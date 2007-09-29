@@ -49,10 +49,6 @@
     
     <!-- clean targets -->
     <target name="clean">
-        <delete>
-            <fileset dir="${build.dir}">
-                <include name="**"/>
-            </fileset>
-        </delete>
+        <delete dir="${build.dir}"/>
     </target>
 </project>

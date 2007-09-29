@@ -198,11 +198,7 @@
         <delete>
             <fileset defaultexcludes="no" dir="." includes="**/*~"/>
         </delete>
-        <delete>
-            <fileset dir="${build.dir}">
-                <include name="**"/>
-            </fileset>
-        </delete>
+        <delete dir="${build.dir}"/>
     </target>
 
 

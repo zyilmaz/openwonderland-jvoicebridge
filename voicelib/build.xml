@@ -73,19 +73,8 @@
 	<ant antfile="build.xml" dir="${common.dir}" target="clean"/>
 	<ant antfile="build.xml" dir="${voip.dir}" target="clean"/>
         
-        <delete dir="${classes.dir}"/>
-        <delete>
-            <fileset dir="${build.dir}">
-                <include name="**"/>
-            </fileset>
-        </delete>
-        <delete>
-            <fileset defaultexcludes="no" dir="." includes="**/*~"/>
-        </delete>
-        <delete dir="${build.lib.dir}"/>
-        <delete failonerror="false" includeemptydirs="true">
-            <fileset dir="${log.dir}"/>
-	</delete>
+        <delete dir="${build.dir}"/>
+        <delete dir="${log.dir}" failonerror="false" includeemptydirs="true"/>
     </target>
 
     <!-- compile -->
