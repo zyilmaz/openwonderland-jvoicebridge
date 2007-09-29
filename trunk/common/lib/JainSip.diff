@@ -1,0 +1,179 @@
+These are the diffs for JainSip.
+
+diff -r1.4 ant-build-config.properties
+9a10
+> stun=stun.jar
+===================================================================
+diff -r1.50 build.xml
+92a93
+> 	<property name="stun_jar" value="${root}/lib/${stun}" />
+156a158
+> 				<pathelement location="${stun_jar}" />
+219a222
+> 							<pathelement location="${stun_jar}" />
+229a233
+> 							<pathelement location="${stun_jar}" />
+333a338
+> 							<pathelement location="${stun_jar}" />
+371a377
+> 							<pathelement location="${stun_jar}" />
+413a420
+> 							<pathelement location="${stun_jar}" />
+442a450
+> 							<pathelement location="${stun_jar}" />
+===================================================================
+diff -r1.9 ListeningPointImpl.java
+27a28,29
+> import java.net.InetSocketAddress;
+> 
+185a188,190
+>     public InetSocketAddress getPublicAddress() {
+> 	return this.messageProcessor.getPublicAddress();
+>     }
+===================================================================
+diff -r1.47 SipProviderImpl.java
+290,296c290,294
+< 				|| (!listeningPoint.getMessageProcessor().getSavedIpAddress()
+< 						.equals(IN_ADDR_ANY)
+< 						&& !listeningPoint.getMessageProcessor()
+< 								.getSavedIpAddress().equals(IN6_ADDR_ANY) && !listeningPoint
+< 						.getSentBy().equalsIgnoreCase(
+< 								sipRequest.getTopmostVia().getSentBy()
+< 										.toString()))) {
+---
+> 		    || (!listeningPoint.getMessageProcessor().getSavedIpAddress().equals(IN_ADDR_ANY)
+> 		    && !listeningPoint.getMessageProcessor().getSavedIpAddress().equals(IN6_ADDR_ANY) 
+> 		    && !listeningPoint.getSentBy().equalsIgnoreCase(
+> 		    sipRequest.getTopmostVia().getSentBy().toString()))) {
+> 
+===================================================================
+diff -r1.11 MessageProcessor.java
+28a29,30
+> 
+> import java.net.DatagramSocket;
+29a32
+> import java.net.InetSocketAddress;
+137a141,142
+>     public abstract InetSocketAddress getPublicAddress();
+>     
+===================================================================
+diff -r1.27 TCPMessageProcessor.java
+29a30
+> import java.net.InetSocketAddress;
+307a309,312
+> 
+>  	public InetSocketAddress getPublicAddress() {
+> 	    return null;
+> 	}
+===================================================================
+diff -r1.11 TLSMessageProcessor.java
+321a322,325
+> 
+>  	public InetSocketAddress getPublicAddress() {
+> 	    return null;
+> 	}
+===================================================================
+diff -r1.29 UDPMessageProcessor.java
+36a37,39
+> import com.sun.stun.StunClient;
+> import com.sun.stun.StunServer;
+> 
+102a106,156
+>   	private static StunServer stunServer;
+> 	private static InetAddress registrarAddress;
+> 	private static int registrarPort = 5060;
+> 
+> 	static {
+> 	    stunServer = StunServerFactory.getInstance();
+> 
+> 	    String s = System.getProperty(
+>                 "com.sun.mc.softphone.sip.REGISTRAR_ADDRESS");
+> 
+> 	    int ix = -1;
+> 
+> 	    if (s != null) {
+> 		ix = s.indexOf(";sip-stun");
+> 	    }
+> 
+> 	    if (s == null || s.length() == 0 || ix < 0) {
+> 		//System.out.println(
+> 		//    "UDPMessageProcessor:  No STUN Registrar specified. "
+> 		//    + "Can't use STUN.");
+> 	    } else {
+> 		s = s.substring(0, ix);
+> 
+> 		try {
+> 		    registrarAddress = InetAddress.getByName(s);
+> 		} catch (UnknownHostException e) {
+> 		    System.out.println("UDPMessageProcessor: "
+> 			+ "unable to resolve registrar address "
+> 			+ s + " " + e.getMessage());
+> 		}
+> 	    }
+> 
+>             s = System.getProperty(
+> 		"com.sun.mc.softphone.sip.REGISTRAR_UDP_PORT");
+> 
+>             if (s != null && s.length() > 0) {
+>                 try {
+>                     registrarPort = Integer.parseInt(s);
+>                 } catch (NumberFormatException e) {
+>                     System.out.println("Invalid registrar port " + s
+>                     + ".  Defaulting to " + registrarPort);
+> 		}
+>             }
+>         }
+> 
+> 	private InetSocketAddress publicAddress;
+> 
+> 	public InetSocketAddress getPublicAddress() {
+> 	    return publicAddress;
+> 	}
+> 
+120a175
+> 
+122a178,196
+> 			
+> 			if (registrarAddress != null) {
+> 			    try {
+> 				StunClient stunClient = new StunClient(
+> 				    new InetSocketAddress(registrarAddress, registrarPort),
+> 				    this.sock);
+> 				
+> 			        publicAddress = stunClient.getMappedAddress();
+> 			    } catch (IOException e) {
+> 			        //System.out.println("UDPMessageProcessor:  " + e.getMessage());
+> 			    }
+> 			}
+> 
+> 			if (publicAddress == null) {
+> 			    /*
+> 			     * Assume public address is the same as the private
+> 			     */
+> 			    publicAddress = new InetSocketAddress(ipAddress, port);
+> 			}
+201a276,290
+> 		                /*
+>                  		 * If the first 2 bytes are 0001, then this is a STUN
+>                  		 * Binding Request.
+>  		                 */
+>                 		if (message[0] == 0 && message[1] == 1) {
+> 				    if (stunServer == null) {
+> 					System.out.println(
+> 					    "Ignoring STUN request from "
+> 					    + packet.getAddress());
+> 					continue;
+> 				    }
+> 		                    stunServer.processStunRequest(sock, packet);
+>        		                    continue;
+>                 		}
+> 
+===================================================================
+diff -r1.3 ListeningPoint.java
+24a25,27
+> 
+> import java.net.InetSocketAddress;
+> 
+78a82,83
+>     public InetSocketAddress getPublicAddress();
+> 

@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Copyright 2005 Sun Microsystems, Inc. All rights reserved.
+ *
+ * Unpublished - rights reserved under the Copyright Laws of the United States.
+ *
+ * Sun Microsystems, Inc. has intellectual property rights relating to
+ * technology embodied in the product that is described in this document. In
+ * particular, and without limitation, these intellectual property rights may
+ * include one or more of the U.S. patents listed at http://www.sun.com/patents
+ * and one or more additional patents or pending patent applications in the
+ * U.S. and in other countries.
+ *
+ * SUN PROPRIETARY/CONFIDENTIAL.
+ *
+ * U.S. Government Rights - Commercial software. Government users are subject
+ * to the Sun Microsystems, Inc. standard license agreement and applicable
+ * provisions of the FAR and its supplements.
+ *
+ * Use is subject to license terms.
+ *
+ * This distribution may include materials developed by third parties. Sun, Sun
+ * Microsystems, the Sun logo, Java, Jini, Solaris and Sun Ray are trademarks
+ * or registered trademarks of Sun Microsystems, Inc. in the U.S. and other
+ * countries.
+ *
+ * UNIX is a registered trademark in the U.S. and other countries, exclusively
+ * licensed through X/Open Company, Ltd.
+-->
+
+<project basedir="." default="all" name="voip">
+    <property name="top.dir" location=".."/>
+        
+    <!-- my.build.properties overrides build.properties -->
+    <property file="my.build.properties"/>
+    <property file="build.properties"/>
+    
+    <!-- Extra "third party" libraries should be put in ./lib -->
+    <path id="build.classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+        <fileset dir="${common.lib.dir}" includes="*.jar"/>
+        <fileset dir="${common.build.lib.dir}" includes="*.jar"/>
+        <fileset dir="${stun.build.lib.dir}" includes="*.jar"/>
+    </path>
+    
+    <path id="run.classpath">
+        <path refid="build.classpath"/>
+        <path location="${build.lib.dir}/bridge.jar"/>
+    </path>
+    
+    <path id="servlet.classpath">
+        <path refid="build.classpath"/>
+        <pathelement location="${common.lib.dir}/servlet.jar"/>
+    </path>
+    
+    <path id="test.classpath">
+        <pathelement location="${classes.dir}"/>
+        <pathelement location="${junit.jar}"/>
+        <pathelement location="${test.classes.dir}"/>
+        <path refid="run.classpath"/>
+    </path>
+    
+    <target name="init">
+        <!-- build dependecies -->
+	<ant antfile="build.xml" dir="${stun.dir}" target="jar"/>
+	<ant antfile="build.xml" dir="${common.dir}" target="jar"/>
+
+        <!-- create our directories -->
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.lib.dir}"/>
+        <mkdir dir="${classes.dir}"/>
+
+        <!-- create a timestamp for this build -->
+	<tstamp>
+   	    <format property="current.time" pattern="E MMM d yyyy hh:mm aa"/>
+	</tstamp> 
+	<mkdir dir="${classes.dir}/com/sun/voip/server"/>
+	<echo file="${build.dir}/classes/com/sun/voip/server/builddate.txt" append="false">${current.time}</echo>
+
+        <copy todir="${classes.dir}/com/sun/voip/server/sounds/">
+            <fileset dir="${src.dir}/com/sun/voip/server/sounds">
+                <include name="**/*.au"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- 
+    Default target 'all' compiles everything and runs all of the JUnit
+    tests.  The individual sections for compilation and running the
+    unit tests area below.
+    -->
+    <target name="all"
+	    depends="init,compile,jar" 
+	    description="Build everything.">
+        <echo message="Build complete."/>
+    </target>
+
+
+    <!-- Compiles everything. -->
+    <target name="compile"
+	    depends="compile-src"/>
+
+
+    <!-- Compiles just the sources, except the VoIP servlet -->
+    <target name="compile-src" depends="init">
+        <mkdir dir="${classes.dir}"/>
+        <javac debug="true" 
+	       deprecation="true" 
+	       srcdir="${src.dir}"
+	       destdir="${classes.dir}"
+               excludes="com/sun/voip/servlet/**"
+               source="${source.version}"> 
+            <classpath refid="build.classpath"/>
+        </javac>
+    </target>
+    
+    <!-- Compiles the VoIP servlet -->
+    <target name="compile-bridge-servlet" depends="init">
+        <mkdir dir="${servlet.dir}"/>
+        <javac debug="true" 
+	       deprecation="true" 
+	       srcdir="${src.dir}"
+	       destdir="${servlet.dir}"
+               includes="com/sun/voip/servlet/**"
+               source="${source.version}"> 
+            <classpath refid="servlet.classpath"/>
+        </javac>
+    </target>
+
+    
+    <!-- Compiles the native libraries -->
+    <target name="compile-native" depends="compile-src">
+        <javah destdir="${src.dir}/com/sun/voip/util/hrtimer" 
+               classpath="${classes.dir}">
+            <class name="com.sun.voip.util.hrtimer.NativeHighResTimer"/>
+        </javah>
+    </target>
+    
+    <!-- Makes all the jar files for this package. -->
+    <target name="jar" depends="compile">
+        <jar compress="true" jarfile="${build.lib.dir}/bridge.jar">
+            <fileset dir="${classes.dir}">
+                <include name="**/*"/>
+                <exclude name="com/sun/voip/client/connector/test/**/*"/>
+                <exclude name="com/sun/voip/modules/*"/>
+            </fileset>
+            <manifest>
+                <attribute name="Main-Class" value="com.sun.voip.server.Bridge"/>
+                <attribute name="Class-Path" 
+                           value="JainSipApi1.2.jar JainSipRi1.2.jar codecLib_dtmf.jar codecLibwrapper_dtmf.jar jspeex.jar concurrent.jar log4j-1.2.8.jar Stun4J.jar voip.jar stun.jar"/>
+            </manifest>
+        </jar>
+        
+        <jar compress="true" jarfile="${build.lib.dir}/bridge_connector.jar">
+            <fileset dir="${classes.dir}">
+                <include name="com/sun/voip/client/connector/**/*"/>
+                <include name="com/sun/voip/CallParticipant.*"/>
+                <exclude name="com/sun/voip/client/connector/test/**/*"/>
+            </fileset>
+        </jar>
+    </target>
+
+    <!-- Generates the javadoc for this package. -->
+    <target name="javadoc" depends="init" description="">
+        <mkdir dir="${javadoc.dir}"/>
+        <javadoc sourcepath="${src.dir}"
+		 destdir="${javadoc.dir}" 
+		 packagenames="com.sun.*"
+		 windowtitle="${javadoc.desc}"
+                 doctitle="${javadoc.desc}"
+                 access="protected">
+            <classpath refid="build.classpath"/>
+            <link offline="true" href="http://java.sun.com/j2se/1.5.0/docs/api/" 
+                  packagelistLoc="${common.dir}/javadoc"/>
+        </javadoc>
+    </target>
+
+    <!-- Generates the javadoc for the connector package. -->
+    <target name="javadoc-connector" depends="init" description="">
+        <mkdir dir="${javadoc.connector.dir}"/>
+        <javadoc destdir="${javadoc.connector.dir}" 
+		 windowtitle="${javadoc.desc}"
+                 doctitle="${javadoc.desc}"
+                 access="protected"
+                 defaultexcludes="yes">
+            <classpath refid="build.classpath"/>
+            <fileset dir="${src.dir}" defaultexcludes="yes">
+                <include name="com/sun/voip/CallParticipant.java"/>
+                <include name="com/sun/voip/client/connector/*.java"/>
+            </fileset>
+            <link offline="true" href="http://java.sun.com/j2se/1.5.0/docs/api/" 
+                  packagelistLoc="${common.dir}/javadoc"/>
+        </javadoc>
+    </target>
+    
+    <!-- Deletes all output and detritus -->
+    <target name="clean" description="Clean all.">
+        <delete>
+            <fileset defaultexcludes="no" dir="." includes="**/*~"/>
+        </delete>
+        <delete>
+            <fileset dir="${build.dir}">
+                <include name="**"/>
+            </fileset>
+        </delete>
+    </target>
+
+
+    <!-- ==================== Deploy Servlet Target ======================== -->
+
+    <!--
+
+    The "deploy_bridge_servlet" target copies the contents of the build 
+    directory into a location required by our servlet container, and 
+    picks up any external dependencies along the way.  
+    After this, you must restart the servlet container.
+
+    To restart, 
+
+	cd /etc
+	rc3.d/S50apache stop
+	rc3.d/S50apache start
+
+    **** 
+	 YOU MUST RUN THIS WHERE YOUR WEB SERVER IS RUNNING!
+    ****
+
+    XXX This needs to be updated.  It appears that the files being used for the
+        servlet are in /usr/apache/tomcat/webapps instead of /var/apache/tomcat.
+	Not sure what's going on!
+
+    -->
+
+    <target name="deploy-bridge-servlet" depends="compile-bridge-servlet"
+        description="Deploy application to servlet container">
+
+	<copy todir="${deploy.home}/WEB-INF" file="${src.dir}/com/sun/voip/servlet/web.xml"/>
+
+        <copy todir="${deploy.home}/WEB-INF/classes/com/sun/voip" file="${build.home}/classes/com/sun/voip/CallParticipant.class"/>
+        <copy todir="${deploy.home}/WEB-INF/classes/com/sun/voip/servlet" file="${build.home}/WEB-INF/classes/com/sun/voip/servlet/TPCallControl.class"/>
+
+        <!-- Copy external dependencies as required -->
+        <!-- *** CUSTOMIZE HERE AS REQUIRED BY YOUR APPLICATION *** -->
+        <mkdir  dir="${deploy.home}/WEB-INF/lib"/>
+    </target>
+    
+    <target name="run-bridge" depends="jar">
+        <ant antfile="run.xml" target="run-bridge">
+            <reference refid="run.classpath"/>
+        </ant>
+    </target>
+    
+     <target name="shutdown-bridge" depends="jar">
+        <ant antfile="run.xml" target="shutdown-bridge">
+            <reference refid="run.classpath"/>
+        </ant>
+    </target>
+    
+    <target name="run-config" depends="jar">
+        <ant antfile="run.xml" target="run-config">
+            <reference refid="run.classpath"/>
+        </ant>
+    </target>
+</project>

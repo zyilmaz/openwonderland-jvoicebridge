@@ -1,0 +1,37 @@
+The programs in this directory were intended to help us understand and 
+produce audio files as well as to analyze rtp packets.  
+
+adjustVolume <linear or ulaw input / output file> <volumeFactor>
+
+    Read and audio file adjust volume by <volumeFactor> and write back
+    to the original file.
+
+linear2ulaw <linear input file> <ulaw output file>
+
+    Read the audio file <linear input file> and produce <ulaw output file>.
+
+mix <file1> <file2> ...
+
+    mix together the linear input files and write a linear output file
+    to standard output.
+
+rtpAnalyzer <raw snoop file> | <recording file>"
+            [-to | -from <port>] [-checkRtp] [-au] [-rtp] [-speechDebug]
+
+    The conference recording file is read and analyzed and a 
+    histogram of times between packets is produced.
+
+    If -au is specifed, an audio file will be produced.
+    This can be played by audiotool.
+
+seq <file1> <file2> ...
+
+    concatenate the ulaw audio files and produce a ulaw output file.
+
+ulaw.c
+
+    library routines to convert between linear and ulaw.
+
+ulaw2linear <ulaw input file> <linear output file>
+
+    Read the audio file <ulaw input file> and produce <linear output file>

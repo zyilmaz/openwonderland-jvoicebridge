@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="Voip Common" default="build" basedir=".">
+    
+    <description>
+        Voip Code Common to Bridge and Softphone
+    </description>
+    
+    <property name="top.dir" location=".."/>
+    
+    <!-- values in my.build.properties override build.properties -->
+    <property file="my.build.properties"/>
+    <property file="build.properties"/>
+    
+    <!-- class path -->
+    <path id="build.classpath">
+	<pathelement location="${lib.dir}/jspeex.jar"/>
+	<pathelement location="${lib.dir}/concurrent.jar"/>
+	<pathelement location="${lib.dir}/JainSipApi1.2.jar"/>
+	<pathelement location="${lib.dir}/JainSipRi1.2.jar"/>
+	<pathelement location="${lib.dir}/log4j-1.2.8.jar"/>
+    </path>
+    
+    <target name="init">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.classes.dir}"/>
+        <mkdir dir="${build.lib.dir}"/>
+    </target>
+    
+    <!-- build targets -->
+    <target name="build" depends="init, compile"/>
+    
+    <target name="compile" depends="init">
+        <javac includeAntRuntime="no" debug="on" deprecation="on"
+               srcdir="src" destdir="${build.classes.dir}"
+               classpathref="build.classpath" source="${source.version}">
+        </javac>
+    </target>
+    
+    <!-- jar targets -->
+    <target name="jar" depends="compile" description="Builds server JAR files">
+        <jar compress="true" jarfile="${build.lib.dir}/voip.jar">
+	    <fileset dir="${build.classes.dir}">
+		 <include name="**/*.*"/>
+	    </fileset>
+	    <fileset dir="src" includes="com/sun/voip/server/sounds/dtmf*.au, com/sun/voip/server/sounds/silence.100ms.au, com/sun/voip/server/sounds/comfort_noise.au"/>
+        </jar>
+    </target>
+    
+    <!-- clean targets -->
+    <target name="clean">
+        <delete>
+            <fileset dir="${build.dir}">
+                <include name="**"/>
+            </fileset>
+        </delete>
+    </target>
+</project>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2005 Sun Microsystems, Inc. All rights reserved.
+ *
+ * Unpublished - rights reserved under the Copyright Laws of the United States.
+ *
+ * Sun Microsystems, Inc. has intellectual property rights relating to
+ * technology embodied in the product that is described in this document. In
+ * particular, and without limitation, these intellectual property rights may
+ * include one or more of the U.S. patents listed at http://www.sun.com/patents
+ * and one or more additional patents or pending patent applications in the
+ * U.S. and in other countries.
+ *
+ * SUN PROPRIETARY/CONFIDENTIAL.
+ *
+ * U.S. Government Rights - Commercial software. Government users are subject
+ * to the Sun Microsystems, Inc. standard license agreement and applicable
+ * provisions of the FAR and its supplements.
+ *
+ * Use is subject to license terms.
+ *
+ * This distribution may include materials developed by third parties. Sun, Sun
+ * Microsystems, the Sun logo, Java, Jini, Solaris and Sun Ray are trademarks
+ * or registered trademarks of Sun Microsystems, Inc. in the U.S. and other
+ * countries.
+ *
+ * UNIX is a registered trademark in the U.S. and other countries, exclusively
+ * licensed through X/Open Company, Ltd.
+-->
+
+<!-- JNLP File for Softphone application -->
+<jnlp spec="1.0+" codebase="http://@HOST_NAME@/@JINI_GROUP@/">
+  <information>
+     <title>Software Phone</title>
+     <vendor>Sun Labs</vendor>
+     <homepage href="http://@HOST_NAME@/@JINI_GROUP@/index.html"/>
+     <description>Meeting Central software phone</description>
+     <description kind="short">Meeting Central SoftPhone</description>
+     <icon href="logo.gif"/>
+     <offline-allowed/>
+  </information>
+  <security>
+     <all-permissions/>
+     <!-- j2ee-application-client-permissions/ -->
+  </security>
+  <resources>
+     <j2se version="1.5+"/>
+     <jar href="softphone.jar"/>
+  </resources>
+  <resources os="Mac OS X">
+     <j2se version="1.4*"/>
+     <jar href="softphone.jar"/>
+  </resources>
+  <application-desc main-class="com.sun.mc.softphone.SipCommunicator">
+  </application-desc>
+</jnlp>
