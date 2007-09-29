@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Copyright 2005 Sun Microsystems, Inc. All rights reserved.
+ *
+ * Unpublished - rights reserved under the Copyright Laws of the United States.
+ *
+ * Sun Microsystems, Inc. has intellectual property rights relating to
+ * technology embodied in the product that is described in this document. In
+ * particular, and without limitation, these intellectual property rights may
+ * include one or more of the U.S. patents listed at http://www.sun.com/patents
+ * and one or more additional patents or pending patent applications in the
+ * U.S. and in other countries.
+ *
+ * SUN PROPRIETARY/CONFIDENTIAL.
+ *
+ * U.S. Government Rights - Commercial software. Government users are subject
+ * to the Sun Microsystems, Inc. standard license agreement and applicable
+ * provisions of the FAR and its supplements.
+ *
+ * Use is subject to license terms.
+ *
+ * This distribution may include materials developed by third parties. Sun, Sun
+ * Microsystems, the Sun logo, Java, Jini, Solaris and Sun Ray are trademarks
+ * or registered trademarks of Sun Microsystems, Inc. in the U.S. and other
+ * countries.
+ *
+ * UNIX is a registered trademark in the U.S. and other countries, exclusively
+ * licensed through X/Open Company, Ltd.
+-->
+<project basedir="." default="all" name="softphone">
+
+    <property name="top.dir" location=".."/>
+    
+    <!-- values in my.build.properties override build.properties -->
+    <property file="my.build.properties"/>
+    <property file="build.properties"/>
+    
+    <path id="build.classpath">
+        <!-- JAIN SIP RI -->
+        <pathelement location="${common.lib.dir}/JainSipApi1.2.jar"/>
+        <pathelement location="${common.lib.dir}/JainSipRi1.2.jar"/>
+        <pathelement location="${common.lib.dir}/concurrent.jar"/>
+        <!-- log4j -->
+        <pathelement location="${common.lib.dir}/log4j-1.2.8.jar"/>
+	<!-- Speex -->
+        <pathelement location="${common.lib.dir}/jspeex.jar"/>
+	<!-- JNLP -->
+        <pathelement location="${lib.dir}/jnlp.jar"/>
+	<!-- Junit -->
+        <pathelement location="${lib.dir}/junit.jar"/>
+        <!-- swing-layout -->
+        <pathelement location="${common.lib.dir}/swing-layout-1.0.jar"/>
+	<!-- stun server -->
+        <pathelement location="${stun.build.lib.dir}/stun.jar"/>
+        <!-- voip common -->
+        <pathelement location="${common.build.lib.dir}/voip.jar"/>
+    </path>
+
+    <path id="run.classpath">
+        <path refid="build.classpath"/>
+        <pathelement location="${classes.dir}"/>
+    </path>
+    
+    <path id="sourcepath">
+        <pathelement location="${src.dir}"/>
+    </path>
+    
+    <!-- TARGETS -->
+
+    <target name="all" depends="init, jar"/>
+
+    <target name="init">
+        <!-- build dependencies -->
+	<ant antfile="build.xml" dir="${stun.dir}" target="jar"/>
+	<ant antfile="build.xml" dir="${common.dir}" target="jar"/>
+
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.lib.dir}"/>
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${log.dir}"/>
+
+        <!-- copy native libraries -->
+        <copy todir="${build.lib.dir}">
+            <fileset dir="${alsa.dir}">
+                <include name="*.so"/>
+	    </fileset>
+            <fileset dir="${coreaudio.dir}">
+                <include name="*.jnilib"/>
+            </fileset>
+	</copy>
+
+        <!-- resources -->
+        <mkdir dir="${classes.dir}/com/sun/mc/softphone/common/resource"/>
+	<copy todir="${classes.dir}/com/sun/mc/softphone/common/resource">
+            <fileset dir="${src.dir}/com/sun/mc/softphone/common/resource">
+                <include name="**/*.jpe"/>
+                <include name="**/*.jpeg"/>
+                <include name="**/*.rmf"/>
+                <include name="**/*.au"/>
+                <include name="**/*.mid"/>
+                <include name="**/*.midi"/>
+                <include name="**/*.au"/>
+                <include name="**/*.gif"/>
+                <include name="**/*.png"/>
+                <include name="**/*.jpg"/>
+                <include name="**/*.aiff"/>
+                <include name="**/*.txt"/>
+                <!-- copy xmls to dst - report Damian Minkov -->
+                <include name="**/*.xml"/>
+                <include name="**/*.properties"/>
+            </fileset>
+        </copy>
+
+        <!-- configuration -->
+	<copy todir="${classes.dir}/com/sun/mc/softphone/gui/config/xml">
+            <fileset dir="${src.dir}/com/sun/mc/softphone/gui/config/xml">
+		<include name="**/gui-config.xml"/>
+	    </fileset>
+	</copy>
+    </target>
+    
+    <target name="clean">
+	<ant antfile="build.xml" dir="${common.dir}" target="clean"/>
+        <ant antfile="build.xml" dir="${stun.dir}" target="clean"/>
+        
+        <delete dir="${classes.dir}"/>
+        <delete>
+            <fileset dir="${build.dir}">
+                <include name="**"/>
+            </fileset>
+        </delete>
+        <delete>
+            <fileset defaultexcludes="no" dir="." includes="**/*~"/>
+        </delete>
+        <delete dir="${build.lib.dir}"/>
+        <delete failonerror="false" includeemptydirs="true">
+            <fileset dir="${log.dir}"/>
+	</delete>
+    </target>
+
+    <!-- compile -->
+    <target name="compile" depends="init" description="Compile everything" >
+        <!-- create timestamp -->
+        <tstamp>
+            <format property="current.time" pattern="E MMM d yyyy hh:mm aa"/>
+        </tstamp>
+	<echo file="${build.dir}/classes/com/sun/mc/softphone/common/resource/version.txt" append="false">${current.time}</echo>
+
+
+        <javac debug="true" deprecation="true" destdir="${classes.dir}" 
+               srcdir="${src.dir}" source="${source.version}">
+	    <include name="com/sun/mc/softphone/*.java"/>
+	    <include name="com/sun/mc/softphone/common/*.java"/>
+	    <include name="com/sun/mc/softphone/gui/*.java"/>
+	    <include name="com/sun/mc/softphone/gui/config/*.java"/>
+	    <include name="com/sun/mc/softphone/gui/config/xml/*.java"/>
+	    <include name="com/sun/mc/softphone/gui/config/event/*.java"/>
+	    <include name="com/sun/mc/softphone/gui/plaf/*.java"/>
+	    <include name="com/sun/mc/softphone/media/*.java"/>
+	    <include name="com/sun/mc/softphone/media/event/*.java"/>
+            <include name="com/sun/mc/softphone/media/alsa/*.java"/>
+            <include name="com/sun/mc/softphone/media/coreaudio/*.java"/>
+	    <include name="com/sun/mc/softphone/media/javasound/*.java"/>
+	    <include name="com/sun/mc/softphone/media/audiotest/*.java"/>
+            <include name="com/sun/mc/softphone/sip/*.java"/>
+	    <include name="com/sun/mc/softphone/sip/event/*.java"/>
+	    <include name="com/sun/mc/softphone/sip/security/*.java"/>
+	    <include name="com/sun/mc/softphone/inst/*.java"/>
+            <classpath refid="build.classpath"/>
+	</javac>
+
+        <!-- put native libraries in the right place -->
+        <property name="coreaudio.native.dir"
+                  value="${classes.dir}/com/sun/mc/softphone/media/coreaudio/native"/>
+	<mkdir dir="${coreaudio.native.dir}"/>
+	<copy file="${intel.coreaudio.native.library}"
+	      tofile="${coreaudio.native.dir}/libmedia.intel.jnilib"/>
+	<copy file="${powerpc.coreaudio.native.library}"
+	      tofile="${coreaudio.native.dir}/libmedia.powerpc.jnilib"/>
+
+        <property name="alsa.native.dir"
+                  value="${classes.dir}/com/sun/mc/softphone/media/alsa/native"/>
+        <mkdir dir="${alsa.native.dir}"/>
+        <copy file="${alsa.native.library}"
+              todir="${alsa.native.dir}"/>
+    </target>
+
+    <!-- jar - bundles the whole project (including libraries) into a single jar-->
+    <target name="jar" depends="compile" 
+            description="bundles the whole project (including libraries) into a single jar">
+                
+        <classfileset dir="${classes_dir}" id="communicatorClasses">
+            <root classname="com.sun.mc.softphone.SipCommunicator"/>
+        </classfileset>
+
+        <jar compress="true" jarfile="${build.lib.dir}/softphone.jar">
+            <fileset dir="${classes.dir}">
+                <include name="**/*.*"/>
+            </fileset>
+            <zipfileset src="${common.lib.dir}/JainSipRi1.2.jar"/>
+            <zipfileset src="${common.lib.dir}/JainSipApi1.2.jar"/>
+            <zipfileset src="${common.lib.dir}/log4j-1.2.8.jar"/>
+            <zipfileset src="${common.lib.dir}/concurrent.jar"/>
+            <zipfileset src="${common.lib.dir}/jspeex.jar"/>
+            <zipfileset src="${common.lib.dir}/swing-layout-1.0.jar"/>
+            <zipfileset src="${stun.build.lib.dir}/stun.jar"/>
+            <zipfileset src="${common.build.lib.dir}/voip.jar"/>
+        
+            <manifest>
+                <attribute name="Main-Class" value="com.sun.mc.softphone.SipCommunicator"/>
+            </manifest>
+        </jar>
+        
+        <copy file="${alsa.native.library}" tofile="${build.lib.dir}/libMediaFramework.so"/>
+        <copy file="${intel.coreaudio.native.library}" tofile="${build.lib.dir}/libmedia.intel.jnilib"/>
+        <copy file="${powerpc.coreaudio.native.library}" tofile="${build.lib.dir}/libmedia.powerpc.jnilib"/>
+
+        <jar compress="true" jarfile="${build.lib.dir}/softphone_inst.jar">
+            <fileset dir="${classes.dir}">
+                <include name="com/sun/mc/softphone/inst/*.class"/>
+            </fileset>
+
+            <fileset dir="${build.lib.dir}" file="${softphone.jar}"/>    
+
+            <fileset dir="${build.lib.dir}" file="libMediaFramework.so"/>    
+            <fileset dir="${build.lib.dir}" file="libmedia.powerpc.jnilib"/>    
+            <fileset dir="${build.lib.dir}" file="libmedia.intel.jnilib"/>    
+            
+            <manifest>
+                <attribute name="Main-Class" value="com.sun.mc.softphone.inst.SoftphoneExtInstaller"/>
+            </manifest> 
+        </jar>
+    </target>
+    
+    <!-- == Netbeans integration == -->
+    <!-- compile the selected file -->
+    <target name="compile-selected-files" depends="init">
+        <fail unless="files">Must set property 'files'</fail>
+        <javac debug="true" srcdir="${src.dir}" destdir="${classes.dir}" 
+               includes="${files}" source="${source.version}">
+            <classpath refid="build.classpath"/>
+        </javac>
+    </target>
+    
+    <!-- run the selected file -->
+    <target name="run" depends="compile,jar,clearlogs" description="start the softphone application.">
+        <condition property="classname" value="com.sun.mc.softphone.SipCommunicator">
+            <not>
+                <isset property="classname"/>
+            </not>
+        </condition>
+        
+        <java classname="${classname}" classpathref="run.classpath" 
+              failonerror="true" fork="true" newenvironment="true">
+            <jvmarg value="-server"/>
+            <jvmarg value="-ms20m"/>
+            <jvmarg value="-mx20m"/>
+            <jvmarg value="-XX:NewSize=1m"/>
+            <jvmarg value="-XX:MaxNewSize=1m"/>
+            <jvmarg value="-XX:+UseParNewGC"/>
+            <jvmarg value="-XX:+UseConcMarkSweepGC"/>
+	    <JVMarg value="-Djava.library.path=${java.library.path}:${native.lib.dir}:${build_lib_dir}"/>
+<!--
+            <jvmarg value="-XX:+PrintGCDetails"/>
+            <jvmarg value="-XX:+TraceGen0Time"/>
+            <jvmarg value="-XX:+TraceGen1Time"/>
+-->
+<!--
+            <jvmarg value="-Dcom.sun.mc.softphone.MEDIA_MANAGER=com.sun.mc.softphone.media.javasound.JSMediaManager"/>
+-->
+            <sysproperty key="log4j.configuration" value="softphone.properties"/>
+        </java>
+    </target>
+    
+    <!-- debug the selected file -->
+    <target name="debug-selected-file" depends="compile" 
+            if="netbeans.home" description="Debug a Single File">
+       <fail unless="classname">Must set property 'classname'</fail>
+       <nbjpdastart name="${classname}" addressproperty="jpda.address" 
+                    transport="dt_socket">
+          <classpath refid="run.classpath"/>
+          <!-- Optional - If source roots are properly declared in project, should
+          work without setting source path. -->
+          <sourcepath refid="sourcepath"/>
+       </nbjpdastart>
+       
+       <java classname="${classname}" classpathref="run.classpath" 
+              failonerror="true" fork="true" newenvironment="true">
+            <jvmarg value="-Xdebug"/>
+            <jvmarg value="-Xnoagent"/>
+            <jvmarg value="-Djava.compiler=none"/>
+            <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
+            <jvmarg value="-server"/>
+            <jvmarg value="-ms20m"/>
+            <jvmarg value="-mx20m"/>
+            <jvmarg value="-XX:NewSize=2m"/>
+            <jvmarg value="-XX:MaxNewSize=2m"/>
+            <jvmarg value="-XX:+UseParNewGC"/>
+            <jvmarg value="-XX:+UseConcMarkSweepGC"/>
+            <jvmarg value="-XX:+PrintGCDetails"/>
+            <jvmarg value="-XX:+TraceGen0Time"/>
+            <jvmarg value="-XX:+TraceGen1Time"/>
+            <jvmarg value="-Dcom.sun.mc.softphone.MEDIA_MANAGER=com.sun.mc.softphone.media.javasound.JSMediaManager"/>
+            <sysproperty key="log4j.configuration" value="softphone.properties"/>
+        </java>
+     </target>
+    <!-- == end Netbeans integration == -->
+     
+    <!-- javadoc - runs javadoc over project  sources-->
+    <target name="javadoc" description="runs javadoc over project sources">
+        <javadoc author="true" destdir="doc/api" package="true">
+            <fileset dir="${src.dir}"/>
+        </javadoc>
+    </target>
+
+    <!-- clearlogs - deletes all files in the log directory-->
+    <target name="clearlogs" description="deletes all files in the log directory">
+        <delete failonerror="false" includeemptydirs="true">
+            <fileset dir="${log.dir}">
+		<include name="**/*"/>
+	    </fileset>
+        </delete>
+    </target>
+</project>

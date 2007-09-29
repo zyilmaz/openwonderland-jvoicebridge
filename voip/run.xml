@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="run-bridge" default="run-bridge" basedir=".">
+    <!-- set the runtime classpath -->
+    <dirname property="run.dir" file="${ant.file.run-bridge}"/>
+    <path id="run.classpath">
+        <fileset dir="${run.dir}" includes="*.jar"/>
+    </path>
+  
+    <!-- default property values.  Can be overridden on the command line -->
+    <property name="bridge.sip.port" value="5060"/>
+    <property name="bridge.hostname" value="localhost"/>
+    
+    <target name="run-bridge" depends="shutdown-bridge"
+            description="Run Conference Bridge">
+        <java classname="com.sun.voip.server.Bridge" failonerror="true" fork="true">
+            <jvmarg value="-server"/>
+            <jvmarg value="-Djavax.sip.IP_ADDRESS=${bridge.hostname}"/>
+            <jvmarg value="-Dgov.nist.jainsip.stack.disableAuthentication=true"/>
+	    <jvmarg value="-Dgov.nist.jainsip.stack.traceLevel=8"/>
+	    <jvmarg value="-Dgov.nist.javax.sip.SERVER_LOG=sipMessages.log"/>
+	    <jvmarg value="-Dgov.nist.javax.sip.DEBUG_LOG=nistStack.log"/>
+            <jvmarg value="-Dgov.nist.jainsip.stack.enableUDP=${bridge.sip.port}"/>
+	    <jvmarg value="-Dcom.sun.voip.server.BRIDGE_LOG=bridge.log"/>
+	    <jvmarg value="-Dcom.sun.voip.server.BRIDGE_LOCATION=BUR"/>
+	    <jvmarg value="-Dcom.sun.voip.server.LOCALHOST_SECURITY=false"/>
+            <jvmarg value="-Dcom.sun.voip.server.BRIDGE_CONTROL_PORT=6666"/>
+            <jvmarg value="-Dcom.sun.voip.server.Bridge.soundPath=/com/sun/voip/server/sounds:."/>
+	    <jvmarg value="-Dcom.sun.voip.server.BRIDGE_STATUS_LISTENERS=proteus.east.sun.com:6668"/>
+            <jvmarg value="-ms200m"/>
+            <jvmarg value="-mx200m"/>
+	    <jvmarg value="-XX:NewSize=3m"/>
+            <jvmarg value="-XX:MaxNewSize=3m"/> 
+            <jvmarg value="-XX:+UseParNewGC"/> 
+            <jvmarg value="-XX:+UseConcMarkSweepGC"/>
+            <jvmarg value="-XX:+PrintClassHistogram"/> 
+	    <jvmarg value="-XX:+PrintGCDetails"/>
+            <jvmarg value="-XX:+PrintGCTimeStamps"/>
+            <jvmarg value="-XX:+TraceGen0Time"/>
+            <jvmarg value="-XX:+TraceGen1Time"/>
+        
+            <arg value="noprogram"/>
+            <classpath refid="run.classpath"/>
+        </java>
+    </target>
+    
+    <!-- shut down an existing bridge -->
+    <target name="shutdown-bridge" description="Shutdown Conference Bridge">
+        <java classname="com.sun.voip.server.ShutdownBridge" failonerror="true" fork="true">
+            <arg value="${bridge.server.name}"/>
+            <classpath refid="run.classpath"/>
+        </java>
+    </target>
+    
+</project>

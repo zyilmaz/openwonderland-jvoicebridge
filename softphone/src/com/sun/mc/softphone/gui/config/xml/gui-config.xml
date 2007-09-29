@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration title="Configuration Title">
+<!--
+	IMPORTANT when writing description escape the characters '<' with &#60
+-->
+    <config name="custom properties">
+        <media>
+            <property name="com.sun.mc.softphone.media.LOG_LEVEL">
+                <labelname>Media Log Level</labelname>
+                <description><![CDATA[
+			Specifies an integer value for logging media related 
+			information.  Default is 3.  16 is the maximum.  
+			Higher values mean to log more information.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.AUDIO_PORT">
+                <labelname>Media data port</labelname>
+                <description><![CDATA[
+			Specifies an integer value for the data port.
+			This is useful if you are behind a firewall and 
+			have to open up ports.  Default is dynamic port number.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.SWAP_SPEAKER_CHANNELS">
+                <labelname>Swap Speaker Channels</labelname>
+                <description><![CDATA[
+			If set to true, left and right speaker channels will be 
+			swapped.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.SPEAKER_BUFFER_SIZE">
+                <labelname>Speaker buffer size</labelname>
+                <description><![CDATA[
+			This is the number of milliseconds of data which the 
+			speaker can buffer.  Values will be rounded up to 20ms 
+			boundaries.  Smaller values mean lower latency but also 
+			run the risk of overflow if there's is burst of data.  
+			The default value is 160ms.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.FLUSH_SPEAKER_WHEN_FULL">
+                <labelname>Flush speaker when full</labelname>
+                <description><![CDATA[
+		    When data needs to be written to the speaker and there
+		    isn't enough room to write the data, flush the speaker
+		    before before writing.  Default is false.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.PREVENT_SPEAKER_UNDERRUN">
+                <labelname>Prevent speaker underrun</labelname>
+                <description><![CDATA[
+			When set to true, a thread writes silence to the speaker
+			when the speaker buffer is near empty.
+                ]]></description>
+            </property>
+	    <property name="com.sun.mc.softphone.media.MIN_JITTER_BUFFER_SIZE">
+                <labelname>Min Jitter Buffer Size</labelname>
+                <description><![CDATA[
+            		Add at least this many packets of latency to smooth out 
+			jitter.  The actual jitter buffer size is determined 
+			dynamically.  This parameter sets the minimum value.
+                ]]></description>
+            </property>
+	    <property name="com.sun.mc.softphone.media.MAX_JITTER_BUFFER_SIZE">
+                <labelname>Max Jitter Buffer Size</labelname>
+                <description><![CDATA[
+            		Add up to this many packets of latency to smooth out 
+			jitter.  The actual jitter buffer size is determined 
+			dynamically.  This parameter limits the size.
+		]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.USE_EXTERNAL_MIC">
+                <labelname>Use External Mic on Mac</labelname>
+                <description><![CDATA[
+			When set to true, the last mixer will be selected for 
+			the microphone on the Mac.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.MICROPHONE_BUFFER_SIZE">
+                <labelname>Microphone buffer size</labelname>
+                <description><![CDATA[
+			This is the number of milliseconds of data which 
+			the microphone can buffer.  Values will be rounded up 
+			to 20ms boundaries.  Smaller values mean lower latency 
+			but also run the risk of overflow if the softphone 
+			is unable to read the microphone fast enough.
+			default value is 40ms.  It is unlikely you will
+			need to change this.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.ADJUST_MICROPHONE_BIAS">
+                <labelname>Auto Adjust Mic Bias</labelname>
+                <description><![CDATA[
+			We have encountered a microphone with a DC bias.
+			This causes static to be heard.  If this parameter
+			is set to true, an attempt will be made
+			to figure out the bias and adjust for it.
+			Default is false.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.SMOOTH_MICROPHONE">
+                <labelname>Smooth Microphone</labelname>
+                <description><![CDATA[
+			When set to true, an attempt is made to smooth out
+			microphone reads so that only one read is done
+			every 20 ms.  This is intended for debugging.
+                        Default is false.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.SPEAKER_BIAS">
+                <labelname>Speaker Bias</labelname>
+                <description><![CDATA[
+			Adjust samples written to the speaker by adding this value.   
+			For Debugging!
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.RECEIVE_COMFORT_PAYLOAD">
+                <labelname>Handle comfort noise payload</labelname>
+                <description><![CDATA[
+			When set to true, if a comfort noise payload is 
+			received, comfort noise will be generated. 
+		]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.SEND_COMFORT_PAYLOAD">
+                <labelname>Send comfort noise payload</labelname>
+                <description><![CDATA[
+                        When set to true, a comfort noise payload is sent
+                        when silence is detected.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.COMFORT_NOISE_LEVEL">
+                <labelname>Comfort Noise Level</labelname>
+                <description><![CDATA[
+			Specifies the comfort noise level used with a
+			Comfort Payload.  Default is 62.  Range is 0 - 127
+			with smaller numbers meaning louder comfort noise.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.VERIFY_SENDER">
+                <labelname>Verify Sender</labelname>
+                <description><![CDATA[
+			When using the same audio port number for different 
+			sessions, it's possible that an old audio source is 
+			still sending data.  When this flag is set to true,
+			old data will be rejected.  Default is true.
+		]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.FLUSH_SOCKET">
+                <labelname>Flush Receiver RTP Socket</labelname>
+                <description><![CDATA[
+                	When set to any String, causes the RTP socket 
+			to be flushed.  This automatically resets to an 
+			empty String.
+                ]]></description>
+            </property>
+	    <property name="com.sun.mc.softphone.media.VOLUME_THRESHOLD">
+                <labelname>Volume Threshold</labelname>
+                <description><![CDATA[
+                        Used to tune the detection of sound for determining 
+			when to send a comfort payload.  Default value is 100.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.MIN_THRESHOLD_COUNT">
+                <labelname>Min Threshold Count</labelname>
+                <description><![CDATA[
+                	Used to tune the detection of sound for determining 
+			when to send a comfort payload.  Default value is 50.
+                ]]></description>
+            </property>
+        </media>
+	<network>
+            <property name="com.sun.mc.stun.LOCAL_IP_ADDRESS">
+                <labelname>Local IP Address</labelname>
+                <description><![CDATA[
+			This is the IP to use for network traffic.  
+			If this is blank, system will try to find a suitable 
+			address which is reachable.  If you specify an
+			address here and it is not reachable as determined
+			by InetAddress isReachable(), a warning message will
+			be displayed but the address will be used anyway.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.stun.NETWORK_INTERFACE_TIMEOUT">
+                <labelname>Interface Timeout</labelname>
+                <description><![CDATA[
+			This is the timeout value in milliseconds used by 
+			InetAddress.isReachable() to determine if an address
+		 	is reachable.  The default is 100ms and it is unlikely 
+			that you will need to change this.
+                ]]></description>
+            </property>
+	</network>
+	<speexEncoding>
+            <property name="com.sun.mc.softphone.media.SPEEX_ENABLED">
+                <labelname>Enable Speex Encoding</labelname>
+                <description><![CDATA[
+			Set to true to enable Speex encoding.  Default is false.
+			Note that decoding of received packets is always enabled
+			so that the sender can enable or disable Speex encoding 
+			without restarting a call.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.SPEEX_QUALITY">
+                <labelname>Speex Quality</labelname>
+                <description><![CDATA[
+			If Speex is enabled, this is the Speex Encoding Quality.
+                        Values range from 0 to 10, default is 0.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.media.SPEEX_COMPLEXITY">
+                <labelname>Speex Complexity</labelname>
+                <description><![CDATA[
+			If Speex is enabled, this is the Speex Encoding 
+			Complexity.  Values range from 0 to 10, default is 0.
+		]]></description>
+            </property>
+	</speexEncoding>
+        <sip>
+	    <property name="com.sun.mc.softphone.sip.USER_NAME">
+                <labelname>User Name</labelname>
+                <description><![CDATA[
+			The name the Sip Communicator will use as part of 
+			the SIP phone address.
+		]]></description>
+            </property>
+
+            <property name="com.sun.mc.softphone.sip.PREFERRED_LOCAL_PORT">
+                <labelname>Preferred SIP port number</labelname>
+                <description><![CDATA[
+			The port where Sip Communicator should listen for 
+			incoming SIP messages. If it fails to bind to that 
+			port Sip Communicator will randomly bind to another one.
+		]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.sip.REGISTRAR_ADDRESS">
+                <labelname>Registrar address</labelname>
+                <description><![CDATA[
+			The address of your registrar server (if any).
+		]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.sip.REGISTRAR_UDP_PORT">
+                <labelname>Registrar port</labelname>
+                <description><![CDATA[
+			The port where the registrar server is listening.
+		]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.sip.REGISTRAR_TRANSPORT">
+                <labelname>Registrar transport protocol</labelname>
+                <description><![CDATA[
+			The transport protocol that should be used when 
+			contacting the registrar server.
+		]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.sip.WAIT_UNREGISTGRATION_FOR">
+                <labelname>Registrations expire after</labelname>
+                <description><![CDATA[
+			The time that registrations with the registrar server 
+			will remain valid. Sip Communicator automatically 
+			renews registration after the time has expired 
+			(default is 3600).
+		]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.sip.DOMAIN_NAME">
+                <labelname>DOMAIN_NAME</labelname>
+                <description><![CDATA[
+			Describe it!
+		]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.sip.AUTHENTICATION_USER_NAME ">
+                <labelname>AUTHENTICATION_USER_NAME </labelname>
+                <description><![CDATA[
+                	Describe it!
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.sip.DEFAULT_AUTHENTICATION_REALM ">
+                <labelname>DEFAULT_AUTHENTICATION_REALM </labelname>
+                <description><![CDATA[
+                	Describe it!
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.softphone.sip.WAIT_UNREGISTGRATION_FOR">
+                <labelname>WAIT_UNREGISTGRATION_FOR</labelname>
+                <description><![CDATA[
+			Describe it!
+		]]></description>
+            </property>
+	    <property name="com.sun.mc.softphone.AUTOANSWER_DELAY">
+                <labelname>Delay auto answering</labelname>
+                <description><![CDATA[
+			If this is set to non-zero, when a call is received, 
+			it will be autoanswered after the speicifed milliseconds
+			have elapsed.
+                ]]></description>
+            </property>
+	    <property name="com.sun.mc.softphone.USE_TELEPHONE_EVENT_PAYLOAD">
+                <labelname>Enable Telephone Events</labelname>
+                <description><![CDATA[
+			If this is set to true, an attempt will be made to 
+			negotiate a telephone event payload with the remote 
+			side.
+		]]></description>
+            </property>
+	    <property name="com.sun.mc.softphone.sip.SESSION_PROGRESS_IS_OK">
+                <labelname>Connect on SESSION_PROGRESS</labelname>
+                <description><![CDATA[
+			If this is set to true, SESSION_PROGRESS will be treated
+			as OK.  This is a workaround to a problem where our PBX 
+			never sends a connect message to the VoIP gateway.  
+			Default is true.
+                ]]></description>
+	    </property>
+        </sip>
+    </config>
+    <config name="stack properties">
+        <jain>
+            <property name="javax.sip.OUTBOUND_PROXY_ADDRESS">
+                <labelname>SIP proxy</labelname>
+                <description><![CDATA[
+			Fill this in if you are using a SIP proxy server.
+			IMPORTANT! Format is 
+			<font color="blue">&#60address>:&#60port>/&#60transport>
+			</font>.  Where <font color="blue">&#60address></font> 
+			is the IP address or FQDN of the proxy server.
+			<font color="blue">&#60port></font> is its port and 
+			<font color="blue">&#60transport></font> is the 
+			protocol that it uses, tcp or udp.
+		]]></description>
+            </property>
+        </jain>
+        <nist>
+            <property name="gov.nist.javax.sip.TRACE_LEVEL">
+                <labelname>Trace level</labelname>
+                <description><![CDATA[
+			Trace level indicates the stack the level of logging. 
+			32 logs everything and 1 for weakest logging.
+		]]></description>
+            </property>
+            <property name="gov.nist.javax.sip.SERVER_LOG">
+                <labelname>Server log</labelname>
+                <description><![CDATA[
+			The name of the file where the stack should store 
+			its log messages.
+		]]></description>
+            </property>
+		</nist>
+    </config>
+    <config name="thirdparty properties">
+        <log4J>
+            <property name="log4j.rootLogger">
+                <labelname>Root Logger</labelname>
+                <description><![CDATA[
+			Needed by Log4J
+		]]></description>
+            </property>
+            <property name="log4j.appender.RFLogger">
+                <labelname>RFLogger</labelname>
+                <description><![CDATA[
+			Needed by Log4J
+		]]></description>
+            </property>
+            <property name="log4j.appender.RFLogger.File">
+                <labelname>File</labelname>
+                <description><![CDATA[
+			Log file name.
+		]]></description>
+            </property>
+            <property name="log4j.appender.RFLogger.MaxFileSize">
+                <labelname>Max log file size</labelname>
+                <description><![CDATA[
+			 The maximum allowable size of the log file.
+		]]></description>
+            </property>
+            <property name="log4j.appender.RFLogger.MaxBackupIndex">
+                <labelname>Max Backup Index</labelname>
+                <description><![CDATA[
+			Number of log files to keep in backup.
+		]]></description>
+            </property>
+            <property name="log4j.appender.RFLogger.layout">
+                <labelname>Log layout</labelname>
+                <description><![CDATA[
+			The layout to used when logging messages.
+		]]></description>
+            </property>
+            <property name="log4j.appender.RFLogger.layout.ConversionPattern">
+                <labelname>ConversionPattern</labelname>
+                <description><![CDATA[
+			Conversion pattern. Needed by Log4J
+		]]></description>
+            </property>
+        </log4J>
+    </config>
+</configuration>

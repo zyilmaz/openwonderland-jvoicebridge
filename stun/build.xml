@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="Stun server" default="build" basedir=".">
+    
+    <description>
+        "Stun Server code"
+    </description>
+    
+    <property name="top.dir" location=".."/>
+    
+    <!-- values in my.build.properties override build.properties -->
+    <property file="my.build.properties"/>
+    <property file="build.properties"/>
+    
+    <!-- class path -->
+    <path id="classpath">
+        <pathelement location="${build.classes.dir}"/>
+    </path>
+    
+    <target name="init">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.classes.dir}"/>
+        <mkdir dir="${build.lib.dir}"/>
+    </target>
+    
+    <!-- build targets -->
+    <target name="build" depends="init, compile"/>
+    
+    <target name="compile" depends="init">
+        <javac includeAntRuntime="no" debug="on" deprecation="on"
+               srcdir="src" destdir="${build.classes.dir}"
+               classpathref="classpath" source="${source.version}">
+        </javac>
+    </target>
+    
+    <!-- jar targets -->
+    <target name="jar" depends="compile" description="Builds server JAR files">
+        <jar compress="true" jarfile="${build.lib.dir}/stun.jar">
+	    <fileset dir="${build.classes.dir}">
+		 <include name="**/*.*"/>
+	    </fileset>
+        </jar>
+    </target>
+    
+    <!-- clean targets -->
+    <target name="clean">
+        <delete>
+            <fileset dir="${build.dir}">
+                <include name="**"/>
+            </fileset>
+        </delete>
+    </target>
+    
+</project>

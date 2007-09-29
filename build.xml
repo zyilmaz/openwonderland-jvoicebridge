@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="jVoiceBridge" default="jar" basedir=".">
+    
+    <description>jVoiceBridge project</description>
+   
+    <property name="top.dir" location="."/>
+    
+    <!-- values in my.build.properties override build.properties -->
+    <property file="my.build.properties"/>
+    <property file="build.properties"/>
+    
+    <!-- build and package -->
+    <target name="jar" depends="jar-common, jar-bridge, jar-softphone, jar-voicelib"
+            description="Build all jar files"/>
+    
+    <target name="jar-common" description="Build common jar files">
+        <ant dir="${common.dir}" antfile="build.xml" target="jar"/>
+        <ant dir="${stun.dir}" antfile="build.xml" target="jar"/>
+    </target>
+        
+    <target name="jar-bridge" depends="jar-common"
+            description="Build bridge jar files">
+        <ant dir="${bridge.dir}" antfile="build.xml" target="jar"/>
+    </target>
+    
+    <target name="jar-softphone" depends="jar-common"
+            description="Build softphone jar files">
+        <ant dir="${softphone.dir}" antfile="build.xml" target="jar"/>
+    </target>
+    
+    <target name="jar-voicelib" depends="jar-common"
+            description="Build voicelib jar files">
+        <ant dir="${voicelib.dir}" antfile="build.xml" target="jar"/>
+    </target>
+    
+    <!-- copy to dist directory -->
+    <target name="dist" depends="jar, dist-bridge, dist-softphone, dist-voicelib, dist-doc"
+            description="Build distribution directory">
+    
+	<mkdir dir="dist"/>
+	<mkdir dir="tmp"/>
+	<mkdir dir="tmp/voicebridge"/>
+	<mkdir dir="tmp/voicebridge/nist-sip"/>
+	<mkdir dir="tmp/voicelib"/>
+
+	<copy todir="tmp/voicebridge">
+	   <fileset file="${bridge.dir}/build/lib/bridge_connector.jar"/>
+	   <fileset file="${bridge.dir}/build/lib/bridge.jar"/>
+	   <fileset file="${bridge.dir}/run.xml"/>
+	   <fileset file="${bridge.dir}/lib/codecLib_dtmf.jar"/>
+	   <fileset file="${bridge.dir}/lib/codecLibwrapper_dtmf.jar"/>
+	   <fileset file="${common.dir}/build/lib/voip.jar"/>
+	   <fileset file="${common.dir}/lib/jspeex.jar"/>
+	   <fileset file="${softphone.dir}/build/lib/libmedia.intel.jnilib"/>
+	   <fileset file="${softphone.dir}/build/lib/libmedia.powerpc.jnilib"/>
+	   <fileset file="${softphone.dir}/lib/log4j-1.2.8.jar"/>
+	   <fileset file="${softphone.dir}/build/lib/softphone.jar"/>
+	   <fileset file="${softphone.dir}/build/lib/softphone_native.jar"/>
+	   <fileset file="${stun.dir}/build/lib/stun.jar"/>
+	</copy>
+
+	<copy todir="tmp/voicebridge/nist-sip">
+	   <fileset file="${common.dir}/lib/concurrent.jar"/>
+	   <fileset file="${common.dir}/lib/JainSipApi1.2.jar"/>
+	   <fileset file="${common.dir}/lib/JainSipRi1.2.jar"/>
+	</copy>
+	
+	<copy todir="tmp/voicelib">
+            <fileset file="${voicelib.dir}/build/lib/voicelib.jar"/>
+	</copy>
+
+        <zip zipfile="${dist.dir}/WonderlandAudio.zip">
+            <fileset dir="tmp">
+                <include name="**"/>
+	    </fileset>
+        </zip>
+    </target>
+
+    <target name="dist-bridge" depends="jar-bridge"
+            description="Build bridge distribution directory">
+        <mkdir dir="${dist.dir}/bridge"/>
+        
+        <copy todir="${dist.dir}/bridge">
+            <fileset dir="${common.dir}/lib">
+                <include name="*.jar"/>
+            </fileset>
+            <fileset dir="${common.dir}/build/lib">
+                <include name="*.jar"/>
+            </fileset>
+            <fileset dir="${stun.dir}/build/lib">
+                <include name="*.jar"/>
+            </fileset>
+            <fileset dir="${bridge.dir}/lib">
+                <include name="*.jar"/>
+            </fileset>
+            <fileset dir="${bridge.dir}/build/lib">
+                <include name="*.jar"/>
+            </fileset>
+            <fileset dir="${bridge.dir}">
+                <include name="run.xml"/>
+            </fileset>
+        </copy>
+    </target>
+    
+    <target name="dist-softphone" depends="jar-softphone"
+            description="Build softphone distribution directory">
+        <mkdir dir="${dist.dir}/softphone"/>
+        
+        <copy todir="${dist.dir}/softphone">
+            <fileset dir="${softphone.dir}/build/lib">
+                <include name="softphone.jar"/>
+            </fileset>
+        </copy>
+    </target>
+    
+    <target name="dist-voicelib" depends="jar-voicelib"
+            description="Build voicelib distribution directory">
+        <mkdir dir="${dist.dir}/voicelib"/>
+
+        <copy todir="${dist.dir}/voicelib">
+            <fileset dir="${voicelib.dir}/build/lib">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="dist-doc" description="Build documentation">
+        <mkdir dir="${dist.dir}/doc"/>
+        <mkdir dir="${dist.dir}/doc/example"/>
+        
+        <ant dir="${bridge.dir}" antfile="build.xml" target="javadoc-connector"/>
+        
+        <copy todir="${dist.dir}/doc">
+            <fileset dir="${bridge.dir}/build/javadoc">
+                <include name="connector/**"/>
+            </fileset>
+        </copy>
+        
+        <!-- copy the placecall example -->
+        <copy todir="${dist.dir}/doc/example">
+            <fileset dir="${bridge.dir}/src/com/sun/voip/client/connector/test">
+                <include name="PlaceCall.java"/>
+            </fileset>
+        </copy>
+        <replace file="${dist.dir}/doc/example/PlaceCall.java" 
+                 token="package com.sun.voip.client.connector.test;" 
+                 value=""/>
+    </target>
+    
+    <!-- run bridge -->
+    <target name="run-bridge" depends="dist-bridge">
+        <ant dir="${dist.dir}/bridge" antfile="run.xml"/>
+    </target>
+    
+    <!-- run softphone -->
+    <target name="run-softphone" depends="dist-softphone">
+        <java jar="${dist.dir}/softphone/softphone.jar" fork="true">
+            <arg value="-r"/>
+            <arg value="${softphone.registrar}"/>    
+            <arg value="-u"/>
+            <arg value="${softphone.username}"/>
+        </java>
+    </target>
+    
+    <!-- clean targets -->
+    <target name="clean" depends="dist-clean">
+        <ant dir="${common.dir}" antfile="build.xml" target="clean"/>
+        <ant dir="${stun.dir}" antfile="build.xml" target="clean"/>
+        <ant dir="${bridge.dir}" antfile="build.xml" target="clean"/>
+        <ant dir="${softphone.dir}" antfile="build.xml" target="clean"/>
+    </target>
+    
+    <target name="dist-clean">
+        <delete dir="${dist.dir}"/>
+    </target>
+</project>

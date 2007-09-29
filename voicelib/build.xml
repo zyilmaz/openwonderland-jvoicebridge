@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Copyright 2005 Sun Microsystems, Inc. All rights reserved.
+ *
+ * Unpublished - rights reserved under the Copyright Laws of the United States.
+ *
+ * Sun Microsystems, Inc. has intellectual property rights relating to
+ * technology embodied in the product that is described in this document. In
+ * particular, and without limitation, these intellectual property rights may
+ * include one or more of the U.S. patents listed at http://www.sun.com/patents
+ * and one or more additional patents or pending patent applications in the
+ * U.S. and in other countries.
+ *
+ * SUN PROPRIETARY/CONFIDENTIAL.
+ *
+ * U.S. Government Rights - Commercial software. Government users are subject
+ * to the Sun Microsystems, Inc. standard license agreement and applicable
+ * provisions of the FAR and its supplements.
+ *
+ * Use is subject to license terms.
+ *
+ * This distribution may include materials developed by third parties. Sun, Sun
+ * Microsystems, the Sun logo, Java, Jini, Solaris and Sun Ray are trademarks
+ * or registered trademarks of Sun Microsystems, Inc. in the U.S. and other
+ * countries.
+ *
+ * UNIX is a registered trademark in the U.S. and other countries, exclusively
+ * licensed through X/Open Company, Ltd.
+-->
+<project basedir="." default="all" name="voicelib">
+
+    <property name="top.dir" location=".."/>
+    <property name="log.dir" location="./log"/>
+    <property name="lib.dir" location="./lib"/>
+    <property name="voip.dir" location="../voip"/>
+    <property name="voip.build.lib.dir" location="../voip/build/lib"/>
+    
+    <!-- values in my.build.properties override build.properties -->
+    <property file="my.build.properties"/>
+    <property file="build.properties"/>
+    
+    <path id="build.classpath">
+        <pathelement location="../common/lib/swing-layout-1.0.jar"/>
+        <pathelement location="${voip.build.lib.dir}/bridge_connector.jar"/>
+        <pathelement location="${lib.dir}/sgs.jar"/>
+    </path>
+
+    <path id="run.classpath">
+        <path refid="build.classpath"/>
+        <pathelement location="${classes.dir}"/>
+    </path>
+    
+    <path id="sourcepath">
+        <pathelement location="${src.dir}"/>
+    </path>
+    
+    <!-- TARGETS -->
+
+    <target name="all" depends="init, jar"/>
+
+    <target name="init">
+        <!-- build dependencies -->
+	<ant antfile="build.xml" dir="${common.dir}" target="jar"/>
+	<ant antfile="build.xml" dir="${voip.dir}" target="jar"/>
+
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.lib.dir}"/>
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${log.dir}"/>
+    </target>
+    
+    <target name="clean">
+	<ant antfile="build.xml" dir="${common.dir}" target="clean"/>
+	<ant antfile="build.xml" dir="${voip.dir}" target="clean"/>
+        
+        <delete dir="${classes.dir}"/>
+        <delete>
+            <fileset dir="${build.dir}">
+                <include name="**"/>
+            </fileset>
+        </delete>
+        <delete>
+            <fileset defaultexcludes="no" dir="." includes="**/*~"/>
+        </delete>
+        <delete dir="${build.lib.dir}"/>
+        <delete failonerror="false" includeemptydirs="true">
+            <fileset dir="${log.dir}"/>
+	</delete>
+    </target>
+
+    <!-- compile -->
+    <target name="compile" depends="init" description="Compile everything" >
+        <javac debug="true" deprecation="true" destdir="${classes.dir}" 
+               srcdir="${src.dir}" source="${source.version}">
+	    <include name="com/sun/mpk20/voicelib/app/*.java"/>
+	    <include name="com/sun/mpk20/voicelib/service/*.java"/>
+	    <include name="com/sun/mpk20/voicelib/impl/app/*.java"/>
+	    <include name="com/sun/mpk20/voicelib/impl/service/voice/*.java"/>
+            <classpath refid="build.classpath"/>
+	</javac>
+    </target>
+
+    <!-- jar - bundles the whole project (including libraries) into a single jar-->
+    <target name="jar" depends="compile" 
+            description="bundles the whole project (including libraries) into a single jar">
+                
+        <classfileset dir="${classes_dir}" id="voiceLibClasses">
+            <root classname="com.sun.mpk20.voicelib.impl.service.voice.BridgeMonitor"/>
+        </classfileset>
+
+        <jar compress="true" jarfile="${build.lib.dir}/voicelib.jar">
+            <fileset dir="${classes.dir}">
+                <include name="**/*.*"/>
+            </fileset>
+            <manifest>
+                <attribute name="Main-Class" value="com.sun.mpk20.voicelib.impl.service.voice.BridgeMonitor"/>
+            </manifest>
+        </jar>
+    </target>
+    
+    <!-- javadoc - runs javadoc over project  sources-->
+    <target name="javadoc" description="runs javadoc over project sources">
+        <javadoc author="true" destdir="doc/api" package="true">
+            <fileset dir="${src.dir}"/>
+        </javadoc>
+    </target>
+
+    <!-- clearlogs - deletes all files in the log directory-->
+    <target name="clearlogs" description="deletes all files in the log directory">
+        <delete failonerror="false" includeemptydirs="true">
+            <fileset dir="${log.dir}">
+		<include name="**/*"/>
+	    </fileset>
+        </delete>
+    </target>
+</project>
+
