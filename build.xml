@@ -75,6 +75,17 @@
                 <include name="**"/>
 	    </fileset>
         </zip>
+        
+        <zip zipfile="${dist.dir}/jVoiceBridge.zip">
+            <fileset dir="${dist.dir}">
+                <include name="bridge/**"/>
+                <include name="softphone/**"/>
+                <include name="doc/**"/>
+                <include name="README"/>
+            </fileset>
+        </zip>
+        
+        <delete dir="tmp"/>
     </target>
 
     <target name="dist-bridge" depends="jar-bridge"
@@ -146,6 +157,28 @@
         <replace file="${dist.dir}/doc/example/PlaceCall.java" 
                  token="package com.sun.voip.client.connector.test;" 
                  value=""/>
+                 
+        <!-- copy readmes -->
+        <copy todir="${dist.dir}/bridge">
+            <fileset dir="${bridge.dir}/doc">
+                <include name="README"/>
+            </fileset>
+        </copy>
+        <copy todir="${dist.dir}/softphone">
+            <fileset dir="${softphone.dir}/doc">
+                <include name="README"/>
+            </fileset>
+        </copy>
+        <copy todir="${dist.dir}/doc">
+            <fileset dir="${bridge.dir}/doc">
+                <include name="README.connector"/>
+            </fileset>
+        </copy>
+        <copy todir="${dist.dir}">
+            <fileset dir="${common.dir}/doc">
+                <include name="README"/>
+            </fileset>
+        </copy>
     </target>
     
     <!-- run bridge -->
