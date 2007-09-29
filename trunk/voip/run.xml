@@ -25,7 +25,6 @@
 	    <jvmarg value="-Dcom.sun.voip.server.LOCALHOST_SECURITY=false"/>
             <jvmarg value="-Dcom.sun.voip.server.BRIDGE_CONTROL_PORT=6666"/>
             <jvmarg value="-Dcom.sun.voip.server.Bridge.soundPath=/com/sun/voip/server/sounds:."/>
-	    <jvmarg value="-Dcom.sun.voip.server.BRIDGE_STATUS_LISTENERS=proteus.east.sun.com:6668"/>
             <jvmarg value="-ms200m"/>
             <jvmarg value="-mx200m"/>
 	    <jvmarg value="-XX:NewSize=3m"/>
