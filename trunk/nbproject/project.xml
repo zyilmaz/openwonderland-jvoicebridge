@@ -43,14 +43,14 @@
             </folders>
             <ide-actions>
                 <action name="build">
-                    <target>jar</target>
+                    <target>dist</target>
                 </action>
                 <action name="clean">
                     <target>clean</target>
                 </action>
                 <action name="rebuild">
                     <target>clean</target>
-                    <target>jar</target>
+                    <target>dist</target>
                 </action>
             </ide-actions>
             <view>
@@ -81,8 +81,8 @@
                 </items>
                 <context-menu>
                     <ide-action name="build"/>
-                    <ide-action name="clean"/>
                     <ide-action name="rebuild"/>
+                    <ide-action name="clean"/>
                 </context-menu>
             </view>
             <subprojects/>

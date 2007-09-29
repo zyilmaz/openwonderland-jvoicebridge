@@ -1,0 +1,16 @@
+
+jVoiceBridge Distribution
+-------------------------
+
+jVoiceBridge includes two major components: the voice bridge mixes VoIP audio
+into conference calls;  the software phone is a SIP-based softphone that
+takes advantage of many of jVoiceBridge's features.  
+
+The distribution includes the following directories:
+
+bridge/    - the core jVoiceBridge binary
+softphone/ - the jVoiceBridge software phone
+doc/       - documentation and examples
+
+See the individual READMEs in each directory for information on how to get up
+and running with jVoiceBridge.
