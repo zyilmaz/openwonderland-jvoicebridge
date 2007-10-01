@@ -49,6 +49,13 @@ To run the voice bridge, from <bridge_dir> run:
 
 $ ant run-bridge
 
+   ** NOTE (Mac OS X only):
+   If you're running the JDK 1.6 Developer Preview release, you'll need to comment out the following lines from 
+   <bridge_dir>/dist/bridge/run.xml:
+
+            <!--jvmarg value="-XX:+UseParNewGC"/-->
+            <!--jvmarg value="-XX:+UseConcMarkSweepGC"/-->
+
 This will start up the voice bridge on the local host, port 5060.  To change the port the bridge runs on, you can create a file called "my.build.properties" in <bridge_dir> and add the following line:
 
 bridge.sip.port=xxx
