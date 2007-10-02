@@ -54,7 +54,7 @@
 	   <fileset file="${common.dir}/lib/jspeex.jar"/>
 	   <fileset file="${softphone.dir}/build/lib/libmedia.intel.jnilib"/>
 	   <fileset file="${softphone.dir}/build/lib/libmedia.powerpc.jnilib"/>
-	   <fileset file="${softphone.dir}/lib/log4j-1.2.8.jar"/>
+	   <fileset file="${common.dir}/lib/log4j-1.2.8.jar"/>
 	   <fileset file="${softphone.dir}/build/lib/softphone.jar"/>
 	   <fileset file="${softphone.dir}/build/lib/softphone_native.jar"/>
 	   <fileset file="${stun.dir}/build/lib/stun.jar"/>
