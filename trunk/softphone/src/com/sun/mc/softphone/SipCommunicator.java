@@ -145,6 +145,8 @@ public class SipCommunicator extends Thread implements
     
     private static ParameterControl parameterControl;
 
+    private static String arguments = "";
+
     /*
      * Meeting central starts the communicator and adds MC as
      * as listener so that the comunicator can tell MC the 
@@ -187,6 +189,8 @@ public class SipCommunicator extends Thread implements
 	    }
 
 	    Utils.initPreferences(userName, loadGen);
+
+	    Logger.println("Arguments:  " + arguments);
 
 	    Logger.println("Sip Communicator built on " + Version.getVersion());
 
@@ -787,6 +791,10 @@ public class SipCommunicator extends Thread implements
         // load the toolkit?
         java.awt.Toolkit toolkit = java.awt.Toolkit.getDefaultToolkit();
             
+	for (int i = 0; i < args.length; i++) {
+	    arguments += args[i] + " ";
+	}
+
         try {
             console.logEntry();
             if (args.length == 1 && args[0].length() > 0 &&
