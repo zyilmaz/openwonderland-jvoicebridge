@@ -66,7 +66,7 @@ class RequestHandler extends Thread implements CallEventListener {
     private boolean synchronousMode;
 
     private static String bridgePublicAddress;
-    private static String bridgeSipPort;
+    private static int bridgeSipPort;
 
     private static boolean bridgeSuspended;
 
@@ -74,25 +74,9 @@ class RequestHandler extends Thread implements CallEventListener {
 	new ArrayList<RequestHandler>();
 
     static {
-	bridgePublicAddress =
-	    System.getProperty("com.sun.voip.server.PUBLIC_IP_ADDRESS");
+	bridgePublicAddress = Bridge.getPublicHost().getHostAddress();
 
-	if (bridgePublicAddress == null) {
-	    bridgePublicAddress = Bridge.getLocalHost().getHostAddress();
-
-	    Logger.println("com.sun.voip.server.PUBLIC_IP_ADDRESS is not set.  "
-	        + "Defaulting to local address:  " + bridgePublicAddress);
-	}
-
-	bridgeSipPort =
-	    System.getProperty("com.sun.voip.server.PUBLIC_SIP_PORT");
-
-	if (bridgeSipPort== null) {
-	    bridgeSipPort = System.getProperty("gov.nist.jainsip.stack.enableUDP");
-
-	    Logger.println("com.sun.voip.server.PUBLIC_SIP_PORT is not set.  " 
-		+ " Defaulting to local port:  " + bridgeSipPort);
-	}
+	bridgeSipPort = Bridge.getPublicPort();
     }
 
     public RequestHandler(Socket socket) throws IOException {
@@ -105,14 +89,9 @@ class RequestHandler extends Thread implements CallEventListener {
 
 	CallEvent callEvent = new CallEvent(CallEvent.NEW_CONNECTION);
 
-	if (bridgePublicAddress != null && bridgeSipPort != null) {
-	    callEvent.setInfo("to " + socket.getInetAddress().getHostName() 
-	        + ":" + socket.getPort() + " BridgePublicAddress='" 
-		+ bridgePublicAddress + ":" + bridgeSipPort + "'");
-	} else {
-	    callEvent.setInfo("to " + socket.getInetAddress().getHostName() 
-	        + ":" + socket.getPort());
-	}
+	callEvent.setInfo("to " + socket.getInetAddress().getHostName() 
+	    + ":" + socket.getPort() + " BridgePublicAddress='" 
+	    + bridgePublicAddress + ":" + bridgeSipPort + "'");
 
 	writeToSocket(callEvent.toString());
 

@@ -307,9 +307,13 @@ public class Bridge {
 	try {
             s = System.getProperty("com.sun.voip.server.PUBLIC_SIP_PORT");
 
-            if (s != null && s.length() > 0) {
-                publicPort = Integer.parseInt(s);
-            }
+            if (s == null || s.length() == 0) {
+		Logger.println("Public SIP Port not set, defaulting to local port "
+		    + s);
+
+		s = System.getProperty("gov.nist.jainsip.stack.enableUDP");
+	    }
+	    publicPort = Integer.parseInt(s);
         } catch (NumberFormatException e) {
 	    Logger.println("Invalid public sip port:  " + s + " " 
 		+ e.getMessage());
