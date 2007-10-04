@@ -65,11 +65,15 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.InetAddress;
 
+import java.util.logging.Level;
+
 import java.util.prefs.Preferences;
 
 import com.sun.mc.softphone.SipCommunicator;
 
 import com.sun.voip.Logger;
+
+import com.sun.stun.StunClient;
 
 /**
  * <p>Title: SIP COMMUNICATOR-1.1</p>
@@ -440,6 +444,16 @@ public class Utils {
 
 		if (loadGen && Logger.logLevel <= Logger.LOG_PRODUCTION) {
 		    Logger.suppressSystemOut = true;
+		}
+
+		if (Logger.logLevel <= Logger.LOG_PRODUCTION) {
+		    StunClient.setLogLevel(Level.INFO);
+		} else if (Logger.logLevel >= Logger.LOG_INFO) {
+		    StunClient.setLogLevel(Level.FINE);
+		} else if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+		    StunClient.setLogLevel(Level.FINER);
+		} else if (Logger.logLevel >= Logger.LOG_DETAIL) {
+		    StunClient.setLogLevel(Level.FINEST);
 		}
 	    } catch (NumberFormatException e) {
                 System.out.println("Can't set media log level to " 

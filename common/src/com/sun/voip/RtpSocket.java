@@ -181,22 +181,12 @@ public class RtpSocket {
     }
 
     /**
-     * Return the source port for the RTP socket
+     * Return the local address for the RTP socket
      *
      * @return InetSocketAddress local address and port for the socket
      */
     public InetSocketAddress getInetSocketAddress() {
-	InetAddress inetAddress = null;
-
-        try {
-            inetAddress = InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            Logger.error("Can't get Local Host's IP Address!  "
-                + e.getMessage());
-            System.exit(1);
-        }
-
-	return new InetSocketAddress(inetAddress,
+	return new InetSocketAddress(rtpDatagramSocket.getLocalAddress(),
 	    rtpDatagramSocket.getLocalPort());
     }
 
