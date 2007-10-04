@@ -41,6 +41,9 @@ import com.sun.voip.LowPassFilter;
 
 import com.sun.voip.client.BridgeConnector;
 
+import com.sun.stun.StunClient;
+import com.sun.stun.StunServerImpl;
+
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -52,6 +55,8 @@ import java.text.ParseException;
 import java.lang.NumberFormatException;
 
 import java.net.Socket;
+
+import java.util.logging.Level;
 
 import java.util.NoSuchElementException;
 import java.util.Vector;
@@ -1677,6 +1682,21 @@ public class RequestParser {
 
 	try {
             Logger.logLevel = getIntegerValue("logLevel" , "l", request);
+
+	    if (Logger.logLevel <= Logger.LOG_PRODUCTION) {
+                StunClient.setLogLevel(Level.INFO);
+                StunServerImpl.setLogLevel(Level.INFO);
+            } else if (Logger.logLevel >= Logger.LOG_INFO) {
+                StunClient.setLogLevel(Level.FINE);
+                StunServerImpl.setLogLevel(Level.INFO);
+            } else if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+                StunClient.setLogLevel(Level.FINER);
+                StunServerImpl.setLogLevel(Level.INFO);
+            } else if (Logger.logLevel >= Logger.LOG_DETAIL) {
+                StunClient.setLogLevel(Level.FINEST);
+                StunServerImpl.setLogLevel(Level.INFO);
+            }
+
 	    return true;
 	} catch (ParameterException e) {
 	}

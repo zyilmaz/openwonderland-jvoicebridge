@@ -59,6 +59,7 @@ import com.sun.stun.StunServerImpl;
 public class Bridge {
     private static InetAddress localHost;
     private static InetAddress publicHost;
+    private static int publicPort;
     private static int controlPort = 6666;
 
     private static String bridgeLocation;
@@ -95,6 +96,10 @@ public class Bridge {
 
     public static InetAddress getPublicHost() {
 	return publicHost;
+    }
+
+    public static int getPublicPort() {
+	return publicPort;
     }
 
     public static void setLocalhostSecurity(boolean localhostSecurity) {
@@ -276,13 +281,15 @@ public class Bridge {
 
 	publicHost = localHost;
 
-	try {
-	    String s = System.getProperty("com.sun.voip.server.PUBLIC_IP_ADDRESS");
+	String s = System.getProperty("com.sun.voip.server.PUBLIC_IP_ADDRESS");
 
+	try {
 	    if (s != null && s.length() > 0) {
 		publicHost = InetAddress.getByName(s);
 	    }
 	} catch (UnknownHostException e) {
+	    Logger.println("Invalid public IP Address:  " + s 
+		+ " " + e.getMessage());
 	}
 
 	if (publicHost.getHostAddress().equals("127.0.0.1") ||
@@ -297,10 +304,21 @@ public class Bridge {
 		publicHost.getHostAddress());
 	}
 
+	try {
+            s = System.getProperty("com.sun.voip.server.PUBLIC_SIP_PORT");
+
+            if (s != null && s.length() > 0) {
+                publicPort = Integer.parseInt(s);
+            }
+        } catch (NumberFormatException e) {
+	    Logger.println("Invalid public sip port:  " + s + " " 
+		+ e.getMessage());
+        }
+
 	System.setProperty("com.sun.voip.server.BRIDGE_SERVER_ADDRESS",
 	    localHost.getHostAddress());
 
-	String s = System.getProperty(
+	s = System.getProperty(
 	    "com.sun.voip.server.BRIDGE_CONTROL_PORT", 
 	    String.valueOf(controlPort));
 
