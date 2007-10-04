@@ -68,13 +68,12 @@ To run the softphone, from <bridge_dir> run:
 
 $ ant run-softphone
 
-This will launch the softphone.  By default, the softphone does not have a SIP registrar set, so will not register properly.  Generally, it is a good idea to use the voice bridge as a SIP registrar.  To set this up, create a file called "my.build.properties" in <bridge_dir> and add the following line:
+This will launch the softphone.  
 
-softphone.registrar=<bridge.ip-address>;sip-stun:<bridge.sip.port>
-
-Where <bridge.ip-address> is the ip address of the bridge, and  <bridge.sip.port> is the bridge port.  For example:
-
-softphone.registrar=192.168.2.1;sip-stun:5060
+By default, the softphone does not have a SIP registrar set, so will not register properly.  Generally, it is a good idea to use the voice bridge as a SIP registrar.  You can do this selecting Settings in the softphone menu, then
+Configure, click on sip in the Configuration window, scroll down to
+Registrar address and enter <registrar IP address>;sip-stun:<registrar port>
+Click Save, Close, then restart the softphone.
 
 When the softphone registers correctly, you will see the current registered address in green at the bottom of the softphone.  You can mouse over the address to see the full version.  When placing calls to the softphone, use this address.
 

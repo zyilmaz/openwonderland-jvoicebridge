@@ -14,17 +14,20 @@
             description="Run Conference Bridge">
         <java classname="com.sun.voip.server.Bridge" failonerror="true" fork="true">
             <jvmarg value="-server"/>
-            <jvmarg value="-Djavax.sip.IP_ADDRESS=${bridge.hostname}"/>
             <jvmarg value="-Dgov.nist.jainsip.stack.disableAuthentication=true"/>
 	    <jvmarg value="-Dgov.nist.jainsip.stack.traceLevel=8"/>
 	    <jvmarg value="-Dgov.nist.javax.sip.SERVER_LOG=sipMessages.log"/>
 	    <jvmarg value="-Dgov.nist.javax.sip.DEBUG_LOG=nistStack.log"/>
-            <jvmarg value="-Dgov.nist.jainsip.stack.enableUDP=${bridge.sip.port}"/>
+            <jvmarg value="-Dgov.nist.jainsip.stack.enableUDP=${voicebridge.sip.port}"/>
 	    <jvmarg value="-Dcom.sun.voip.server.BRIDGE_LOG=bridge.log"/>
 	    <jvmarg value="-Dcom.sun.voip.server.BRIDGE_LOCATION=BUR"/>
 	    <jvmarg value="-Dcom.sun.voip.server.LOCALHOST_SECURITY=false"/>
-            <jvmarg value="-Dcom.sun.voip.server.BRIDGE_CONTROL_PORT=6666"/>
             <jvmarg value="-Dcom.sun.voip.server.Bridge.soundPath=/com/sun/voip/server/sounds:."/>
+            <jvmarg value="-Dcom.sun.voip.server.BRIDGE_CONTROL_PORT=${voicebridge.control.port}"/>
+	    <jvmarg value="-Dcom.sun.voip.server.PUBLIC_IP_ADDRESS=${voicebridge.server.public.address}"/>
+            <jvmarg value="-Dcom.sun.voip.server.FIRST_RTP_PORT=${voicebridge.first.rtp.port}"/>
+            <jvmarg value="-Dcom.sun.voip.server.LAST_RTP_PORT=${voicebridge.last.rtp.port}"/>
+            <jvmarg value="-Djavax.sip.IP_ADDRESS=${voicebridge.local.hostAddress}"/>
             <jvmarg value="-ms200m"/>
             <jvmarg value="-mx200m"/>
 	    <jvmarg value="-XX:NewSize=3m"/>
