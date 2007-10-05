@@ -278,12 +278,6 @@
                 	Describe it!
                 ]]></description>
             </property>
-            <property name="com.sun.mc.softphone.sip.WAIT_UNREGISTGRATION_FOR">
-                <labelname>WAIT_UNREGISTGRATION_FOR</labelname>
-                <description><![CDATA[
-			Describe it!
-		]]></description>
-            </property>
 	    <property name="com.sun.mc.softphone.AUTOANSWER_DELAY">
                 <labelname>Delay auto answering</labelname>
                 <description><![CDATA[

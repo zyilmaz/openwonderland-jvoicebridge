@@ -411,7 +411,10 @@ public class MemberSender {
 	}
 
         if (Logger.logLevel == -77) {
-	    Logger.println("Call " + cp + " sending data...");
+	    Logger.println("Call " + cp + " sending data from socket "
+		+ datagramChannel.socket().getLocalAddress()
+		+ ":" + datagramChannel.socket().getLocalPort()
+		+ " to " + senderPacket.getSocketAddress());
 	}
 
 	try {
