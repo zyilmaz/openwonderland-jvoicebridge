@@ -846,6 +846,7 @@ public class SipCommunicator extends Thread implements
         Logger.println("                     [-r <registrar> > specify the registrar address");
         Logger.println("                     [-silent > don't open the mic/speaker]");
         Logger.println("                     [-stun <server:port> > specify the stun server address");
+        Logger.println("                     [-t <registrar timeout> specify the registrar timeout seconds");
 	Logger.println("                     [-u <user name>]");
 	System.exit(1);
     }
@@ -1011,6 +1012,19 @@ public class SipCommunicator extends Thread implements
 
                 System.setProperty("com.sun.mc.stun.STUN_SERVER_PORT",
                     stunPort);
+            } else if (args[i].equalsIgnoreCase("-t") && 
+		    i < (args.length - 1)) {
+
+		try {
+		    int registrarTimeout = Integer.parseInt(args[++i]);
+		    
+		    System.setProperty(
+			"com.sun.mc.softphone.sip.WAIT_UNREGISTGRATION_FOR",
+			String.valueOf(registrarTimeout));
+		} catch (NumberFormatException e) {
+		    throw new IOException("Invalid registrar timeout:  "
+			+ e.getMessage());
+		}
             } else {
 	        throw new IOException("Invalid arguments");
 	    }

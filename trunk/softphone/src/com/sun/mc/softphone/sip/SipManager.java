@@ -697,8 +697,8 @@ if (false) {
 		    registrarAddress = registrarAddress.substring(0, ix);
 		}
 
-		Logger.println("Registering with " + registrarAddress + ":"
-		    + registrarPort);
+		Logger.println("Registering with registrar " + registrarAddress + ":"
+		    + registrarPort + " expiration " + registrationsExpiration);
 
                 registerProcessing.register(registrarAddress, registrarPort,
                    registrarTransport, registrationsExpiration);
