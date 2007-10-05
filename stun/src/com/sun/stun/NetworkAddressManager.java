@@ -109,7 +109,7 @@ public class NetworkAddressManager {
 	logger.setLevel(newLevel);
     }
 
-    private static void getLocalHost() throws IOException {
+    public static void getLocalHost() throws IOException {
 	/*
 	 * If there's a preferred address, use it.
 	 */
@@ -152,7 +152,7 @@ public class NetworkAddressManager {
      * Show the default address which would have been used if there
      * wasn't a preferred address.
      */
-    private static void showDefaultAddress(boolean useStun) {
+    public static void showDefaultAddress(boolean useStun) {
 	InetAddress defaultAddress = null;
 
 	if (useStun) {
@@ -181,7 +181,7 @@ public class NetworkAddressManager {
 	}
     }
 
-    private static InetAddress getLocalHostFromPreferredAddress() 
+    public static InetAddress getLocalHostFromPreferredAddress() 
 	    throws IOException {
 
 	String preferredAddress = System.getProperty(
@@ -211,7 +211,7 @@ public class NetworkAddressManager {
     /*
      * Try to connect to the STUN Server to get our private local address
      */
-    private static InetAddress getLocalHostFromStun() throws IOException {
+    public static InetAddress getLocalHostFromStun() throws IOException {
 	if (stunServer == null) {
 	    throw new IOException("No Stun Server specified");
 	}
@@ -229,7 +229,7 @@ public class NetworkAddressManager {
 	return address;
     }
 
-    private static InetAddress getLocalHostFromInterfaces() throws IOException {
+    public static InetAddress getLocalHostFromInterfaces() throws IOException {
 	InetAddress possibleAddress = null;
 
 	/*
