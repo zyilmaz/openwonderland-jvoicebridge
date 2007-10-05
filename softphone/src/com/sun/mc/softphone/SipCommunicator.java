@@ -145,7 +145,7 @@ public class SipCommunicator extends Thread implements
     
     private static ParameterControl parameterControl;
 
-    private static String arguments = "";
+    private String arguments = "";
 
     /*
      * Meeting central starts the communicator and adds MC as
@@ -190,7 +190,7 @@ public class SipCommunicator extends Thread implements
 
 	    Utils.initPreferences(userName, loadGen);
 
-	    Logger.println("Arguments:  " + arguments);
+            Logger.println("Arguments:  " + arguments);
 
 	    Logger.println("Sip Communicator built on " + Version.getVersion());
 
@@ -812,6 +812,7 @@ public class SipCommunicator extends Thread implements
                 try {
                     parseArgs(args);
                 } catch (IOException e) {
+		    Logger.println("Arguments:  " + arguments);
                     usage();
                 }
             }
