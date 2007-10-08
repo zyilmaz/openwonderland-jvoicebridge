@@ -228,6 +228,12 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    VoiceManager voiceManager = 
 		AppContext.getManager(VoiceManager.class);
 
+	    //DefaultSpatializer spatializer = new DefaultSpatializer();
+
+	    //spatializer.setFallOff(.95);
+
+	    //voiceManager.setupCall(cp, 0, 0, 0, 0, spatializer, bridge);
+
 	    voiceManager.setupCall(cp, 0, 0, 0, 0, null, bridge);
 	    return callId;
 	} catch (IOException e) {
@@ -684,6 +690,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
     public void addCallStatusListener(ManagedCallStatusListener listener, 
 	    String callId) {
 	
+	logger.fine("Adding listener " + listener + " for callId " + callId);
+
         DataManager dm = AppContext.getDataManager();
 
         CallStatusListeners listeners =
@@ -700,6 +708,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void removeCallStatusListener(ManagedCallStatusListener listener) {
+	logger.fine("removing listener " + listener); 
+
         DataManager dm = AppContext.getDataManager();
 
         CallStatusListeners listeners =
@@ -708,7 +718,10 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	//ManagedCallStatusListener ml = listener.get(ManagedCallStatusListener.class);
 
 	synchronized (listeners) {
-	    listeners.remove(listener);
+	    if (listeners.remove(listener) == null) {
+		logger.info("listener " + listener 
+		    + " is not in map of call status listeners!");
+	    }
 	}
     }
 
