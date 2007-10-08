@@ -1042,7 +1042,9 @@ public class MediaManagerImpl implements MediaManager {
     public void startRecording(String path, String recordingType, 
 	    boolean recordingMic, CallDoneListener listener) throws IOException {
 
-	addCallDoneListener(listener);
+	if (listener != null) {
+	    addCallDoneListener(listener);
+	}
 
 	if (recordingMic) {
 	    audioTransmitter.startRecording(path, recordingType);
