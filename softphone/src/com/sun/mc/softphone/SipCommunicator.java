@@ -145,7 +145,7 @@ public class SipCommunicator extends Thread implements
     
     private static ParameterControl parameterControl;
 
-    private String arguments = "";
+    private static String arguments = "";
 
     /*
      * Meeting central starts the communicator and adds MC as
@@ -625,6 +625,34 @@ public class SipCommunicator extends Thread implements
 		continue;
 	    }
 
+	    if (s.indexOf("transmitSampleRate=") >= 0) {
+		String tokens[] = s.split("=");
+
+		if (tokens[1].equals("8000") || tokens[1].equals("16000") ||
+		    tokens[1].equals("32000") || tokens[1].equals("32000") ||
+		    tokens[1].equals("44100") || tokens[1].equals("48000")) {
+
+		    Utils.setPreference(
+			"com.sun.mc.softphone.media.TRANSMIT_SAMPLE_RATE", tokens[1]);
+		} else {
+		    Logger.println("Invalid transmit sample rate:  " + s);
+		}
+
+		continue;
+	    }
+
+	    if (s.indexOf("transmitChannels=") >= 0) {
+		String tokens[] = s.split("=");
+
+		if (tokens[1].equals("1") || tokens[1].equals("2")) {
+            	    Utils.setPreference("com.sun.mc.softphone.media.TRANSMIT_CHANNELS",
+		        tokens[1]);
+		} else {
+		    Logger.println("Invalid number of transmit channels:  " + s);
+		}
+
+		continue;
+	    }
 	    if (s.indexOf("encoding=") >= 0) {
 		String tokens[] = s.split("=");
 
@@ -831,6 +859,7 @@ public class SipCommunicator extends Thread implements
 	Logger.println("java SipCommunicator ");
 	Logger.println("                     [-a <encryption algorithm>]");
         Logger.println("                     [-answer > automatically answer incoming calls]");
+        Logger.println("                     [-channels <audio channels> > specify # of channels]");
 	Logger.println("                     [-k <encryption key>]");
         Logger.println("                     [-loadGen > run as load generator]");
         Logger.println("                     [-mc > launched from Meeting Central]");
@@ -845,9 +874,12 @@ public class SipCommunicator extends Thread implements
         Logger.println("                     [-phoneNumber <phoneNumber for load generator>]");
         //Logger.println("                     [-playTreatment <treatment>[:<duty cycle %>]]");
         Logger.println("                     [-r <registrar> > specify the registrar address");
+        Logger.println("                     [-sampleRate <sampleRate> > specify the sampleRate");
         Logger.println("                     [-silent > don't open the mic/speaker]");
         Logger.println("                     [-stun <server:port> > specify the stun server address");
         Logger.println("                     [-t <registrar timeout> specify the registrar timeout seconds");
+        Logger.println("                     [-transmitChannels <channels> specify the xmit channels");
+        Logger.println("                     [-transmitSampleRate <sampleRate> specify the xmit rate");
 	Logger.println("                     [-u <user name>]");
 	System.exit(1);
     }
@@ -862,6 +894,9 @@ public class SipCommunicator extends Thread implements
 	        encryptionKey = args[++i];
 	    } else if (args[i].equalsIgnoreCase("-a") && i < (args.length - 1)) {
 		encryptionAlgorithm = args[++i];
+	    } else if (args[i].equalsIgnoreCase("-channels") && i < (args.length - 1)) {
+            	Utils.setPreference("com.sun.mc.softphone.media.CHANNELS",
+		    args[++i]);
 	    } else if (args[i].equalsIgnoreCase("-loadGen")) {
                 setLoadGen(true);
                 setOpenAudio(false);
@@ -979,6 +1014,8 @@ public class SipCommunicator extends Thread implements
 	
 		System.setProperty("com.sun.mc.softphone.sip.REGISTRAR_UDP_PORT",
 		    tokens[1]);
+	    } else if (args[i].equalsIgnoreCase("-sampleRate") && i < (args.length - 1)) {
+		Utils.setPreference("com.sun.mc.softphone.media.SAMPLE_RATE", args[++i]);
             } else if (args[i].equalsIgnoreCase("-stun") && 
 		    i < (args.length - 1)) {
 
@@ -1026,6 +1063,10 @@ public class SipCommunicator extends Thread implements
 		    throw new IOException("Invalid registrar timeout:  "
 			+ e.getMessage());
 		}
+	    } else if (args[i].equalsIgnoreCase("-transmitSampleRate") && i < (args.length - 1)) {
+		Utils.setPreference("com.sun.mc.softphone.media.TRANSMIT_SAMPLE_RATE", args[++i]);
+	    } else if (args[i].equalsIgnoreCase("-transmitChannels") && i < (args.length - 1)) {
+		Utils.setPreference("com.sun.mc.softphone.media.TRANSMIT_CHANNELS", args[++i]);
             } else {
 	        throw new IOException("Invalid arguments");
 	    }
