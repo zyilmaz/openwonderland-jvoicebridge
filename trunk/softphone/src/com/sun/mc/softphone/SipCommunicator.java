@@ -690,6 +690,12 @@ public class SipCommunicator extends Thread implements
 		Logger.logLevel = 8;
 		Utils.setPreference("com.sun.mc.softphone.media.LOG_LEVEL", "8");
 
+		if (callInProgressInterlocutor != null) {
+		    Logger.println("Softphone is connected");
+		} else {
+		    Logger.println("Softphone is disconnected");
+	 	}
+
 		if (mediaManager != null) {
 		    try {
 		        mediaManager.startRecording("Recording.au", "Au",
