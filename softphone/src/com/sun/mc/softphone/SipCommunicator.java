@@ -84,6 +84,8 @@ import java.awt.event.ActionEvent;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import javax.swing.AbstractAction;
 
 /**
@@ -410,6 +412,8 @@ public class SipCommunicator extends Thread implements
      * If we don't hear from MC, assume it terminated
      * and we should quit as well.
      */
+    private int previousLogLevel;
+
     public void run() {
 	BufferedReader bufferedReader = new
 	    BufferedReader(new InputStreamReader(System.in));
@@ -443,6 +447,18 @@ public class SipCommunicator extends Thread implements
 		    
 		shutDown();
 		break;
+	    }
+
+	    if (s.indexOf("logLevel=") >= 0) {
+		String tokens[] = s.split("=");
+		
+		try {
+		    Utils.setPreference("com.sun.mc.softphone.media.LOG_LEVEL",
+			tokens[1]);
+		} catch (NumberFormatException e) {
+		    Logger.println("Invalid log level:  " + tokens[1]);
+		}
+		continue;
 	    }
 
 	    if (s.indexOf("isConnected") >= 0) {
@@ -500,8 +516,6 @@ public class SipCommunicator extends Thread implements
 	    }
                     
 	    if (s.indexOf("ReRegister=") >= 0) {
-		Logger.println(s);
-
 		s = s.substring(11);
 
 		String[] tokens = s.split(":");
@@ -671,6 +685,33 @@ public class SipCommunicator extends Thread implements
             //** 1.5 only!
 
             if (s.indexOf("stack") >= 0) {
+		previousLogLevel = Logger.logLevel;
+
+		Logger.logLevel = 8;
+		Utils.setPreference("com.sun.mc.softphone.media.LOG_LEVEL", "8");
+
+		if (mediaManager != null) {
+		    try {
+		        mediaManager.startRecording("Recording.au", "Au",
+			    false, null);
+		    } catch (IOException e) {
+			Logger.println("Unable to record:  " + e.getMessage());
+		    }
+		}
+
+		Timer timer = new Timer();
+
+		timer.schedule(new TimerTask() {
+                    public void run() {
+			Logger.logLevel = previousLogLevel;
+			Utils.setPreference("com.sun.mc.softphone.media.LOG_LEVEL", 
+			    String.valueOf(previousLogLevel));
+
+			if (mediaManager != null) {
+			    mediaManager.stopRecording(false);
+			}
+		    }}, 10000);
+
                 Logger.println("Stack trace: ");
                 Map st = Thread.getAllStackTraces();
                 for (Iterator i = st.entrySet().iterator(); i.hasNext();) {
