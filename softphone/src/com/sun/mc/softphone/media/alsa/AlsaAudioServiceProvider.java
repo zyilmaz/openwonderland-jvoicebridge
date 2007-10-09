@@ -58,8 +58,10 @@ public class AlsaAudioServiceProvider implements AudioServiceProvider {
 
 	shutdown();	// stop old driver if running
 
-	Logger.println("Initializing audio driver to " + speakerSampleRate
-	    + "/" + speakerChannels + " bufferSize " + speakerBufferSize);
+	if (Logger.logLevel >= Logger.LOG_INFO) {
+	    Logger.println("Initializing audio driver to " + speakerSampleRate
+	        + "/" + speakerChannels + " bufferSize " + speakerBufferSize);
+	}
 
 	synchronized (audioDriver) {
             speaker = new SpeakerAlsaImpl(speakerSampleRate, speakerChannels, 

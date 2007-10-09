@@ -380,7 +380,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 		    + " telephoneEventPayload " + telephoneEventPayload);
  	    }
 	} catch (ParseException e) {
-	    Logger.println("Call " + cp + " Invalid receivePayload" 
+	    Logger.println("Call " + cp + " Invalid receivePayload " 
 		+ receivePayload);
 
 	    callHandler.cancelRequest("Invalid receive payload " 
