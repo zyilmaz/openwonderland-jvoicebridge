@@ -240,13 +240,17 @@ public class SipManager
 	if (ix < 0) {
 	    noStunRegistrar();
 	} else {
-	    s = s.substring(0, ix) + ";sip-stun";
+	    s = s.substring(0, ix);
 	    registrarIsStunServer = true;
 	}
 
 	try {
             registrarAddress = InetAddress.getByName(s).getHostAddress();
 	
+	    if (registrarIsStunServer) {
+		s += ";sip-stun";
+	    }
+
 	    System.setProperty(
                 "com.sun.mc.softphone.sip.REGISTRAR_ADDRESS", s);
         } catch (UnknownHostException e) {
