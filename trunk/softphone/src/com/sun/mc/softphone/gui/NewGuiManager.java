@@ -120,6 +120,8 @@ public class NewGuiManager implements GuiManagerUI, GuiCallback,
 
     private PlaybackDialog playbackDialog = null;
 
+    private ReceiveMon receiveMon = null;
+
     private Process audioControlProcess = null;
 
     private VolumeControl volumeControl = null;
@@ -167,6 +169,7 @@ public class NewGuiManager implements GuiManagerUI, GuiCallback,
 	( (MenuBar) phoneFrame.jMenuBar1).addHistoryAction(new HistoryAction());
 	( (MenuBar) phoneFrame.jMenuBar1).addRecordAction(new RecordAction());
 	( (MenuBar) phoneFrame.jMenuBar1).addPlaybackAction(new PlaybackAction());
+	( (MenuBar) phoneFrame.jMenuBar1).addReceiveMonAction(new ReceiveMonAction());
 	( (MenuBar) phoneFrame.jMenuBar1).addExitCallAction(new ExitAction());
 	configFrame.setLocationRelativeTo(phoneFrame);
         //phoneFrame.participantsTable.setModel(interlocutors);
@@ -712,6 +715,20 @@ public class NewGuiManager implements GuiManagerUI, GuiCallback,
             }
 
             playbackDialog.setVisible(true);
+        }
+    }
+
+    private class ReceiveMonAction extends AbstractAction {
+        public ReceiveMonAction() {
+            super("ReceiveMonitor");
+        }
+
+        public void actionPerformed(ActionEvent evt) {
+            if (receiveMon == null) {
+                receiveMon = new ReceiveMon();
+            }
+
+            receiveMon.setVisible(true);
         }
     }
 

@@ -428,8 +428,9 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	}
 
 	if (t != null) {
-	    if (t.listener != null) {
+	    if (t.listener != null && restart == false) {
  		removeCallStatusListener(t.listener);
+		t.listener = null;
 	    }
 	} else {
 	    logger.fine("callId " + callId + " treatment info is null");
@@ -700,9 +701,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
         /*
          * Create a reference to listener and keep that.
          */
-	synchronized (listeners) {
-            listeners.put(dm.createReference(listener), callId);
-	}
+        listeners.put(dm.createReference(listener), callId);
 
         logger.finest("VS:  listeners size " + listeners.size());
     }
@@ -717,11 +716,9 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	//ManagedCallStatusListener ml = listener.get(ManagedCallStatusListener.class);
 
-	synchronized (listeners) {
-	    if (listeners.remove(listener) == null) {
-		logger.info("listener " + listener 
-		    + " is not in map of call status listeners!");
-	    }
+	if (listeners.remove(dm.createReference(listener)) == null) {
+	    logger.info("listener " + listener 
+		+ " is not in map of call status listeners!");
 	}
     }
 
@@ -734,9 +731,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
         /*
          * Create a reference to listener and keep that.
          */
-	synchronized (listeners) {
-            listeners.add(dm.createReference(listener));
-	}
+        listeners.add(dm.createReference(listener));
 
         logger.finest("VS:  listeners size " + listeners.size());
     }
@@ -750,9 +745,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	//ManagedCallBeginEndListener ml =
         //        listener.get(ManagedCallBeginEndListener.class);
 
-	synchronized (listeners) {
-	    listeners.remove(listener);
-	}
+	listeners.remove(dm.createReference(listener));
     }
 
     public void callStatusChanged(CallStatus callStatus) {

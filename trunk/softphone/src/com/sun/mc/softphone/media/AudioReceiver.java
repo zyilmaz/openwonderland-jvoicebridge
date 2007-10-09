@@ -262,6 +262,10 @@ public class AudioReceiver extends Thread {
 	this.oldSynchronizationSource = oldSynchronizationSource;
     }
 
+    public int getPacketsReceived() {
+	return received;
+    }
+
     /*
      * Stop receiving data 
      */
