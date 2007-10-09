@@ -194,11 +194,13 @@ public class MediaManagerImpl implements MediaManager {
         supportedMedia.add(new MediaInfo(
             (byte)108, RtpPacket.PCM_ENCODING, 44100, 2, false));
 
+if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)109, RtpPacket.PCM_ENCODING, 48000, 1, false));
 
         supportedMedia.add(new MediaInfo(
             (byte)110, RtpPacket.PCM_ENCODING, 48000, 2, false));
+}
 
         supportedMedia.add(new MediaInfo(
             (byte)111, RtpPacket.PCMU_ENCODING, 8000, 2, false));
@@ -206,6 +208,7 @@ public class MediaManagerImpl implements MediaManager {
         supportedMedia.add(new MediaInfo(
             (byte)112, RtpPacket.PCMU_ENCODING, 16000, 1, false));
 
+if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)113, RtpPacket.PCMU_ENCODING, 16000, 2, false));
 
@@ -226,6 +229,7 @@ public class MediaManagerImpl implements MediaManager {
 
         supportedMedia.add(new MediaInfo(
             (byte)119, RtpPacket.PCMU_ENCODING, 48000, 2, false));
+}
 
         supportedMedia.add(new MediaInfo(
             (byte)120, RtpPacket.SPEEX_ENCODING, 8000, 1, false));
@@ -667,8 +671,11 @@ public class MediaManagerImpl implements MediaManager {
 
 	if (remoteSdpInfo.getTransmitMediaInfoOk() == true) {
             microphoneMediaInfo = sdpManager.getTransmitMediaInfo();
-	    Logger.println("Remote media says okay to use separate xmit media "
-		+ microphoneMediaInfo);
+
+	    if (Logger.logLevel >= Logger.LOG_INFO) {
+	        Logger.println("Remote media says okay to use separate xmit media "
+		    + microphoneMediaInfo);
+	    }
 	} else {
 	    sdpManager.setTransmitMediaInfo((MediaInfo) null);
 	}

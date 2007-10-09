@@ -272,7 +272,9 @@ public class SipCommunicator extends Thread implements
 		 * If we don't hear from MC, assume it terminated
 		 * and we should quit as well.
 		 */
-		Logger.println("Starting thread to watch for MC heartbeat.");
+		if (Logger.logLevel >= Logger.LOG_INFO) {
+		    Logger.println("Starting thread to watch for MC heartbeat.");
+		}
 		start();
 
 		/*
@@ -473,7 +475,10 @@ public class SipCommunicator extends Thread implements
 	    if (s.indexOf("ping") >= 0) {
 		if (firstTime) {
 		    firstTime = false;
-		    Logger.println("softphone got ping from MC:  " + s);
+
+		    if (Logger.logLevel >= Logger.LOG_INFO) {
+			Logger.println("softphone got ping from MC:  " + s);
+		    }
 		}
 
 		synchronized (timeoutLock) {
@@ -1728,14 +1733,12 @@ public class SipCommunicator extends Thread implements
 
                             mm.startDtmf(s);
                         }
-                    } catch (IOException ioe) {
+                    } catch (IOException e) {
                         console.showError("The following exception occurred " +
                             "while trying to open media connection:\n"
-                            + ioe.getMessage());
+                            + e.getMessage());
 
-			if (Logger.logLevel >= Logger.LOG_INFO) {
-                            ioe.printStackTrace();
-			}
+			Logger.println("Unable to start media manager:  " + e.getMessage());
                     }
                 } else {
                     try {
@@ -1744,13 +1747,17 @@ public class SipCommunicator extends Thread implements
 			synchronized (mediaManager) {
                             mediaManager.start();
 			}
-                    } catch (IOException ex) {
-                        console.showError(
-                            "The following exception occurred while trying to open media connection:\n"
-                            + ex.getMessage());
+                    } catch (IOException e) {
+			Logger.println("Unable to start media manager:  " + e.getMessage());
 
-			if (Logger.logLevel >= Logger.LOG_INFO) {
-                            ex.printStackTrace();
+			if (callInProgressInterlocutor != null) {
+			    int callId = callInProgressInterlocutor.getID();
+
+			    try {
+			        sipManager.endCall(callId);
+			    } catch (CommunicationsException ex) {
+				Logger.println("Unable to end call " + callId + " " + ex.getMessage());
+			    }
 			}
                     }
 //You better not send an error response. User would terminate call if they wish so.

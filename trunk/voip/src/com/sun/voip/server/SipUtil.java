@@ -168,10 +168,10 @@ if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)111, RtpPacket.PCMU_ENCODING, 8000, 2, false));
 
-if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)112, RtpPacket.PCMU_ENCODING, 16000, 1, false));
 
+if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)113, RtpPacket.PCMU_ENCODING, 16000, 2, false));
 

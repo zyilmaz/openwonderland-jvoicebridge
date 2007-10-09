@@ -275,7 +275,10 @@ public class SdpManager {
 	if (localMediaPreference != null) {
 	    if (remoteSdpInfo.isSupported(localMediaPreference)) {
 	        mediaInfo = localMediaPreference;
-		Logger.println("Using local media preference:  " + mediaInfo);
+
+		if (Logger.logLevel >= Logger.LOG_INFO) {
+		    Logger.println("Using local media preference:  " + mediaInfo);
+		}
 	    }
 	}
 	 
