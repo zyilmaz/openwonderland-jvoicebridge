@@ -187,6 +187,7 @@ public class SipManager
 
     private static String registrarAddress = null;
     private static int registrarPort = 5060;
+    private static boolean registrarIsStunServer;
 
     //XxxProcessing managers
     /**
@@ -239,15 +240,15 @@ public class SipManager
 	if (ix < 0) {
 	    noStunRegistrar();
 	} else {
-	    s = s.substring(0, ix);
+	    s = s.substring(0, ix) + ";sip-stun";
+	    registrarIsStunServer = true;
 	}
 
 	try {
             registrarAddress = InetAddress.getByName(s).getHostAddress();
-
+	
 	    System.setProperty(
-                "com.sun.mc.softphone.sip.REGISTRAR_ADDRESS", 
-		s + ";sip-stun");
+                "com.sun.mc.softphone.sip.REGISTRAR_ADDRESS", s);
         } catch (UnknownHostException e) {
             Logger.println("No Registrar:  Unable to resolve host " + s);
 	    noStunRegistrar();
@@ -297,6 +298,10 @@ public class SipManager
 
     public static String getRegistrarAddress() {
 	return registrarAddress;
+    }
+
+    public static boolean isRegistrarStunServer() {
+	return registrarIsStunServer;
     }
 
     public static int getRegistrarPort() {

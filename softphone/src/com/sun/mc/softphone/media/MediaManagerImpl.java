@@ -801,6 +801,14 @@ public class MediaManagerImpl implements MediaManager {
         }   
     }   
 
+    public int getPacketsReceived() {
+	if (audioReceiver == null) {
+	    return 0;
+	}
+
+	return audioReceiver.getPacketsReceived();
+    }
+
     public void startDtmf(String dtmf) {
         if(audioTransmitter != null) {
             audioTransmitter.startDtmf(dtmf);
@@ -924,7 +932,7 @@ public class MediaManagerImpl implements MediaManager {
 	String registrarAddress = SipManager.getRegistrarAddress();
 	int registrarPort = SipManager.getRegistrarPort();
 
-	if (registrarAddress != null) {
+	if (registrarAddress != null && SipManager.isRegistrarStunServer()) {
 	    try {
 	        isa = NetworkAddressManager.getPublicAddressFor(
 		    new InetSocketAddress(registrarAddress, registrarPort), 
@@ -950,7 +958,7 @@ public class MediaManagerImpl implements MediaManager {
 	String registrarAddress = SipManager.getRegistrarAddress();
 	int registrarPort = SipManager.getRegistrarPort();
 
-	if (registrarAddress != null) {
+	if (registrarAddress != null && SipManager.isRegistrarStunServer()) {
 	    try {
 	        isa = NetworkAddressManager.getPublicAddressFor(
 		    new InetSocketAddress(registrarAddress, registrarPort), 

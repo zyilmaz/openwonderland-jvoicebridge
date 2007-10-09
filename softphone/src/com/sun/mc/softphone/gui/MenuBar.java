@@ -368,6 +368,11 @@ class MenuBar extends JMenuBar {
         callMenu.add(playback);
     }
 
+    void addReceiveMonAction(Action action) {
+        JMenuItem receiveMon = new JMenuItem(action);
+        callMenu.add(receiveMon);
+    }
+
     void addExitCallAction(Action action) {
         callMenu.addSeparator();
         callMenu.add(action);
