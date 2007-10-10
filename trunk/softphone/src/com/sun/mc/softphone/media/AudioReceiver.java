@@ -266,6 +266,14 @@ public class AudioReceiver extends Thread {
 	return received;
     }
 
+    public int getJitterBufferSize() {
+	if (jitterManager == null) {
+	    return 0;
+	}
+
+	return jitterManager.getPacketListSize();
+    }
+
     /*
      * Stop receiving data 
      */

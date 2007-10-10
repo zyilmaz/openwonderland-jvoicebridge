@@ -120,7 +120,7 @@ public class NewGuiManager implements GuiManagerUI, GuiCallback,
 
     private PlaybackDialog playbackDialog = null;
 
-    private ReceiveMon receiveMon = null;
+    private PerfMonDialog perfMonDialog = null;
 
     private Process audioControlProcess = null;
 
@@ -169,7 +169,7 @@ public class NewGuiManager implements GuiManagerUI, GuiCallback,
 	( (MenuBar) phoneFrame.jMenuBar1).addHistoryAction(new HistoryAction());
 	( (MenuBar) phoneFrame.jMenuBar1).addRecordAction(new RecordAction());
 	( (MenuBar) phoneFrame.jMenuBar1).addPlaybackAction(new PlaybackAction());
-	( (MenuBar) phoneFrame.jMenuBar1).addReceiveMonAction(new ReceiveMonAction());
+	( (MenuBar) phoneFrame.jMenuBar1).addPerfMonAction(new PerfMonAction());
 	( (MenuBar) phoneFrame.jMenuBar1).addExitCallAction(new ExitAction());
 	configFrame.setLocationRelativeTo(phoneFrame);
         //phoneFrame.participantsTable.setModel(interlocutors);
@@ -718,17 +718,17 @@ public class NewGuiManager implements GuiManagerUI, GuiCallback,
         }
     }
 
-    private class ReceiveMonAction extends AbstractAction {
-        public ReceiveMonAction() {
-            super("ReceiveMonitor");
+    private class PerfMonAction extends AbstractAction {
+        public PerfMonAction() {
+            super("Perf Monitor");
         }
 
         public void actionPerformed(ActionEvent evt) {
-            if (receiveMon == null) {
-                receiveMon = new ReceiveMon();
+            if (perfMonDialog == null) {
+                perfMonDialog = new PerfMonDialog();
             }
 
-            receiveMon.setVisible(true);
+	    perfMonDialog.setVisible(true);
         }
     }
 

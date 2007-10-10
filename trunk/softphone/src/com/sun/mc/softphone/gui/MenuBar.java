@@ -368,9 +368,9 @@ class MenuBar extends JMenuBar {
         callMenu.add(playback);
     }
 
-    void addReceiveMonAction(Action action) {
-        JMenuItem receiveMon = new JMenuItem(action);
-        callMenu.add(receiveMon);
+    void addPerfMonAction(Action action) {
+        JMenuItem perfMon = new JMenuItem(action);
+        callMenu.add(perfMon);
     }
 
     void addExitCallAction(Action action) {

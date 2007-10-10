@@ -27,4 +27,6 @@ public interface DataUpdater {
 
     public int getData();
 
+    public void windowClosed();
+
 }

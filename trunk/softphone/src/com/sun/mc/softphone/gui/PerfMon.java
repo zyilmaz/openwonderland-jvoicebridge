@@ -39,13 +39,14 @@ class PerfObservable extends Observable {
 }
 
 class PerfMonCanvas extends Canvas implements Observer {
-    int maxElements = 300;
+    int maxElements;
     Vector rateVector = new Vector();
     // Vector highestAllowedVector = new Vector();
     Vector windowSizeVector = new Vector();
     Graphics g;
 
-    PerfMonCanvas(Observable notifier) {
+    PerfMonCanvas(Observable notifier, int width) {
+	this.maxElements = width;
 	notifier.addObserver(this);
     }
 
@@ -111,30 +112,40 @@ public class PerfMon extends Frame implements Runnable {
     class DWAdapter extends WindowAdapter {
         public void windowClosing(WindowEvent event) {
             setVisible(false);
+
+	    updater.windowClosed();
         }
     }
 
     private PerfMonCanvas pmc;
     private Thread dispThread;
-    private int height = 100;
-    private int width = 300;
+    private int height;
+    private int width;
     private boolean quit = false;
 
     private DataUpdater updater;
 
-    public PerfMon(String s, DataUpdater updater) {
+    public PerfMon(String s, DataUpdater updater, Point location, int width,
+	    int height) {
+
 	super(s);
 
 	this.updater = updater;
+	this.width = width;
+	this.height = height;
+
+	if (location != null) {
+	    setLocation(location);
+	}
 
 	addWindowListener(new DWAdapter());
 	setBackground(Color.white);
 	setLayout(new BorderLayout());
-	pmc = new PerfMonCanvas(new PerfObservable());
+	pmc = new PerfMonCanvas(new PerfObservable(), width);
 	ScrollPane sp = new ScrollPane();
 	sp.add("Center", pmc);
 	add(sp);
-	setSize(300, 100);
+	setSize(width, height);
 	setVisible(true);
 	//show();
 

@@ -30,28 +30,23 @@ import javax.swing.JRadioButton;
 import com.sun.mc.softphone.media.MediaManagerImpl;
 import com.sun.mc.softphone.media.MediaManagerFactory;
 
-public class ReceiveMon implements DataUpdater {
+public class JitterMon implements DataUpdater {
     private PerfMon perfMon;
 
     private MediaManagerImpl mediaManagerImpl;
-
-    private int lastPacketsReceived;
 
     private JRadioButton button;
 
     private boolean closed;
 
-    public ReceiveMon(JRadioButton button, Point location, int width,
+    public JitterMon(JRadioButton button, Point location, int width,
 	    int height) {
 
 	this.button = button;
 
         mediaManagerImpl = (MediaManagerImpl) MediaManagerFactory.getInstance();
 
-	perfMon = new PerfMon("Received Packets vs Time", this, location,
-	    width, height);
-
-	lastPacketsReceived = mediaManagerImpl.getPacketsReceived();
+	perfMon = new PerfMon("Jitter vs Time", this, location, width, height);
     }
 
     public void setVisible(boolean isVisible) {
@@ -59,16 +54,11 @@ public class ReceiveMon implements DataUpdater {
     }
 
     public int getData() {
-	int packetsReceived = mediaManagerImpl.getPacketsReceived();
-
-	int ret = packetsReceived - lastPacketsReceived;
-	lastPacketsReceived = packetsReceived;
-	
-	return ret;
+	return mediaManagerImpl.getJitterBufferSize();
     }
 
     public void windowClosed() {
-        button.setSelected(false);
+	button.setSelected(false);
 	closed = true;
     }
 

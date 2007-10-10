@@ -232,6 +232,10 @@ public class JitterManager {
 	}
     }
 
+    public int getPacketListSize() {
+	return packetList.size();
+    }
+
     private LinkedList packetList = new LinkedList();  // list of 20ms rcv bufs
 
     private short firstSequence;
