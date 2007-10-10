@@ -40,6 +40,7 @@ import java.lang.reflect.Constructor;
 import java.util.concurrent.ConcurrentHashMap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -154,6 +155,30 @@ public class VoiceManagerImpl implements VoiceManager {
 
     public void setPrivateSpatializer(String targetCallId, String sourceCallId,
 	    Spatializer spatializer) {
+
+	if (targetCallId == null) {
+	    /*
+	     * Set a private spatializer for all live Players for sourceCallId
+	     */
+	    synchronized (players) {
+		Collection<Player> values = players.values();
+
+		Iterator<Player> iterator = values.iterator();
+
+		while (iterator.hasNext()) {
+		    Player player = iterator.next();
+
+		    if (player.isLivePerson == false ||
+			    player.callId.equals(sourceCallId)) {
+
+			continue;
+		    }
+
+		    setPrivateSpatializer(player.callId, sourceCallId, 
+			spatializer);
+		}
+	    }
+	}
 
         Player targetPlayer = findPlayer(targetCallId);
 
