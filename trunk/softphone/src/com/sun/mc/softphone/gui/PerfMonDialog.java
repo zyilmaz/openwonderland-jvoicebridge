@@ -39,9 +39,6 @@ class PerfMonDialog extends JFrame {
     private JRadioButton rbAvgRecvTime;
     private JRadioButton rbJitter;
 
-    private Point frameLocation;
-    private int frameWidth;
-
     private int numberOfWindows = 0;
 
     private int graphWidth = 330;
@@ -58,9 +55,6 @@ class PerfMonDialog extends JFrame {
 	setMinimumSize(d);
 	setMaximumSize(d);
 	setPreferredSize(d);
-
-	frameLocation = getLocation();
-	frameWidth = (int) getSize().getWidth();
 
         rbReceivedPackets = new JRadioButton(receivedPacketsAction);
 	rbReceivedPackets.setText("Received Packets");
@@ -88,9 +82,9 @@ class PerfMonDialog extends JFrame {
     }
 
     private Point getGraphLocation() {
-	int x = (int) (frameLocation.getX() + frameWidth);
+	int x = (int) (getLocation().getX() + getWidth());
 
-	int y = (int) (frameLocation.getY() + (numberOfWindows / 2) * graphHeight);
+	int y = (int) (getLocation().getY() + (numberOfWindows / 2) * graphHeight);
 
 	if ((numberOfWindows % 2) != 0) {
 	    x += graphWidth;
