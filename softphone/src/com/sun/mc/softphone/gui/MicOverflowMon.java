@@ -63,8 +63,6 @@ public class MicOverflowMon implements DataUpdater {
 
 	int ret = micOverflow - lastMicOverflow;
 
-	System.out.println("mic overflow " + micOverflow + " ret " + ret);
-
 	lastMicOverflow = micOverflow;
 	return ret;
     }
