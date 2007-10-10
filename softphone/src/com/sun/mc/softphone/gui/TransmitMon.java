@@ -30,28 +30,28 @@ import javax.swing.JRadioButton;
 import com.sun.mc.softphone.media.MediaManagerImpl;
 import com.sun.mc.softphone.media.MediaManagerFactory;
 
-public class ReceiveMon implements DataUpdater {
+public class TransmitMon implements DataUpdater {
     private PerfMon perfMon;
 
     private MediaManagerImpl mediaManagerImpl;
 
-    private int lastPacketsReceived;
+    private int lastPacketsTransmitted;
 
     private JRadioButton button;
 
     private boolean closed;
 
-    public ReceiveMon(JRadioButton button, Point location, int width,
+    public TransmitMon(JRadioButton button, Point location, int width,
 	    int height) {
 
 	this.button = button;
 
         mediaManagerImpl = (MediaManagerImpl) MediaManagerFactory.getInstance();
 
-	perfMon = new PerfMon("Received Packets vs Time", this, location,
+	perfMon = new PerfMon("Transmitted Packets vs Time", this, location,
 	    width, height);
 
-	lastPacketsReceived = mediaManagerImpl.getPacketsReceived();
+	lastPacketsTransmitted = mediaManagerImpl.getPacketsSent();
     }
 
     public void setVisible(boolean isVisible) {
@@ -59,10 +59,10 @@ public class ReceiveMon implements DataUpdater {
     }
 
     public int getData() {
-	int packetsReceived = mediaManagerImpl.getPacketsReceived();
+	int packetsTransmitted = mediaManagerImpl.getPacketsSent();
 
-	int ret = packetsReceived - lastPacketsReceived;
-	lastPacketsReceived = packetsReceived;
+	int ret = packetsTransmitted - lastPacketsTransmitted;
+	lastPacketsTransmitted = packetsTransmitted;
 	
 	return ret;
     }

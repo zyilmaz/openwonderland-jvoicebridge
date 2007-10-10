@@ -556,8 +556,10 @@ if (false) {
      * Read data from the microphone and if there is a connection to
      * the conference bridge server, send the data to the server.
      */
-    private int totalPacketsSent = 0;
     private int packetsSent = 0;
+
+    private int micOverflow = 0;
+    private int lastMicOverflow = 0;
 
     private boolean firstTime = true;
 
@@ -626,7 +628,6 @@ if (false) {
 
 	long lastReadTime = 0;
  	int micBufferSizeMillis = 0;
-	int micOverflow = 0;
 
 	if (microphone != null) { 
 	    micBufferSizeMillis = microphone.getBufferSizeMillis();
@@ -904,7 +905,7 @@ if (false) {
 			continue;
 		    }
 
-		    if (totalPacketsSent == 0) {
+		    if (packetsSent == 0) {
 			rtpSenderPacket.setMark();
 		    }
 		}
@@ -947,17 +948,17 @@ if (false) {
 	        rtpSenderPacket.clearMark();
 	    }
 
-	    if (packetsSent == 1000) {
+	    if (packetsSent != 0 && (packetsSent % 1000) == 0) {
 		double avg = Math.round(
-		    ((double)elapsedTime / packetsSent) * 1000) / 1000D;
+		    ((double)elapsedTime / 1000) * 1000) / 1000D;
 
-		Logger.println("avg time between sends of last "
-		    + packetsSent + " packets " + avg 
-		    + " ms, " + "microphone overflows " + micOverflow);
+		Logger.println("avg time between sends of last 1000 "
+		    + " packets " + avg 
+		    + " ms, " + "microphone overflows " + 
+			(micOverflow - lastMicOverflow));
 
 		elapsedTime = 0;
-		packetsSent = 0;
-		micOverflow = 0;
+		lastMicOverflow = micOverflow;
 
 		if (speexEncoder != null) {
 		    int encodes = speexEncoder.getEncodes();
@@ -1147,7 +1148,7 @@ if (false) {
 	rtcpSenderPacket.setRTPTimestamp(
 	    (int)(rtpSenderPacket.getRtpTimestamp() & 0xffffffff));
 
-	rtcpSenderPacket.setPacketCount(totalPacketsSent);
+	rtcpSenderPacket.setPacketCount(packetsSent);
 
 	rtcpSenderPacket.setHighestSeqReceived(
 	    rtpSenderPacket.getRtpSequenceNumber());
@@ -1331,7 +1332,6 @@ if (false) {
 	}
 
 	packetsSent++;
-	totalPacketsSent++;
 	return true;
     }
 
@@ -1731,6 +1731,14 @@ if (false) {
 	Logger.logLevel = 5;
     }
 
+    public int getPacketsSent() {
+	return packetsSent;
+    }
+
+    public int getMicOverflow() {
+	return micOverflow;
+    }
+
     private int dataSize;
     private short lastSequence;
     private int lastRtpTimestamp;
@@ -1822,17 +1830,17 @@ if (false) {
 	}
 
 	public void run() {
-	    int lastTotalPacketsSent = totalPacketsSent;
+	    int lastPacketsSent = packetsSent;
 
 	    while (!done) {
-		if (lastTotalPacketsSent == totalPacketsSent) {
+		if (lastPacketsSent == packetsSent) {
 		    if (Logger.logLevel >= Logger.LOG_MOREINFO) {
 			Logger.println("need to send keep alive");
 		    }
 
 		    sendKeepAlive = true;
 		} else {
-		    lastTotalPacketsSent = totalPacketsSent;
+		    lastPacketsSent = packetsSent;
 		}
 
 		try {

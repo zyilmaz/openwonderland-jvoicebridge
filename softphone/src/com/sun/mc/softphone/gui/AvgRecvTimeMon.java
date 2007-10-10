@@ -30,28 +30,29 @@ import javax.swing.JRadioButton;
 import com.sun.mc.softphone.media.MediaManagerImpl;
 import com.sun.mc.softphone.media.MediaManagerFactory;
 
-public class ReceiveMon implements DataUpdater {
+public class AvgRecvTimeMon implements DataUpdater {
     private PerfMon perfMon;
 
     private MediaManagerImpl mediaManagerImpl;
-
-    private int lastPacketsReceived;
 
     private JRadioButton button;
 
     private boolean closed;
 
-    public ReceiveMon(JRadioButton button, Point location, int width,
+    private long lastTime;
+    private int packetsSent;
+
+    public AvgRecvTimeMon(JRadioButton button, Point location, int width, 
 	    int height) {
 
 	this.button = button;
 
         mediaManagerImpl = (MediaManagerImpl) MediaManagerFactory.getInstance();
 
-	perfMon = new PerfMon("Received Packets vs Time", this, location,
-	    width, height);
+	perfMon = new PerfMon("Average Receive Time", this, location, width, height);
 
-	lastPacketsReceived = mediaManagerImpl.getPacketsReceived();
+	lastTime = System.currentTimeMillis();
+	packetsSent = mediaManagerImpl.getPacketsSent();
     }
 
     public void setVisible(boolean isVisible) {
@@ -59,16 +60,28 @@ public class ReceiveMon implements DataUpdater {
     }
 
     public int getData() {
-	int packetsReceived = mediaManagerImpl.getPacketsReceived();
+	int packetsSent = mediaManagerImpl.getPacketsReceived();
 
-	int ret = packetsReceived - lastPacketsReceived;
-	lastPacketsReceived = packetsReceived;
-	
-	return ret;
+	long now = System.currentTimeMillis();
+
+	long elapsed = now - lastTime;
+
+	int n = packetsSent - this.packetsSent;
+
+	int avgRecvTime = 0;
+
+	if (n != 0 && elapsed != 0) {
+	    avgRecvTime = (int) (Math.round(
+	        ((double) elapsed / n) * 1000) / 1000D);
+	}
+
+	this.packetsSent = packetsSent;
+	lastTime = now;
+	return avgRecvTime;
     }
 
     public void windowClosed() {
-        button.setSelected(false);
+	button.setSelected(false);
 	closed = true;
     }
 

@@ -30,28 +30,28 @@ import javax.swing.JRadioButton;
 import com.sun.mc.softphone.media.MediaManagerImpl;
 import com.sun.mc.softphone.media.MediaManagerFactory;
 
-public class ReceiveMon implements DataUpdater {
+public class MicOverflowMon implements DataUpdater {
     private PerfMon perfMon;
 
     private MediaManagerImpl mediaManagerImpl;
-
-    private int lastPacketsReceived;
 
     private JRadioButton button;
 
     private boolean closed;
 
-    public ReceiveMon(JRadioButton button, Point location, int width,
+    private int lastMicOverflow;
+
+    public MicOverflowMon(JRadioButton button, Point location, int width,
 	    int height) {
 
 	this.button = button;
 
         mediaManagerImpl = (MediaManagerImpl) MediaManagerFactory.getInstance();
 
-	perfMon = new PerfMon("Received Packets vs Time", this, location,
-	    width, height);
+	perfMon = new PerfMon("Microphone Overflow", this, location, width,
+	    height);
 
-	lastPacketsReceived = mediaManagerImpl.getPacketsReceived();
+	lastMicOverflow = mediaManagerImpl.getMicOverflow();
     }
 
     public void setVisible(boolean isVisible) {
@@ -59,16 +59,18 @@ public class ReceiveMon implements DataUpdater {
     }
 
     public int getData() {
-	int packetsReceived = mediaManagerImpl.getPacketsReceived();
+	int micOverflow = mediaManagerImpl.getMicOverflow();
 
-	int ret = packetsReceived - lastPacketsReceived;
-	lastPacketsReceived = packetsReceived;
-	
+	int ret = micOverflow - lastMicOverflow;
+
+	System.out.println("mic overflow " + micOverflow + " ret " + ret);
+
+	lastMicOverflow = micOverflow;
 	return ret;
     }
 
     public void windowClosed() {
-        button.setSelected(false);
+	button.setSelected(false);
 	closed = true;
     }
 

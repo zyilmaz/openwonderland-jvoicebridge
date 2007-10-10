@@ -816,6 +816,30 @@ if (false) {
 	return audioReceiver.getPacketsReceived();
     }
 
+    public int getPacketsSent() {
+	if (audioTransmitter == null) {
+	    return 0;
+	}
+
+	return audioTransmitter.getPacketsSent();
+    }
+
+    public int getMicOverflow() {
+	if (audioTransmitter == null) {
+	    return 0;
+	}
+
+	return audioTransmitter.getMicOverflow();
+    }
+	
+    public int getJitterBufferSize() {
+	if (audioReceiver == null) {
+	    return 0;
+	}
+
+	return audioReceiver.getJitterBufferSize();
+    }
+
     public void startDtmf(String dtmf) {
         if(audioTransmitter != null) {
             audioTransmitter.startDtmf(dtmf);
