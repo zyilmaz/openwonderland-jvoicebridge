@@ -109,7 +109,7 @@ public class Logger {
             fw = new FileWriter(logFileName, false);
 	    bw = new BufferedWriter(fw, BUFFER_SIZE);
 
-	    println("Log file is " + logFileName);
+	    forcePrintln("Log file is " + logFileName);
         } catch (IOException e) {
 	    fw = null;
 	    bw = null;

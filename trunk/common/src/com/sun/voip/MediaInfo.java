@@ -82,7 +82,6 @@ if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)112, RtpPacket.PCMU_ENCODING, 16000, 1, false));
 
-if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)113, RtpPacket.PCMU_ENCODING, 16000, 2, false));
 
@@ -92,6 +91,7 @@ if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)115, RtpPacket.PCMU_ENCODING, 32000, 2, false));
 
+if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)116, RtpPacket.PCMU_ENCODING, 44100, 1, false));
 

@@ -510,7 +510,8 @@ public class SipServer implements SipListener {
      */
     public void processResponse(ResponseEvent responseReceivedEvent) { 
 	if (responseReceivedEvent.getClientTransaction() == null) {
-            Logger.error("processResponse:  clientTransaction is null!");
+            Logger.error("processResponse:  clientTransaction is null! " 
+		+ responseReceivedEvent.getResponse());
 	    return;
         }
 
