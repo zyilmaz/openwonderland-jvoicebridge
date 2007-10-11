@@ -419,8 +419,8 @@ public class MemberSender {
 
 	try {
 	    datagramChannel.send(
-		ByteBuffer.wrap(senderPacket.getData()),
-	        senderPacket.getSocketAddress());
+		ByteBuffer.wrap(senderPacket.getData(), 0, 
+		    senderPacket.getLength()), senderPacket.getSocketAddress());
 
             if (Logger.logLevel >= Logger.LOG_MOREDETAIL) {
 	        Logger.writeFile("Call " + cp + " back from sending data");
