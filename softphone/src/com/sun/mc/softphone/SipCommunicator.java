@@ -75,6 +75,8 @@ import com.sun.mc.softphone.sip.event.*;
 import com.sun.mc.softphone.sip.security.*;
 import java.io.IOException;
 
+import java.text.ParseException;
+
 import com.sun.voip.Logger;
 
 import com.sun.stun.NetworkAddressManager;
@@ -113,7 +115,7 @@ public class SipCommunicator extends Thread implements
     public static final String PHONE_MODE = "PhoneMode";
     public String mode = PHONE_MODE;
     private GuiManagerUI guiManager = null;
-    private static MediaManager mediaManager = null;
+    private MediaManager mediaManager = null;
     private SipManager sipManager = null;
     private Window tracesViewerWindow = null;
     private Process rmiRegistryProcess = null;
@@ -123,31 +125,36 @@ public class SipCommunicator extends Thread implements
     
     private Integer unregistrationLock = new Integer(0);
 
-    private static boolean autoLogin = false;
-    private static boolean showGUI = true;
-    private static boolean autoAnswer = false;
-    private static int autoAnswerDelay = 200;
-    private static boolean openAudio = true;
-    private static boolean loadGen = false;
-    private static boolean fromMC = false;
+    private boolean autoLogin = false;
+    private boolean showGUI = true;
+    private boolean autoAnswer = false;
+    private int autoAnswerDelay = 200;
+    private boolean openAudio = true;
+    private boolean loadGen = false;
+    private boolean fromMC = false;
     
-    private static String userName = null;
-    private static String encryptionKey;
-    private static String encryptionAlgorithm;
-    private static String meetingCode;
-    private static boolean mute;
-    private static int nCalls;
-    private static String passCode;
-    private static String phoneNumber;
+    private String userName = null;
+    private String authenticationUserName;
+    private String encryptionKey;
+    private String encryptionAlgorithm;
+    private String meetingCode;
+    private boolean mute;
+    private int nCalls;
+    private String passCode;
+    private String phoneNumber;
 
-    private static String treatment;
-    private static int dutyCycle;
+    private String treatment;
+    private int dutyCycle;
 
     private static SipCommunicator sipCommunicator;
-    
-    private static ParameterControl parameterControl;
 
-    private static String arguments = "";
+    private String registrarAddress;
+
+    private ParameterControl parameterControl;
+
+    private Utils utils;
+
+    private static Object sipCommunicatorLock = new Object();
 
     /*
      * Meeting central starts the communicator and adds MC as
@@ -156,30 +163,52 @@ public class SipCommunicator extends Thread implements
      *
      * When used with MC, there is no visible UI.
      */
-    public SipCommunicator(String userName) throws IOException {
-	this(userName, null, null);
+    public static SipCommunicator getInstance() {
+	return sipCommunicator;
     }
 
-    public SipCommunicator(String userName, String encryptionKey,
-                           String encryptionAlgorithm) 
-        throws IOException 
-    {
-        this(userName, encryptionKey, encryptionAlgorithm, null);
-    }
-    
-    public SipCommunicator(String userName, String encryptionKey,
-            String encryptionAlgorithm, SipManager sipManager)
-        throws IOException 
-    {
+    public SipCommunicator(String[] args) throws ParseException {
 	sipCommunicator = this;
-	this.encryptionKey = encryptionKey;
-	this.encryptionAlgorithm = encryptionAlgorithm;
-        
-	Runtime.getRuntime().addShutdownHook(new ShutdownThread());
 
-	if (loadGen()) {
-            mediaManagers = new HashMap();
+        String arguments = "";
+
+	for (int i = 0; i < args.length; i++) {
+	    arguments += args[i] + " ";
+	}
+
+	Logger.println("Arguments:  " + arguments);
+
+        try {
+            console.logEntry();
+
+            if (args.length == 1 && args[0].length() > 0 &&
+                    !args[0].startsWith("-"))
+            {
+                // work with older mc versions
+                setUserName(args[0]);
+                
+                // called from mc
+                setFromMC(true);
+                setShowGUI(false);
+                setLoadGen(false);
+                setAutoAnswer(true);
+            } else {
+                parseArgs(args);
+            }
+            
+	    synchronized (sipCommunicatorLock) {
+	        initialize();
+	    }
+	} catch (ParseException e) {
+	    usage();
+	    throw e;
+        } finally {
+            console.logExit();
         }
+    }
+ 
+    public void initialize() {
+	Runtime.getRuntime().addShutdownHook(new ShutdownThread());
 
 	String[] config = new String[1];
 
@@ -189,10 +218,6 @@ public class SipCommunicator extends Thread implements
 	    if (userName != null && userName.length() == 0) {
 		userName = null;
 	    }
-
-	    Utils.initPreferences(userName, loadGen);
-
-            Logger.println("Arguments:  " + arguments);
 
 	    Logger.println("Sip Communicator built on " + Version.getVersion());
 
@@ -212,7 +237,7 @@ public class SipCommunicator extends Thread implements
                 + ", OS Version = " + System.getProperty("os.version"));
 
             try {
-                mediaManager = MediaManagerFactory.getInstance();
+                mediaManager = MediaManagerFactory.getInstance(false);
 		mediaManager.initialize(encryptionKey, encryptionAlgorithm,
 		    !openAudio());
             } catch (IOException e) {
@@ -244,12 +269,13 @@ public class SipCommunicator extends Thread implements
                 System.exit(1);
             }
 
-            if (sipManager == null) {
-                this.sipManager = new SipManager();
-            } else {
-                this.sipManager = sipManager;
-            }
+	    utils = new Utils(userName, loadGen);
+
+            sipManager = new SipManager(this, mediaManager, registrarAddress);
             
+	    mediaManager.setSipCommunicator(this);
+	    mediaManager.setSipManager(sipManager);
+
             guiManager.addUserActionListener(this);
             
             if (guiManager instanceof NewGuiManager) {
@@ -272,9 +298,7 @@ public class SipCommunicator extends Thread implements
 		 * If we don't hear from MC, assume it terminated
 		 * and we should quit as well.
 		 */
-		if (Logger.logLevel >= Logger.LOG_INFO) {
-		    Logger.println("Starting thread to watch for MC heartbeat.");
-		}
+		Logger.println("Starting thread to watch for MC heartbeat.");
 		start();
 
 		/*
@@ -291,85 +315,66 @@ public class SipCommunicator extends Thread implements
             launch();
 
 	    Utils.setPreference("com.sun.mc.softphone.LAST_CONFERENCE", "");
-
-	    if (loadGen && nCalls > 0) {
-		for (int i = 0; i < nCalls; i++) {
-            	    InetAddress localhost = 
-			NetworkAddressManager.getPrivateLocalHost();
-
-		    userName = "loadGen" + i; 
-		    dial(null, userName, phoneNumber);
-		}
-
-		System.out.println(nCalls + " calls to " + phoneNumber 
-		    + " Meeting " + meetingCode + " PassCode " + passCode
-		    + " have been dialed");
-	    }
         } finally {
             console.logExit();
         }
     }
  
-    public void locationChanged(Point p) {
-	parameterControl.setString("x is " + p.getX()
-	    + " y is " + p.getY());
-    }
-
-    /****** Methods for SipCommLoadGen ******/
-
-    public void placeCall(String callerName, String callee,
-	    String conferenceId) throws IOException {
-
-	dial(conferenceId, callerName, callee);
-    }
-
     /**
-     * Play a treatment to the given call
-     * @param callId the id of the call to play a treatment to
+     * Play a treatment to the call.
      * @param audioFile the file to play
      * @param repeats the number of times to repeat the treatment, or -1
      * to repeat until it is manually stopped.
      * @throws IOException if there is an error playing the treatment
      */
-    public void playTreatment(int callId, String audioFile, int repeats) 
-        throws IOException 
-    {
-	MediaManager mm = (MediaManager) mediaManagers.get(new Integer(callId));
-        if (mm == null) {
+    public void playTreatment(String audioFile, int repeats) throws IOException {
+	if (mediaManager == null) {
             return;
         }
         
-        mm.playTreatment(audioFile, repeats);
+        mediaManager.playTreatment(audioFile, repeats);
     }
 
-    public void pauseTreatment(int callId, boolean pause) {
-	MediaManager mm = (MediaManager) mediaManagers.get(new Integer(callId));
-        if (mm == null) {
+    public void pauseTreatment(boolean pause) {
+	if (mediaManager == null) {
             return;
         }
         
-	mm.pauseTreatment(pause);
+	mediaManager.pauseTreatment(pause);
     }
 
-    public void stopTreatment(int callId) {
-        MediaManager mm = (MediaManager) mediaManagers.get(new Integer(callId));
-        if (mm == null) {
+    public void stopTreatment() {
+	if (mediaManager == null) {
             return;
         }
         
-        mm.stopTreatment();
+        mediaManager.stopTreatment();
     }   
 	
-    public void mute(int callId, boolean isMuted) {
-        MediaManager mm = (MediaManager) mediaManagers.get(new Integer(callId));
-        if (mm == null) {
+    public void mute(boolean isMuted) {
+	if (mediaManager == null) {
             return;
         }
 
-        mm.mute(isMuted);
+        mediaManager.mute(isMuted);
     }
 
-    /****** End of Methods for SipCommLoadGen ******/
+    public void locationChanged(Point p) {
+	parameterControl.setString("x is " + p.getX()
+	    + " y is " + p.getY());
+    }
+
+    public void sendCommand(String command) {
+	processCommand(command);
+    }
+
+    public String getSoftphoneAddress() {
+	return sipManager.getPublicAddress();
+    }
+
+    public boolean isConnected() {
+	return callInProgressInterlocutor != null;
+    }
 
     /*
      * When started by Meeting Central, we watch for keep alive messages.
@@ -414,14 +419,12 @@ public class SipCommunicator extends Thread implements
      * If we don't hear from MC, assume it terminated
      * and we should quit as well.
      */
-    private int previousLogLevel;
+    boolean firstTime = true;
 
     public void run() {
 	BufferedReader bufferedReader = new
 	    BufferedReader(new InputStreamReader(System.in));
 	
-	boolean firstTime = true;
-
 	/*
 	 * Not sure why we need this but without this,
 	 * the softphone hangs.
@@ -432,17 +435,17 @@ public class SipCommunicator extends Thread implements
         }
 
 	while (true) {
-	    String s;
-
 	    try {
-                s = bufferedReader.readLine();
+                String command = bufferedReader.readLine();
 		
-		if (s == null) {
+		if (command == null) {
 		    Logger.println("Sip Communicator terminating.  "
 			+ "End of input stream");
 
 		    System.exit(1);
 		}
+		
+		processCommand(command);
 	    } catch (IOException e) {
 		Logger.println("Sip Communicator terminating.  "
 		    + "Unable to read heart beat from MC");
@@ -450,345 +453,310 @@ public class SipCommunicator extends Thread implements
 		shutDown();
 		break;
 	    }
+	}
+    }
 
-	    if (s.indexOf("logLevel=") >= 0) {
-		String tokens[] = s.split("=");
-		
-		try {
-		    Utils.setPreference("com.sun.mc.softphone.media.LOG_LEVEL",
-			tokens[1]);
-		} catch (NumberFormatException e) {
-		    Logger.println("Invalid log level:  " + tokens[1]);
-		}
-		continue;
+    private int previousLogLevel;
+
+    public void processCommand(String command) {
+	if (command.indexOf("isConnected") >= 0) {
+	    if (callInProgressInterlocutor != null) {
+		Logger.println("Softphone is connected");
+	    } else {
+		Logger.println("Softphone is disconnected");
+	    }
+	    return;
+	}
+
+	if (command.indexOf("ping") >= 0) {
+	    if (firstTime) {
+		firstTime = false;
+		Logger.println("softphone got ping from MC:  " + command);
 	    }
 
-	    if (s.indexOf("isConnected") >= 0) {
-		if (callInProgressInterlocutor != null) {
-		    Logger.println("Softphone is connected");
-		} else {
-		    Logger.println("Softphone is disconnected");
-	 	}
-		continue;
+	    synchronized (timeoutLock) {
+		ping_timeout_count = 0;
 	    }
+	    return;
+	}
 
-	    if (s.indexOf("ping") >= 0) {
-		if (firstTime) {
-		    firstTime = false;
+	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	    Logger.println("Got command '" + command + "'");
+	}
 
-		    if (Logger.logLevel >= Logger.LOG_INFO) {
-			Logger.println("softphone got ping from MC:  " + s);
-		    }
-		}
+	if (command.indexOf("Shutdown") >= 0) {
+	    Logger.println("Received Shutdown command...");
+	    shutDown();
+	    return;
+	}
 
-		synchronized (timeoutLock) {
-		    ping_timeout_count = 0;
-		}
-		continue;
+	if (command.indexOf("Show") == 0) {
+	    if (guiManager != null) {
+	        guiManager.showPhoneFrame(true);
+		Logger.println("Softphone is visible");
 	    }
+	    return;
+	}
 
-	    if (Logger.logLevel >= Logger.LOG_MOREINFO) {
-		Logger.println("Got command '" + s + "'");
+	if (command.indexOf("Hide") == 0) {
+	    if (guiManager != null) {
+	        guiManager.showPhoneFrame(false);
+		Logger.println("Softphone is hidden");
 	    }
-
-	    if (s.indexOf("Shutdown") >= 0) {
-		Logger.println("Received Shutdown command...");
-		shutDown();
-		break;
-	    }
-
-	    if (s.indexOf("Show") == 0) {
-		if (guiManager != null) {
-	            guiManager.showPhoneFrame(true);
-		    Logger.println("Softphone is visible");
-		}
-		continue;
-	    }
-
-	    if (s.indexOf("Hide") == 0) {
-		if (guiManager != null) {
-	            guiManager.showPhoneFrame(false);
-		    Logger.println("Softphone is hidden");
-		}
-		continue;
-	    }
+	    return;
+	}
  
-	    if (s.indexOf("Show Config") >= 0) {
-		if (guiManager != null) {
-		    guiManager.showConfigFrame();
-		}
-		continue;
+	if (command.indexOf("Show Config") >= 0) {
+	    if (guiManager != null) {
+		guiManager.showConfigFrame();
 	    }
+	    return;
+	}
                     
-	    if (s.indexOf("ReRegister=") >= 0) {
-		s = s.substring(11);
+	if (command.indexOf("ReRegister=") >= 0) {
+	    Logger.println(command);
 
-		String[] tokens = s.split(":");
+	    command = command.substring(11);
 
-		if (tokens.length < 2) {
-		    Logger.println("Missing parameters for Register:  " + s);
-		    continue;
-		}
+	    String[] tokens = command.split(":");
 
-		try {
-		    sipManager.reRegister(tokens[0], tokens[1]);
-		} catch (CommunicationsException e) {
-		    Logger.println("Unable to restart sipManager:  " 
-			+ e.getMessage());
-		}
-
-		continue;
+	    if (tokens.length < 2) {
+		Logger.println("Missing parameters for Register:  " + command);
+		return;
 	    }
 
-            if (s.indexOf("linetest") >= 0) {
-                if (guiManager != null) {
-                    guiManager.showLineTest(mediaManager);
-                    Logger.println("Showing line test dialog");
-		    continue;
-                }
+	    try {
+		sipManager.reRegister(tokens[0], tokens[1]);
+	    } catch (CommunicationsException e) {
+		Logger.println("Unable to restart sipManager:  " 
+		    + e.getMessage());
+	    }
+
+	    return;
+	}
+
+        if (command.indexOf("linetest") >= 0) {
+            if (guiManager != null) {
+                guiManager.showLineTest(mediaManager);
+                Logger.println("Showing line test dialog");
+		return;
+	    }
+        }
+
+	command = command.replaceAll("[\n]", ""); 
+
+	if (command.indexOf("PlaceCall=") >= 0) {
+	    command = command.substring(10);
+
+	    String[] tokens = command.split(",");
+
+	    if (tokens.length != 3) {
+		Logger.println("Usage is:  "
+		    + "PlaceCall=conferenceId:<conferenceId>,"
+		    + "userName=<userName>,"
+		    + "callee=<callee>");
+		    return;
+	    }
+
+	    String[] cId = tokens[0].split(":");
+			
+	    if (cId.length != 2) {
+	        Logger.println("Missing conference Id");
+		return;
+	    }
+
+	    if (cId[0].equalsIgnoreCase("conferenceId") == false) {
+		Logger.println("Unknown parameter:  " + cId[0]);
+		return;
+	    }
+
+	    String conferenceId = cId[1];
+
+            String[] uName = tokens[1].split(":");
+
+            if (uName.length != 2) {
+                Logger.println("Missing userName");
+                return;
             }
 
-	    s = s.replaceAll("[\n]", ""); 
+            if (uName[0].equalsIgnoreCase("userName") == false) {
+                Logger.println("Unknown parameter:  " + cId[0]);
+                return;
+            }
 
-	    if (s.indexOf("PlaceCall=") >= 0) {
-		s = s.substring(10);
+            String userName = uName[1];
 
-		String[] tokens = s.split(",");
+            String[] number = tokens[2].split(":");
 
-		if (tokens.length != 3) {
-		    Logger.println("Usage is:  "
-			+ "PlaceCall=conferenceId:<conferenceId>,"
-			+ "userName=<userName>,"
-			+ "callee=<callee>");
-		    continue;
-		}
+            if (number.length != 2) {
+                Logger.println("Missing callee number");
+                return;
+            }
 
-		String[] cId = tokens[0].split(":");
-			
-		if (cId.length != 2) {
-		    Logger.println("Missing conference Id");
-		    continue;
-		}
+            if (number[0].equalsIgnoreCase("callee") == false) {
+                Logger.println("Unknown parameter:  " + number[0]);
+                return;
+            }
 
-		if (cId[0].equalsIgnoreCase("conferenceId") == false) {
-		    Logger.println("Unknown parameter:  " + cId[0]);
-		    continue;
-		}
+            String callee = number[1];
 
-		String conferenceId = cId[1];
-
-                String[] uName = tokens[1].split(":");
-
-                if (uName.length != 2) {
-                    Logger.println("Missing userName");
-                    continue;
-                }
-
-                if (uName[0].equalsIgnoreCase("userName") == false) {
-                    Logger.println("Unknown parameter:  " + cId[0]);
-                    continue;
-                }
-
-                String userName = uName[1];
-
-                String[] number = tokens[2].split(":");
-
-                if (number.length != 2) {
-                    Logger.println("Missing callee number");
-                    continue;
-                }
-
-                if (number[0].equalsIgnoreCase("callee") == false) {
-                    Logger.println("Unknown parameter:  " + number[0]);
-                    continue;
-                }
-
-                String callee = number[1];
-
-		System.out.println(
-		    "Dialing Conference id " + conferenceId
-			+ " userName " + userName
-			+ " callee " + callee);
+	    System.out.println(
+		"Dialing Conference id " + conferenceId
+		    + " userName " + userName
+		    + " callee " + callee);
 
 		//dial(conferenceId, userName, callee);
-		dial(null, userName, callee);
-		continue;
+	    dial(null, userName, callee);
+	    return;
+        }
+
+	if (command.indexOf("sampleRate=") >= 0) {
+	    String tokens[] = command.split("=");
+
+	    if (tokens[1].equals("8000") || tokens[1].equals("16000") ||
+		tokens[1].equals("32000") || tokens[1].equals("32000") ||
+		tokens[1].equals("44100") || tokens[1].equals("48000")) {
+
+		Utils.setPreference(
+		    "com.sun.mc.softphone.media.SAMPLE_RATE", tokens[1]);
+	    } else {
+		Logger.println("Invalid sample rate:  " + command);
 	    }
 
-	    if (s.indexOf("sampleRate=") >= 0) {
-		String tokens[] = s.split("=");
+	    return;
+	}
 
-		if (tokens[1].equals("8000") || tokens[1].equals("16000") ||
-		    tokens[1].equals("32000") || tokens[1].equals("32000") ||
-		    tokens[1].equals("44100") || tokens[1].equals("48000")) {
+	if (command.indexOf("channels=") >= 0) {
+	    String tokens[] = command.split("=");
 
-		    Utils.setPreference(
-			"com.sun.mc.softphone.media.SAMPLE_RATE", tokens[1]);
-		} else {
-		    Logger.println("Invalid sample rate:  " + s);
-		}
-
-		continue;
+	    if (tokens[1].equals("1") || tokens[1].equals("2")) {
+                Utils.setPreference("com.sun.mc.softphone.media.CHANNELS",
+		   tokens[1]);
+	    } else {
+		Logger.println("Invalid number of channels:  " + command);
 	    }
 
-	    if (s.indexOf("channels=") >= 0) {
-		String tokens[] = s.split("=");
+	    return;
+	}
 
-		if (tokens[1].equals("1") || tokens[1].equals("2")) {
-            	    Utils.setPreference("com.sun.mc.softphone.media.CHANNELS",
-		        tokens[1]);
-		} else {
-		    Logger.println("Invalid number of channels:  " + s);
-		}
+	if (command.indexOf("encoding=") >= 0) {
+	    String tokens[] = command.split("=");
 
-		continue;
+	    if (tokens[1].equals("PCM") || tokens[1].equals("PCMU") ||
+		    tokens[1].equals("SPEEX")) {
+
+        	Utils.setPreference("com.sun.mc.softphone.media.ENCODING",
+		    tokens[1]);
+	    } else {
+		Logger.println("Encoding must be PCMU, PCM, or SPEEX:  " 
+		    + command);
 	    }
 
-	    if (s.indexOf("transmitSampleRate=") >= 0) {
-		String tokens[] = s.split("=");
+	    return;
+	}
 
-		if (tokens[1].equals("8000") || tokens[1].equals("16000") ||
-		    tokens[1].equals("32000") || tokens[1].equals("32000") ||
-		    tokens[1].equals("44100") || tokens[1].equals("48000")) {
+        //** 1.5 only!
 
-		    Utils.setPreference(
-			"com.sun.mc.softphone.media.TRANSMIT_SAMPLE_RATE", tokens[1]);
-		} else {
-		    Logger.println("Invalid transmit sample rate:  " + s);
-		}
+        if (command.indexOf("stack") >= 0) {
+	    previousLogLevel = Logger.logLevel;
 
-		continue;
+	    Logger.logLevel = 8;
+	    Utils.setPreference("com.sun.mc.softphone.media.LOG_LEVEL", "8");
+
+	    if (callInProgressInterlocutor != null) {
+		Logger.println("Softphone is connected");
+	    } else {
+		Logger.println("Softphone is disconnected");
 	    }
 
-	    if (s.indexOf("transmitChannels=") >= 0) {
-		String tokens[] = s.split("=");
-
-		if (tokens[1].equals("1") || tokens[1].equals("2")) {
-            	    Utils.setPreference("com.sun.mc.softphone.media.TRANSMIT_CHANNELS",
-		        tokens[1]);
-		} else {
-		    Logger.println("Invalid number of transmit channels:  " + s);
+	    if (mediaManager != null) {
+		try {
+		    mediaManager.startRecording("Recording.au", "Au",
+			false, null);
+		} catch (IOException e) {
+		    Logger.println("Unable to record:  " + e.getMessage());
 		}
 
-		continue;
-	    }
-	    if (s.indexOf("encoding=") >= 0) {
-		String tokens[] = s.split("=");
+	        Timer timer = new Timer();
 
-		if (tokens[1].equals("PCM") || tokens[1].equals("PCMU") ||
-			tokens[1].equals("SPEEX")) {
-
-        	    Utils.setPreference("com.sun.mc.softphone.media.ENCODING",
-		       tokens[1]);
-		} else {
-		    Logger.println("Encoding must be PCMU, PCM, or SPEEX:  " + s);
-		}
-
-		continue;
-	    }
-
-            //** 1.5 only!
-
-            if (s.indexOf("stack") >= 0) {
-		previousLogLevel = Logger.logLevel;
-
-		Logger.logLevel = 8;
-		Utils.setPreference("com.sun.mc.softphone.media.LOG_LEVEL", "8");
-
-		if (callInProgressInterlocutor != null) {
-		    Logger.println("Softphone is connected");
-		} else {
-		    Logger.println("Softphone is disconnected");
-	 	}
-
-		if (mediaManager != null) {
-		    try {
-		        mediaManager.startRecording("Recording.au", "Au",
-			    false, null);
-		    } catch (IOException e) {
-			Logger.println("Unable to record:  " + e.getMessage());
-		    }
-		}
-
-		Timer timer = new Timer();
-
-		timer.schedule(new TimerTask() {
+	        timer.schedule(new TimerTask() {
                     public void run() {
-			Logger.logLevel = previousLogLevel;
-			Utils.setPreference("com.sun.mc.softphone.media.LOG_LEVEL", 
+		        Logger.logLevel = previousLogLevel;
+
+		        Utils.setPreference("com.sun.mc.softphone.media.LOG_LEVEL", 
 			    String.valueOf(previousLogLevel));
 
-			if (mediaManager != null) {
+		        if (mediaManager != null) {
 			    mediaManager.stopRecording(false);
-			}
-		    }}, 10000);
-
-                Logger.println("Stack trace: ");
-                Map st = Thread.getAllStackTraces();
-                for (Iterator i = st.entrySet().iterator(); i.hasNext();) {
-                    Map.Entry me = (Map.Entry) i.next();
-                    Thread t = (Thread) me.getKey();
-                    Logger.println("");
-                    Logger.println("Thread " + t.getName());
-                    
-                    StackTraceElement[] ste = (StackTraceElement[]) me.getValue();
-                    for (int c = 0; c < ste.length; c++) {
-                        StringBuffer outBuf = new StringBuffer("    ");
-                        outBuf.append(ste[c].getClassName() + ".");
-                        outBuf.append(ste[c].getMethodName() + "(");
-                        outBuf.append(ste[c].getFileName() + ":");
-                        outBuf.append(ste[c].getLineNumber() + ")");
-                    
-                        Logger.println(outBuf.toString());
-                    }
-                }
-                
-                continue;
-            }
-            
-	    if (mediaManager != null) {
-		if (s.indexOf("microphoneVolume=") >= 0) {
-		    try {
-			float volume = Float.parseFloat(s.substring(17));
-			mediaManager.setMicrophoneVolume(volume);
-		    } catch (NumberFormatException e) {
-			Logger.println("Invalid volume specified "
-			    + s + " " + e.getMessage());
-		    }
-		    continue;
-		} else if (s.indexOf("speakerVolume=") >= 0) {
-                    try {
-                        float volume = Float.parseFloat(s.substring(14));
-                        mediaManager.setSpeakerVolume(volume);
-                    } catch (NumberFormatException e) {
-                        Logger.println("Invalid volume specified "
-                            + s + " " + e.getMessage());
-                    }
-		    continue;
-                } else if (s.indexOf("Mute") == 0 || 
-		    s.indexOf("Unmute") == 0) {
-
-                    boolean mute = (s.indexOf("Mute") == 0);        
-
-		    if (mute) {
-			Logger.println("Softphone Muted");
-		    } else {
-			Logger.println("Softphone Unmuted");
-		    }
-
-                    if (mediaManager.isMuted() != mute) {
-                        mediaManager.mute(mute);
-                        
-                        if (guiManager != null) {
-                            guiManager.muted(mediaManager.isMuted());
-                        }
-                    }
-                    continue;
-                }
+		        }
+		}}, 10000);
 	    }
 
-	    Logger.println("Unrecognized command:  " + s);
+            Logger.println("Stack trace: ");
+            Map st = Thread.getAllStackTraces();
+            for (Iterator i = st.entrySet().iterator(); i.hasNext();) {
+                Map.Entry me = (Map.Entry) i.next();
+                Thread t = (Thread) me.getKey();
+                Logger.println("");
+                Logger.println("Thread " + t.getName());
+                    
+                StackTraceElement[] ste = (StackTraceElement[]) me.getValue();
+                for (int c = 0; c < ste.length; c++) {
+                    StringBuffer outBuf = new StringBuffer("    ");
+                    outBuf.append(ste[c].getClassName() + ".");
+                    outBuf.append(ste[c].getMethodName() + "(");
+                    outBuf.append(ste[c].getFileName() + ":");
+                    outBuf.append(ste[c].getLineNumber() + ")");
+                    
+                    Logger.println(outBuf.toString());
+                }
+            }
+                
+            return;
+        }
+            
+	if (mediaManager != null) {
+	    if (command.indexOf("microphoneVolume=") >= 0) {
+		try {
+		    float volume = Float.parseFloat(command.substring(17));
+		    mediaManager.setMicrophoneVolume(volume);
+		} catch (NumberFormatException e) {
+		    Logger.println("Invalid volume specified "
+			+ command + " " + e.getMessage());
+		}
+		return;
+	    } else if (command.indexOf("speakerVolume=") >= 0) {
+                try {
+                    float volume = Float.parseFloat(command.substring(14));
+                    mediaManager.setSpeakerVolume(volume);
+                } catch (NumberFormatException e) {
+                    Logger.println("Invalid volume specified "
+                        + command + " " + e.getMessage());
+                }
+		return;
+            } else if (command.indexOf("Mute") == 0 || 
+		command.indexOf("Unmute") == 0) {
+
+                boolean mute = (command.indexOf("Mute") == 0);        
+
+		if (mute) {
+		    Logger.println("Softphone Muted");
+		} else {
+		    Logger.println("Softphone Unmuted");
+		}
+
+                if (mediaManager.isMuted() != mute) {
+                    mediaManager.mute(mute);
+                        
+                    if (guiManager != null) {
+                        guiManager.muted(mediaManager.isMuted());
+                    }
+                }
+                return;
+            }
 	}
+
+	Logger.println("Unrecognized command:  " + command);
     }
     
     public void launch() {
@@ -799,13 +767,13 @@ public class SipCommunicator extends Thread implements
 	    if (Utils.getPreference("com.sun.mc.stun.STUN_SERVER") ==
 		    null) {
 
-		String registrarAddress = SipManager.getRegistrarAddress();
+		String registrarAddress = sipManager.getRegistrarAddress();
 
 		if (registrarAddress != null) {
 	            System.setProperty(
 			"com.sun.mc.stun.STUN_SERVER", registrarAddress);
 		    
-		    int registrarPort = SipManager.getRegistrarPort();
+		    int registrarPort = sipManager.getRegistrarPort();
 
                     System.setProperty(
 			"com.sun.mc.stun.STUN_SERVER_PORT",
@@ -813,19 +781,24 @@ public class SipCommunicator extends Thread implements
 		}
 	    }
 
-            InetAddress localhost = NetworkAddressManager.getPrivateLocalHost();
+            //InetAddress localhost = NetworkAddressManager.getPrivateLocalHost();
 
-            String stackAddress = localhost.getHostAddress();
+            //String stackAddress = localhost.getHostAddress();
             //Add the host address to the properties that will pass the stack
 
-	    if (Logger.logLevel >= Logger.LOG_MOREINFO) {
-                Logger.println("Softphone setting stack address to " 
-		    + stackAddress);
-	    }
+	    //if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+            //    Logger.println("Softphone setting stack address to " 
+	    //	    + stackAddress);
+	    //}
 
-            Utils.setProperty("javax.sip.IP_ADDRESS", stackAddress);
+            //Utils.setProperty("javax.sip.IP_ADDRESS", stackAddress);
 
 	    //Logger.println("Setting SIP Stack address to " + stackAddress);
+
+	    /*
+	     * The listening point specifies the address rather than the property
+	     */
+            System.clearProperty("javax.sip.IP_ADDRESS");
 
             initDebugTool();
 
@@ -860,8 +833,8 @@ public class SipCommunicator extends Thread implements
                     + "This is a warning only. The phone would still function",
                     exc);
             }
-	} catch (IOException e) {
-	    Logger.println("Unable to determine local host!");
+	//} catch (IOException e) {
+	//    Logger.println("Unable to determine local host!");
         } finally {
             console.logExit();
         }
@@ -871,47 +844,18 @@ public class SipCommunicator extends Thread implements
         // load the toolkit?
         java.awt.Toolkit toolkit = java.awt.Toolkit.getDefaultToolkit();
             
-	for (int i = 0; i < args.length; i++) {
-	    arguments += args[i] + " ";
+	try {
+            SipCommunicator sipCommunicator = new SipCommunicator(args);
+	} catch (ParseException e) {
+	    usage();
+	    System.exit(1);
 	}
-
-        try {
-            console.logEntry();
-            if (args.length == 1 && args[0].length() > 0 &&
-                    !args[0].startsWith("-"))
-            {
-                // work with older mc versions
-                userName = args[0];
-                
-                // called from mc
-                setFromMC(true);
-                setShowGUI(false);
-                setLoadGen(false);
-                setAutoAnswer(true);
-            } else {
-                try {
-                    parseArgs(args);
-                } catch (IOException e) {
-		    Logger.println("Arguments:  " + arguments);
-                    usage();
-                }
-            }
-            
-            SipCommunicator sipCommunicator = 
-		new SipCommunicator(userName, encryptionKey, 
-                                    encryptionAlgorithm);
-	} catch (IOException e) {
-	    Logger.println("Unable to start the communicator: " + e.getMessage());
-        } finally {
-            console.logExit();
-        }
     }
 
     private static void usage() {
 	Logger.println("java SipCommunicator ");
 	Logger.println("                     [-a <encryption algorithm>]");
         Logger.println("                     [-answer > automatically answer incoming calls]");
-        Logger.println("                     [-channels <audio channels> > specify # of channels]");
 	Logger.println("                     [-k <encryption key>]");
         Logger.println("                     [-loadGen > run as load generator]");
         Logger.println("                     [-mc > launched from Meeting Central]");
@@ -926,17 +870,13 @@ public class SipCommunicator extends Thread implements
         Logger.println("                     [-phoneNumber <phoneNumber for load generator>]");
         //Logger.println("                     [-playTreatment <treatment>[:<duty cycle %>]]");
         Logger.println("                     [-r <registrar> > specify the registrar address");
-        Logger.println("                     [-sampleRate <sampleRate> > specify the sampleRate");
         Logger.println("                     [-silent > don't open the mic/speaker]");
         Logger.println("                     [-stun <server:port> > specify the stun server address");
         Logger.println("                     [-t <registrar timeout> specify the registrar timeout seconds");
-        Logger.println("                     [-transmitChannels <channels> specify the xmit channels");
-        Logger.println("                     [-transmitSampleRate <sampleRate> specify the xmit rate");
 	Logger.println("                     [-u <user name>]");
-	System.exit(1);
     }
 
-    private static void parseArgs(String[] args) throws IOException {
+    private void parseArgs(String[] args) throws ParseException {
 	for (int i = 0; i < args.length; i++) {
 	    //Logger.println("arg " + i + " " + args[i]);
 
@@ -946,14 +886,12 @@ public class SipCommunicator extends Thread implements
 	        encryptionKey = args[++i];
 	    } else if (args[i].equalsIgnoreCase("-a") && i < (args.length - 1)) {
 		encryptionAlgorithm = args[++i];
-	    } else if (args[i].equalsIgnoreCase("-channels") && i < (args.length - 1)) {
-            	Utils.setPreference("com.sun.mc.softphone.media.CHANNELS",
-		    args[++i]);
 	    } else if (args[i].equalsIgnoreCase("-loadGen")) {
                 setLoadGen(true);
                 setOpenAudio(false);
                 setShowGUI(false);
                 setFromMC(false);
+                setAutoAnswer(true);
             } else if (args[i].equalsIgnoreCase("-autoLogin")) {
 		setAutoLogin(true);
             } else if (args[i].equalsIgnoreCase("-gui")) {
@@ -975,6 +913,7 @@ public class SipCommunicator extends Thread implements
                 setShowGUI(false);
                 setLoadGen(false);
                 setAutoAnswer(true);
+		setAutoLogin(true);
             } else if (args[i].equalsIgnoreCase("-answer")) {
                 setAutoAnswer(true);
             } else if (args[i].equalsIgnoreCase("-meetingCode") && i < args.length - 1) {
@@ -1024,10 +963,12 @@ public class SipCommunicator extends Thread implements
             } else if (args[i].equalsIgnoreCase("-r") && 
 		    i < (args.length - 1)) {
 
-		String tokens[] = args[++i].split(":");
+		registrarAddress = args[++i];
+
+		String tokens[] = registrarAddress.split(":");
 
 		if (tokens.length < 2) {
-		    throw new IOException("Invalid registrar:  " + args[i]);
+		    throw new ParseException("Invalid registrar:  " + args[i], 0);
 		}
 
 		String s = tokens[0];
@@ -1047,8 +988,8 @@ public class SipCommunicator extends Thread implements
 		    ia = InetAddress.getByName(s);
 		} catch (UnknownHostException e) {
 		    Logger.println("Unknown host: " + s);
-		    throw new IOException("Invalid registrar:  " 
-			+ e.getMessage());
+		    throw new ParseException("Invalid registrar:  " 
+			+ e.getMessage(), 0);
 		}
 
 		String registrar = ia.getHostAddress();
@@ -1066,8 +1007,6 @@ public class SipCommunicator extends Thread implements
 	
 		System.setProperty("com.sun.mc.softphone.sip.REGISTRAR_UDP_PORT",
 		    tokens[1]);
-	    } else if (args[i].equalsIgnoreCase("-sampleRate") && i < (args.length - 1)) {
-		Utils.setPreference("com.sun.mc.softphone.media.SAMPLE_RATE", args[++i]);
             } else if (args[i].equalsIgnoreCase("-stun") && 
 		    i < (args.length - 1)) {
 
@@ -1079,8 +1018,8 @@ public class SipCommunicator extends Thread implements
                     ia = InetAddress.getByName(tokens[0]);
                 } catch (UnknownHostException e) {
                     Logger.println("Unknown host: " + tokens[0]);
-                    throw new IOException("Invalid registrar:  "
-                        + e.getMessage());
+                    throw new ParseException("Invalid stun server:  "
+                        + e.getMessage(), 0);
                 }
 
 		String stunServer = ia.getHostAddress();
@@ -1112,15 +1051,11 @@ public class SipCommunicator extends Thread implements
 			"com.sun.mc.softphone.sip.WAIT_UNREGISTGRATION_FOR",
 			String.valueOf(registrarTimeout));
 		} catch (NumberFormatException e) {
-		    throw new IOException("Invalid registrar timeout:  "
-			+ e.getMessage());
+		    throw new ParseException("Invalid registrar timeout:  "
+			+ e.getMessage(), 0);
 		}
-	    } else if (args[i].equalsIgnoreCase("-transmitSampleRate") && i < (args.length - 1)) {
-		Utils.setPreference("com.sun.mc.softphone.media.TRANSMIT_SAMPLE_RATE", args[++i]);
-	    } else if (args[i].equalsIgnoreCase("-transmitChannels") && i < (args.length - 1)) {
-		Utils.setPreference("com.sun.mc.softphone.media.TRANSMIT_CHANNELS", args[++i]);
             } else {
-	        throw new IOException("Invalid arguments");
+	        throw new ParseException("Invalid arguments", 0);
 	    }
 	}
     }
@@ -1350,12 +1285,6 @@ public class SipCommunicator extends Thread implements
     }
 
     public void handleExitRequest() {
-    //	if (standAlone == false && loadGen == false) {
-    //	    guiManager.showPhoneFrame(false);
-    //	    Logger.println("Softphone is hidden");
-    //	    return;
-    //	}
-
 	if (!showGUI() && callInProgressInterlocutor != null) {
     	    guiManager.showPhoneFrame(false);
     	    Logger.println("Softphone is hidden");
@@ -1366,19 +1295,16 @@ public class SipCommunicator extends Thread implements
         shutDown();
     }
 
-    public static void endAllCalls() {
-	if (sipCommunicator == null) {
-	    return;
-	}
-
-	sipCommunicator.endCalls();
-    }
-
     public void endCalls() {
         //close all sip calls
         try {
-	    mediaManager.stopPlayingAllFiles();
-            sipManager.endAllCalls();
+	    if (mediaManager != null) {
+	        mediaManager.stopPlayingAllFiles();
+	    }
+
+	    if (sipManager != null) {
+                sipManager.endAllCalls();
+	    }
         } catch (CommunicationsException exc) {
             console.showException(
                 "Could not properly terminate all calls!\n", exc);
@@ -1662,7 +1588,7 @@ public class SipCommunicator extends Thread implements
 		}
 
 	        if (autoAnswer) {
-		    if (!loadGen() && callInProgressInterlocutor != null) {
+		    if (callInProgressInterlocutor != null) {
                         /*
 			 * There is already a call in progress.
 			 * End that call and wait until it's disconnected
@@ -1704,62 +1630,21 @@ public class SipCommunicator extends Thread implements
 		    Logger.println("Setting remote sdp...");
 		}
 
-                if (loadGen) {
-                    // create a new media manager
-                    MediaManager mm = MediaManagerFactory.getInstance(false);
-                    
-                    try {
-                        // start the media manager
-                        mm.initialize(encryptionKey, encryptionAlgorithm, true);
-			mm.mute(mute);
-                        mm.setRemoteSdpData(call.getRemoteSdpDescription());
+                try {
+                    //mediaManager.setRemoteSdpData(call.getRemoteSdpDescription());
 
-			if (nCalls == 0 || meetingCode == null) {
-                            mm.generateSdp(true);
-			} 
-                        mm.start();
-                                  
-                        // associate it with the call
-                        mediaManagers.put(new Integer(call.getID()), mm);
+		    synchronized (mediaManager) {
+                        mediaManager.start();
+		    }
+                } catch (IOException ex) {
+                    console.showError(
+                        "The following exception occurred while trying to open media connection:\n"
+                        + ex.getMessage());
 
-                        if (nCalls > 0 && meetingCode != null) {
-			    String s = meetingCode + "#";
-
-                            if (passCode != null) {
-				s += passCode;
-			    }
-
-			    s += "#";
-
-                            mm.startDtmf(s);
-                        }
-                    } catch (IOException e) {
-                        console.showError("The following exception occurred " +
-                            "while trying to open media connection:\n"
-                            + e.getMessage());
-
-			Logger.println("Unable to start media manager:  " + e.getMessage());
-                    }
-                } else {
-                    try {
-                        mediaManager.setRemoteSdpData(call.getRemoteSdpDescription());
-
-			synchronized (mediaManager) {
-                            mediaManager.start();
-			}
-                    } catch (IOException e) {
-			Logger.println("Unable to start media manager:  " + e.getMessage());
-
-			if (callInProgressInterlocutor != null) {
-			    int callId = callInProgressInterlocutor.getID();
-
-			    try {
-			        sipManager.endCall(callId);
-			    } catch (CommunicationsException ex) {
-				Logger.println("Unable to end call " + callId + " " + ex.getMessage());
-			    }
-			}
-                    }
+		    if (Logger.logLevel >= Logger.LOG_INFO) {
+                        ex.printStackTrace();
+		    }
+		}
 //You better not send an error response. User would terminate call if they wish so.
 //                try {
 //                    sipManager.sendServerInternalError(call.getID());
@@ -1768,28 +1653,12 @@ public class SipCommunicator extends Thread implements
 //                    console.println("Failed to send an error response. " + ex1.getMessage());
 //                }
 //		  shutDown();
-                }
             } else if (evt.getNewState() == Call.DISCONNECTED) {
-		if (loadGen) {
-                    // shut down the media manager associated with this call
-                    Integer id = new Integer(evt.getSourceCall().getID());
-                    MediaManager mm = (MediaManager) mediaManagers.remove(id);
-                    if (mm != null) {
-                        try {
-                            mm.stop();
-                        } catch(IOException ioe) {
-                            console.showError("Error stopping media manager: " +
-                                    ioe);
-                            ioe.printStackTrace();
-                        }
-                    }
-                } else {
-                    // restart the global media manager
-                    try {
-                        mediaManager.restart();
-                    } catch (IOException e) {
-                        console.error("Failed to stop mediaManager " + e.getMessage());
-                    }
+                // restart the global media manager
+                try {
+                    mediaManager.restart();
+                } catch (IOException e) {
+                    console.error("Failed to stop mediaManager " + e.getMessage());
                 }
 
 	        callInProgressInterlocutor = null;
@@ -1862,15 +1731,14 @@ public class SipCommunicator extends Thread implements
                                                  defaultValues.getPassword());
 
 		if (guiManager.getUserName() != null) {
-		    Utils.setAuthenticationUserName(guiManager.getAuthenticationUserName());
-		    Utils.setUserName(guiManager.getUserName());
+		    authenticationUserName = guiManager.getAuthenticationUserName();
+		    userName = guiManager.getUserName();
 
                     credentials.setUserName(guiManager.getUserName());
                     credentials.setAuthenticationUserName(guiManager.getAuthenticationUserName());
                     credentials.setPassword(guiManager.getAuthenticationPassword());
 		} else {
-                    String user = Utils.getUserName();
-                    String authenticationUser = Utils.getAuthenticationUserName();
+                    String authenticationUser = utils.getAuthenticationUserName();
 
                     String pass = Utils.getProperty("com.sun.mc.softphone.sip.PASSWORD");
                     char[] password = null;
@@ -1881,9 +1749,10 @@ public class SipCommunicator extends Thread implements
                         password = pass.toCharArray();
             	    }
 
-		    Utils.setProperty("user.name", user);
-                    //Logger.println("obtainCredentials: "+user+"/"+pass);
-                    credentials.setUserName(user);
+		    String userName = utils.getUserName();
+
+		    Utils.setProperty("user.name", userName);
+                    credentials.setUserName(userName);
                     credentials.setAuthenticationUserName(authenticationUser);
                     credentials.setPassword(password);
 		}
@@ -1940,7 +1809,7 @@ public class SipCommunicator extends Thread implements
     /*
      * This is called when a user changes the media settings
      */
-    public static void mediaChanged() {
+    public void mediaChanged() {
 	if (mediaManager == null) {
 	    return;
 	}
@@ -1957,83 +1826,95 @@ public class SipCommunicator extends Thread implements
 	mediaManager.mediaChanged(encoding, sampleRate, channels, true);
     }
     
-    public static void setRemoteSdpData(String sdp) {
+    public void setRemoteSdpData(String sdp) {
 	mediaManager.setRemoteSdpData(sdp);
     }
 
-    public static void setAutoLogin(boolean autoLogin) {
-	SipCommunicator.autoLogin = autoLogin;
+    public void setAutoLogin(boolean autoLogin) {
+	this.autoLogin = autoLogin;
     }
 
-    public static boolean autoLogin() {
+    public boolean autoLogin() {
 	return autoLogin;
     }
 
-    public static void setShowGUI(boolean showGUI) {
-        SipCommunicator.showGUI = showGUI;
+    public void setShowGUI(boolean showGUI) {
+        this.showGUI = showGUI;
     }
     
-    public static boolean showGUI() {
+    public boolean showGUI() {
 	return showGUI;
     }
     
-    public static void setOpenAudio(boolean openAudio) {
-        SipCommunicator.openAudio = openAudio;
+    public void setUserName(String userName) {
+	this.userName = userName;
+    }
+
+    public String getUserName() {
+	return utils.getUserName();
+    }
+
+    public String getAuthenticationUserName() {
+	return utils.getAuthenticationUserName();
+    }
+
+    public void setOpenAudio(boolean openAudio) {
+        this.openAudio = openAudio;
     }
     
-    public static boolean openAudio() {
+    public boolean openAudio() {
         return openAudio;
     }
 
-    public static void setAutoAnswer(boolean autoAnswer) {
-        SipCommunicator.autoAnswer = autoAnswer;
+    public void setAutoAnswer(boolean autoAnswer) {
+        this.autoAnswer = autoAnswer;
     }
     
-    public static boolean autoAnswer() {
+    public boolean autoAnswer() {
         return autoAnswer;
     }
     
-    public static void setLoadGen(boolean loadGen) {
-        SipCommunicator.loadGen = loadGen;
+    public void setLoadGen(boolean loadGen) {
+        this.loadGen = loadGen;
     }
     
-    public static void setMeetingCode(String meetingCode) {
-	SipCommunicator.meetingCode = meetingCode;
+    public void setMeetingCode(String meetingCode) {
+	this.meetingCode = meetingCode;
     }
 
-    public static void setMute() {
-	SipCommunicator.mute = true;
+    public void setMute() {
+	this.mute = true;
     }
 
-    public static void setNCalls(int nCalls) {
-	SipCommunicator.nCalls = nCalls;
+    public void setNCalls(int nCalls) {
+	this.nCalls = nCalls;
     }
 
-    public static void setPassCode(String passCode) {
-	SipCommunicator.passCode = passCode;
+    public void setPassCode(String passCode) {
+	this.passCode = passCode;
     }
 
-    public static void setPhoneNumber(String phoneNumber) {
-	SipCommunicator.phoneNumber = phoneNumber;
+    public void setPhoneNumber(String phoneNumber) {
+	this.phoneNumber = phoneNumber;
     }
 
-    public static void setTreatment(String treatment) {
-	SipCommunicator.treatment = treatment;
+    public void setTreatment(String treatment) {
+	this.treatment = treatment;
     }
 
-    public static void setDutyCycle(int dutyCycle) {
-	SipCommunicator.dutyCycle = dutyCycle;
+    public void setDutyCycle(int dutyCycle) {
+	this.dutyCycle = dutyCycle;
     }
 
-    public static boolean loadGen() {
+    public boolean loadGen() {
         return loadGen;
     }
 
-    public static void setFromMC(boolean fromMC) {
-        SipCommunicator.fromMC = fromMC;
+    public void setFromMC(boolean fromMC) {
+        this.fromMC = fromMC;
     }
     
-    public static boolean fromMC() {
+    public boolean fromMC() {
         return fromMC;
     }
     

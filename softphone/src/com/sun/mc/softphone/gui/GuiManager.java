@@ -413,9 +413,9 @@ public class GuiManager implements GuiManagerUI, GuiCallback {
 	/*
 	 * If the communicator is running standalone, leave the phone number as is.
 	 */
-	if (!SipCommunicator.fromMC()) {
-	    return phoneNumber;
-	}
+	//if (!SipCommunicator.fromMC()) {
+	//    return phoneNumber;
+	//}
 
 	
         /*

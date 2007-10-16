@@ -546,7 +546,6 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	    throw new IOException("register exception!  " + e.getMessage());
 	}
 
-
 	selectionKey.attach(this);
 	return selectionKey;
     }   

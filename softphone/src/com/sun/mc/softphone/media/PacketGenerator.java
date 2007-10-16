@@ -46,8 +46,8 @@ import com.sun.mc.softphone.common.Utils;
 
 public class PacketGenerator {
 
-    public static int AU_ULAW_ENCODING = 1;
-    public static int AU_LINEAR_ENCODING = 3;
+    public static final int AU_ULAW_ENCODING = 1;
+    public static final int AU_LINEAR_ENCODING = 3;
 
     private String path;
 

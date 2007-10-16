@@ -64,7 +64,7 @@ public class DefaultSpatializer implements Spatializer {
 	    }
 	}
 
-	logger.info("Maximum volume " + maximumVolume);
+	logger.fine("Maximum volume " + maximumVolume);
 
 	s = System.getProperty(FALLOFF);
 

@@ -29,6 +29,7 @@ import com.sun.mpk20.voicelib.app.ManagedCallStatusListener;
 import com.sun.mpk20.voicelib.app.Spatializer;
 import com.sun.mpk20.voicelib.app.DefaultSpatializer;
 import com.sun.mpk20.voicelib.app.VoiceManager;
+import com.sun.mpk20.voicelib.app.VoiceManagerParameters;
 
 import java.awt.geom.Line2D;
 
@@ -65,9 +66,13 @@ public class VoiceManagerImpl implements VoiceManager {
 
     private DefaultSpatializer defaultSpatializer;
 
+    private DefaultSpatializer livePlayerSpatializer;
+
     private ConcurrentHashMap<String, Player> players = new ConcurrentHashMap<String, Player>();
 
     private static final double ZERO_VOLUME = .009;
+
+    private static final double LIVE_PLAYER_FALLOFF = .94;
 
     /**
      * @param backingManager the <code>VoiceManager</code> to call through to
@@ -76,6 +81,21 @@ public class VoiceManagerImpl implements VoiceManager {
         this.backingManager = backingManager;
 
 	defaultSpatializer = new DefaultSpatializer();
+
+	livePlayerSpatializer = new DefaultSpatializer();
+
+	livePlayerSpatializer.setFallOff(LIVE_PLAYER_FALLOFF);
+
+	//String s = System.getProperty("voicelib.tunerEnabled");
+	//
+	//if (s != null && s.equalsIgnoreCase("true")) {
+	//    try {
+	//        new VoiceManagerDialog(this);
+	//    } catch (Throwable t) {
+	//	logger.info("Unable to start VoiceManagerDialog: "
+	//	    + t.getMessage());
+	//    }
+	//}
     }
 
     public void monitorConference(String conferenceId) throws IOException {
@@ -123,7 +143,11 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
 
 	if (p.spatializer == null) {
-	    p.spatializer = defaultSpatializer;
+	    if (cp.getInputTreatment() == null) {
+	        p.spatializer = livePlayerSpatializer;
+	    } else {
+	        p.spatializer = defaultSpatializer;
+	    }
 	}
 
 	players.put(callId, p);
@@ -250,12 +274,36 @@ public class VoiceManagerImpl implements VoiceManager {
 	setPrivateMixes();
     }
 
+    public void playTreatmentToCall(String callId, String treatment) 
+	    throws IOException {
+
+	backingManager.playTreatmentToCall(callId, treatment);
+    }
+
+    public void pauseTreatmentToCall(String callId, String treatment) 
+	    throws IOException {
+
+	backingManager.pauseTreatmentToCall(callId, treatment);
+    }
+
+    public void stopTreatmentToCall(String callId, String treatment) 
+	    throws IOException {
+
+	backingManager.stopTreatmentToCall(callId, treatment);
+    }
+
     public void endCall(String callId) throws IOException {
 	logger.finer("call ending:  " + callId);
 
 	players.remove(callId);
 
 	backingManager.endCall(callId);
+    }
+
+    public void disconnectCall(String callId) throws IOException {
+	logger.finer("call disconnecting:  " + callId);
+
+	backingManager.disconnectCall(callId);
     }
 
     public void muteCall(String callId, boolean isMuted) throws IOException {
@@ -512,7 +560,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    if (privateMixParameters[3] == 0) {
 		if (p1.isInRange(p2) == false) {
 		    if ((count % 100) == 0 || logger.isLoggable(Level.FINEST)) {
-	    	        logger.info("pmx for " + p1 + ": " + p2 
+	    	        logger.fine("pmx for " + p1 + ": " + p2 
 			    + " already out of range."); 
 		    }
 
@@ -523,7 +571,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		    return;
 	        }
 
-	    	logger.info("pmx for " + p1.callId + ": "
+	    	logger.fine("pmx for " + p1.callId + ": "
 	            + p2.callId + " no longer in range."); 
 
 		p1.removePlayerInRange(p2);   // p2 is not in range any more
@@ -534,7 +582,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		}
 
 		if (p1.isInRange(p2) == false) {
-	    	    logger.info("pmx for " + p1.callId + ": "
+	    	    logger.fine("pmx for " + p1.callId + ": "
 	                + p2.callId + " setting in range."); 
 
 		    p1.addPlayerInRange(p2);  // p2 is in range now
@@ -566,6 +614,51 @@ public class VoiceManagerImpl implements VoiceManager {
 	logger.finest("VoiceManager:  callStatusListener added");
 
 	backingManager.addCallStatusListener(mcsl);
+    }
+
+    public void setParameters(VoiceManagerParameters parameters) {
+	logger.info("livePlayerFalloff set to " + parameters.livePlayerFalloff
+	    + " defaultFalloff set to " + parameters.defaultFalloff
+	    + " livePlayerFullVolumeRadius set to " 
+	    + parameters.livePlayerFullVolumeRadius 
+	    + " livePlayerZeroVolumeRadius set to "
+	    + parameters.livePlayerZeroVolumeRadius
+	    + " defaultFullVolumeRadius set to " 
+	    + parameters.defaultFullVolumeRadius 
+	    + " defaultZeroVolumeRadius set to "
+	    + parameters.defaultZeroVolumeRadius);
+
+	livePlayerSpatializer.setFallOff(parameters.livePlayerFalloff);
+	defaultSpatializer.setFallOff(parameters.defaultFalloff);
+	livePlayerSpatializer.setFullVolumeRadius(
+	    parameters.livePlayerFullVolumeRadius);
+	livePlayerSpatializer.setZeroVolumeRadius(
+	    parameters.livePlayerZeroVolumeRadius);
+	defaultSpatializer.setFullVolumeRadius(
+	    parameters.defaultFullVolumeRadius);
+	defaultSpatializer.setZeroVolumeRadius(
+	    parameters.defaultZeroVolumeRadius);
+
+	/*
+	 * Reset all private mixes
+	 */
+	try {
+	    setPrivateMixes();
+	} catch (IOException e) {
+	    logger.info("Unable to setPrivateMixes!  " + e.getMessage());
+	}
+    }
+
+    public VoiceManagerParameters getParameters() {
+	VoiceManagerParameters parameters = new VoiceManagerParameters(
+	    livePlayerSpatializer.getFallOff(),
+	    defaultSpatializer.getFallOff(),
+	    livePlayerSpatializer.getFullVolumeRadius(),
+	    livePlayerSpatializer.getZeroVolumeRadius(),
+	    defaultSpatializer.getFullVolumeRadius(),
+	    defaultSpatializer.getZeroVolumeRadius());
+
+	return parameters;
     }
 
     public double round(double v) {

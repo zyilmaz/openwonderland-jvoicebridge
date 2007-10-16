@@ -541,7 +541,7 @@ public class NewGuiManager implements GuiManagerUI, GuiCallback,
 	/*
 	 * If the communicator is running standalone, leave the phone number as is.
 	 */
-	if (!SipCommunicator.fromMC()) {
+	if (!SipCommunicator.getInstance().fromMC()) {
 	    return callee;
 	}
 	

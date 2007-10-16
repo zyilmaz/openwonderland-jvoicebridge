@@ -143,18 +143,6 @@ public class Call {
 	return interlocutor;
     }
 
-    //SDP Data
-    void setRemoteSdpDescription(String data) {
-        if( console.isDebugEnabled() )
-            console.debug("setting remote description to [" + data + "]");
-        this.remoteSdpDescription = data;
-	SipCommunicator.setRemoteSdpData(data);
-    }
-
-    public String getRemoteSdpDescription() {
-        return remoteSdpDescription;
-    }
-
     void setState(String newStatus) {
         try {
             console.logEntry();
@@ -240,9 +228,7 @@ public class Call {
 
     public String toString() {
         return "[ Call " + getID()
-            + "\nfrom " + getRemoteName()+ "@" + getAddress()
-            + "\nSDP:" + getRemoteSdpDescription()
-            + "]";
+            + "\nfrom " + getRemoteName()+ "@" + getAddress() + "]";
     }
 
 //====================== EVENTS ===========================

@@ -671,7 +671,7 @@ public class MediaConfigurationDialog extends JDialog {
                         "com.sun.mc.softphone.media.TRANSMIT_ENCODING",
                         transmitEncoding);
 
-		    SipCommunicator.mediaChanged();
+		    SipCommunicator.getInstance().mediaChanged();
 
 		    if (listener != null) {
 			listener.mediaConfigDone(true);

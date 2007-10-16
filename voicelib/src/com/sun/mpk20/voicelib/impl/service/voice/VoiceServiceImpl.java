@@ -48,8 +48,8 @@ import com.sun.mpk20.voicelib.app.ManagedCallStatusListener;
 import com.sun.mpk20.voicelib.app.Spatializer;
 import com.sun.mpk20.voicelib.app.DefaultSpatializer;
 
-//import com.sun.mpk20.voicelib.service.VoiceService;
 import com.sun.mpk20.voicelib.app.VoiceManager;
+import com.sun.mpk20.voicelib.app.VoiceManagerParameters;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -353,6 +353,34 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     public void restorePrivateMixes() throws IOException {
     }
 
+    public void playTreatmentToCall(String callId, String treatment) 
+	    throws IOException {
+
+	BridgeConnection bc = getBridgeConnection(callId);
+
+	bc.playTreatmentToCall(callId, treatment);
+    }
+
+    public void pauseTreatmentToCall(String callId, String treatment)
+	     throws IOException {
+
+	BridgeConnection bc = getBridgeConnection(callId);
+
+	bc.pauseTreatmentToCall(callId, treatment);
+    }
+
+    public void stopTreatmentToCall(String callId, String treatment)
+	     throws IOException {
+
+	BridgeConnection bc = getBridgeConnection(callId);
+
+	bc.stopTreatmentToCall(callId, treatment);
+    }
+
+    public void disconnectCall(String callId) throws IOException {
+	endCall(callId);
+    }
+
     public void endCall(String callId) throws IOException {
 	endCall(null, callId, true);
     }
@@ -571,6 +599,13 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
     public DefaultSpatializer getDefaultSpatializer() {
 	return null;
+    }
+
+    public void setParameters(VoiceManagerParameters parameters) {
+    }
+
+    public VoiceManagerParameters getParameters() {
+	return new VoiceManagerParameters();
     }
 
     public void addCallStatusListener(ManagedCallStatusListener mcsl) {
@@ -1183,7 +1218,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	for (int i = 0; i < workToDo.size(); i++) {
 	    Work work = workToDo.get(i);
 
-	    if (work.command == SETUPCALL) {
+	    switch (work.command) {
+	    case SETUPCALL:
 		if (work.cp.getPhoneNumber() != null) {
 		    logger.finer("VS:  Setting up call to "
 			+ work.cp.getPhoneNumber() + " on bridge " 
@@ -1209,7 +1245,9 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 		    logger.info("Unable to setup call:  " + e.getMessage()
 			+ " " + work.cp);
 		}
-	    } else if (work.command == SETPRIVATEMIX) {
+		break;
+
+	    case SETPRIVATEMIX:
                 logger.finest("commit setting private mix for"
                     + " source " + work.sourceCallId
                     + " target " + work.targetCallId
@@ -1223,44 +1261,47 @@ public class VoiceServiceImpl implements VoiceManager, Service,
                     privateMixMap.get(work.sourceCallId);
 
 		if (mixMap == null) {
-		    logger.info("No mixMap for " + work.sourceCallId);
-		} else {
-		    synchronized (bridgeConnections) {
-			/*
-			 * If there are no bridges up, there's no
-			 * need to process the private mix list.
-			 * We will retain the last private mixes set
-			 * and when a bridge comes up, apply them.
-			 */
-			for (BridgeConnection bc : bridgeConnections) {
-			    if (bc.isConnected()) {
-		    	        needToNotify = true;
-				break;
-			    }
-		        }
-		    }
+		    logger.fine("No mixMap for " + work.sourceCallId);
+		    break;
+		} 
 
-		    if (needToNotify == false) {
-			logger.info("No bridge available, not notifying mixMap");
-		    }
-
-		    Work w = mixMap.put(work.targetCallId, work);
-
-		    if (w != null) {
-		        logger.fine(w.sourceCallId + " Replacing pm for " 
-			    + w.targetCallId + " old " 
-			    + w.privateMixParameters[0] + ":"
-			    + w.privateMixParameters[1] + ":"
-			    + w.privateMixParameters[2] + ":"
-			    + w.privateMixParameters[3]
-			    + " new " 
-			    + work.privateMixParameters[0] + ":"
-			    + work.privateMixParameters[1] + ":"
-			    + work.privateMixParameters[2] + ":"
-			    + work.privateMixParameters[3]);
+		synchronized (bridgeConnections) {
+		    /*
+		     * If there are no bridges up, there's no
+		     * need to process the private mix list.
+		     * We will retain the last private mixes set
+		     * and when a bridge comes up, apply them.
+		     */
+		    for (BridgeConnection bc : bridgeConnections) {
+			if (bc.isConnected()) {
+		    	    needToNotify = true;
+			    break;
+			}
 		    }
 		}
-	    } else if (work.command == NEWINPUTTREATMENT) {
+
+		if (needToNotify == false) {
+		    logger.info("No bridge available, not notifying mixMap");
+		}
+
+		Work w = mixMap.put(work.targetCallId, work);
+
+		if (w != null) {
+		    logger.fine(w.sourceCallId + " Replacing pm for " 
+			+ w.targetCallId + " old " 
+			+ w.privateMixParameters[0] + ":"
+			+ w.privateMixParameters[1] + ":"
+			+ w.privateMixParameters[2] + ":"
+			+ w.privateMixParameters[3]
+			+ " new " 
+			+ work.privateMixParameters[0] + ":"
+			+ work.privateMixParameters[1] + ":"
+			+ work.privateMixParameters[2] + ":"
+			+ work.privateMixParameters[3]);
+		}
+		break;
+
+	    case NEWINPUTTREATMENT:
 		try {
 		    BridgeConnection bc = getBridgeConnection(
 			work.targetCallId, true);
@@ -1272,7 +1313,9 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 			+ work.treatment + " for " + work.targetCallId
 			+ " " + e.getMessage());
 	        }
-	    } else if (work.command == STOPINPUTTREATMENT) {
+		break;
+
+	    case STOPINPUTTREATMENT:
 		try {
 		    BridgeConnection bc = getBridgeConnection(
 			work.targetCallId);
@@ -1282,7 +1325,9 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 		    logger.warning("Unable to stop input treatment for "
 			+ work.targetCallId);
 		}
-	    } else if (work.command == RESTARTINPUTTREATMENT) {
+		break;
+
+	    case RESTARTINPUTTREATMENT:
 		try {
 		    BridgeConnection bc = getBridgeConnection(
 			work.targetCallId, true);
@@ -1292,6 +1337,10 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 		    logger.warning("Unable to restart input treatment for "
 			+ work.targetCallId + " " + e.getMessage());
 		}
+		break;
+
+	    default:
+		logger.warning("Unknown work command " + work.command);
 	    }
 	}
 

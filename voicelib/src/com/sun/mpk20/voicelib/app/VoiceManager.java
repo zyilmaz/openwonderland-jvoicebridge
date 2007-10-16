@@ -54,7 +54,18 @@ public interface VoiceManager {
 
     public void restartInputTreatment(String callId) throws IOException;
 
+    public void playTreatmentToCall(String callId, String treatment) 
+	throws IOException;
+
+    public void pauseTreatmentToCall(String callId, String treatment) 
+	throws IOException;
+
+    public void stopTreatmentToCall(String callId, String treatment) 
+	throws IOException;
+
     public void endCall(String callId) throws IOException;
+
+    public void disconnectCall(String callId) throws IOException;
 
     public void muteCall(String callId, boolean isMuted) throws IOException;
 
@@ -93,5 +104,9 @@ public interface VoiceManager {
 	double endX, double endY, double characteristic) throws IOException;
 
     public DefaultSpatializer getDefaultSpatializer();
+
+    public void setParameters(VoiceManagerParameters p);
+
+    public VoiceManagerParameters getParameters();
 
 }

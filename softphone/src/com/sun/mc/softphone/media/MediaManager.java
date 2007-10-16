@@ -23,6 +23,9 @@
 
 package com.sun.mc.softphone.media;
 
+import com.sun.mc.softphone.SipCommunicator;
+import com.sun.mc.softphone.sip.SipManager;
+
 import java.io.IOException;
 
 public interface MediaManager {
@@ -43,6 +46,10 @@ public interface MediaManager {
     public void mediaChanged(String encoding, int sampleRate, int channels,
                              boolean notifyRemote);
     
+    public void setSipCommunicator(SipCommunicator sipCommunicator);
+
+    public void setSipManager(SipManager sipManager);
+
     public void start() throws IOException;
     public boolean isStarted();
     public void restart() throws IOException;
