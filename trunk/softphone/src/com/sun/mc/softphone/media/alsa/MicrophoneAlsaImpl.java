@@ -52,7 +52,7 @@ public class MicrophoneAlsaImpl implements Microphone {
 
     private boolean done;
 
-    private static double volumeLevel = 1.0D;
+    private double volumeLevel = 1.0D;
     
     private AudioDriver audioDriver;
 

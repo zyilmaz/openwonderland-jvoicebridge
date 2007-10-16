@@ -116,7 +116,7 @@ public class LineTestConfig extends JFrame {
 		    return;
 		}
 
-		SipCommunicator.endAllCalls();
+		SipCommunicator.getInstance().endCalls();
 	    }
 
             startTest();

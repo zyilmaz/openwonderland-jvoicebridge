@@ -254,7 +254,7 @@ public class CallProcessing
 
 		String sdp = new String(ok.getRawContent());
 
-                call.setRemoteSdpDescription(sdp);
+                sipManCallback.setRemoteSdpDescription(sdp);
                 //change status
 
 	        if (Logger.logLevel >= Logger.LOG_MOREINFO) {
@@ -296,7 +296,7 @@ public class CallProcessing
             //listeners get alerted and they need the sdp
 	    String sdp = new String(response.getRawContent());
 
-            call.setRemoteSdpDescription(sdp);
+            sipManCallback.setRemoteSdpDescription(sdp);
             //change status
             if (!call.getState().equals(Call.CONNECTED)) {
                 call.setState(Call.CONNECTED);
@@ -434,7 +434,7 @@ public class CallProcessing
             ContentLengthHeader cl = invite.getContentLength();
             if (cl != null
                 && cl.getContentLength() > 0) {
-                call.setRemoteSdpDescription(new String(invite.getRawContent()));
+                sipManCallback.setRemoteSdpDescription(new String(invite.getRawContent()));
             }
 
             sipManCallback.fireCallReceived(call);
@@ -633,7 +633,7 @@ public class CallProcessing
             if (cl != null
                 && cl.getContentLength() > 0)
             {
-                call.setRemoteSdpDescription(new String(ackRequest.getRawContent()));
+                sipManCallback.setRemoteSdpDescription(new String(ackRequest.getRawContent()));
             }
             //change status
             call.setState(Call.CONNECTED);
@@ -844,13 +844,13 @@ public class CallProcessing
 
             callee = callee.trim();
             //Handle default domain name (i.e. transform 1234 -> 1234@sip.com
-            String domain = SipManager.getRegistrarAddress();
+            String domain = sipManCallback.getRegistrarAddress();
 
 	    if (domain == null) {
                 domain =
 		    Utils.getPreference("com.sun.mc.softphone.sip.DOMAIN_NAME");
 	    } else {
-		int port = SipManager.getRegistrarPort();
+		int port = sipManCallback.getRegistrarPort();
 
 		domain += ":" + port;
 	    }

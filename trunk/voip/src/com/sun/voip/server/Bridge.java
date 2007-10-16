@@ -416,7 +416,8 @@ public class Bridge {
 		}
 	    }
 	} catch (IOException e) {
-	    Logger.error("can't create server socket with port " + controlPort);
+	    Logger.error("can't create server socket with port " + controlPort
+		+ " " + e.getMessage());
 	    System.exit(-1);
 	}
     }

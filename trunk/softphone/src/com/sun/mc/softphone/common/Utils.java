@@ -91,12 +91,13 @@ public class Utils {
 
     private static boolean propertiesOverridePreferences = true;
 
-    private static String userName;
-    private static String authenticationUserName;
+    private String userName;
+    private String authUserName;
 
     private static boolean loadGen;
 
-    public static void initPreferences(String userName, boolean loadGen) {
+    public Utils(String userName, boolean loadGen) {
+	this.userName = userName;
 	Utils.loadGen = loadGen;
 
 	File logDir = null;
@@ -104,12 +105,13 @@ public class Utils {
         // first check if we need to look at system properties
         String s = System.getProperty(
 	    "com.sun.mc.softphone.sip.PROPERTIES_OVERRIDE_PREFERENCES", 
-	         "true");
+	    "true");
 	if (s.equalsIgnoreCase("false")) {
 	    propertiesOverridePreferences = false;
 	}
         
         String logPath = Utils.getPreference("com.sun.mc.softphone.SERVER_LOG");
+
         if (logPath != null) {
 	    logDir = new File(logPath);
 	}
@@ -131,24 +133,24 @@ public class Utils {
 
 	try {
             if (loadGen || logDir == null || logDir.isDirectory() == false) {
-	    	file = File.createTempFile("sipServer" + s , ".log");
+	    	file = File.createTempFile("sipServer" + s + "_", ".log");
 
                 System.setProperty("gov.nist.javax.sip.SERVER_LOG",
 		    file.getAbsolutePath());
 
-		file = File.createTempFile("sipCommunicator" + s , ".log");
+		file = File.createTempFile("sipCommunicator" + s + "_", ".log");
 
                 Logger.init(file.getAbsolutePath(), loadGen);
 	    } else {
-	    	String serverLog = 
-		    logPath + File.separator + "sipServer" + s + ".log";
+	    	file = File.createTempFile("sipServer" + s + "_", ".log", logDir);
 
-                System.setProperty("gov.nist.javax.sip.SERVER_LOG", serverLog);
+                System.setProperty("gov.nist.javax.sip.SERVER_LOG",
+		    file.getAbsolutePath());
 
-		String communicatorLog = 
-		    logPath + File.separator + "sipCommunicator" + s + ".log";
+		file = File.createTempFile("sipCommunicator" + s + "_", ".log", 
+		    logDir);
 
-                Logger.init(communicatorLog, loadGen);
+                Logger.init(file.getAbsolutePath(), loadGen);
 	    }
 	} catch (IOException e) {
 	    System.out.println("Unable to create temp file for log!");
@@ -184,7 +186,7 @@ public class Utils {
 	initAuthenticationUserName();
 
 	if (Logger.logLevel >= Logger.LOG_INFO) {
-	    Logger.println("authenticationUserName="+authenticationUserName);
+	    Logger.println("authenticationUserName="+authUserName);
 	}
 
 	/*
@@ -280,7 +282,7 @@ public class Utils {
 	
     }
 
-    private static void initPreference(String preference, String defaultValue) {
+    private void initPreference(String preference, String defaultValue) {
 	// first get the value
         String p = Utils.getPreference(preference);
         
@@ -600,7 +602,7 @@ if (false) {
 	}
     }
 
-    private static void initUserName(String userName) {
+    private void initUserName(String userName) {
         if (userName == null || userName.length() == 0) {
 	    userName = getPreference("com.sun.mc.softphone.sip.USER_NAME");
 
@@ -615,22 +617,22 @@ if (false) {
 
 	userName = cleanUserName(userName);
 
-	if (Utils.userName == null) {
+	if (this.userName == null) {
 	    initPreference("com.sun.mc.softphone.sip.USER_NAME", userName);
 	}
 
-	Utils.userName = userName;
+	this.userName = userName;
     }
 
-    public static String getUserName() {
+    public String getUserName() {
 	return userName;
     }
 
-    public static void setUserName(String userName) {
+    public void setUserName(String userName) {
 	userName = cleanUserName(userName);
 
 	setPreference("com.sun.mc.softphone.sip.USER_NAME", userName);
-	Utils.userName = userName;
+	this.userName = userName;
     }
 
     public static String cleanUserName(String userName) {
@@ -652,33 +654,34 @@ if (false) {
 	return userName;
     }
 
-    private static void initAuthenticationUserName() {
-	String userName = getPreference("com.sun.mc.softphone.sip.AUTHENTICATION_USER_NAME");
-	if (userName == null || "".equals(userName)) {
-            userName = Utils.userName;
+    private void initAuthenticationUserName() {
+	String authUserName = getPreference("com.sun.mc.softphone.sip.AUTHENTICATION_USER_NAME");
+
+	if (authUserName == null || authUserName.length() == 0) {
+            authUserName = userName;
         }
 
-	userName = cleanUserName(userName);
+	authUserName = cleanUserName(authUserName);
 
-	if (Utils.authenticationUserName == null) {
-	    initPreference("com.sun.mc.softphone.sip.AUTHENTICATION_USER_NAME", userName);
+	if (this.authUserName == null) {
+	    initPreference("com.sun.mc.softphone.sip.AUTHENTICATION_USER_NAME", authUserName);
 	}
 
-	Utils.authenticationUserName = userName;
+	this.authUserName = authUserName;
     }
 
-    public static String getAuthenticationUserName() {
-	return authenticationUserName;
+    public String getAuthenticationUserName() {
+	return authUserName;
     }
 
-    public static void setAuthenticationUserName(String userName) {
-	userName = cleanUserName(userName);
+    public void setAuthenticationUserName(String authUserName) {
+	authUserName = cleanUserName(authUserName);
 
-	setPreference("com.sun.mc.softphone.sip.AUTHENTICATION_USER_NAME", userName);
-	Utils.authenticationUserName = userName;
+	setPreference("com.sun.mc.softphone.sip.AUTHENTICATION_USER_NAME", authUserName);
+	this.authUserName = authUserName;
     }
 
-    private static boolean canWrite(String logFile) {
+    private boolean canWrite(String logFile) {
         File file = null;
  
         try {

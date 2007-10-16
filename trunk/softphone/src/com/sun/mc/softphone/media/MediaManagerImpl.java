@@ -72,6 +72,8 @@ import java.util.ArrayList;
 import java.util.prefs.Preferences;
 import java.util.Vector;
 
+import com.sun.mc.softphone.SipCommunicator;
+
 import com.sun.mc.softphone.common.*;
 
 import com.sun.mc.softphone.sip.SipManager;
@@ -131,6 +133,9 @@ public class MediaManagerImpl implements MediaManager {
     private int microphoneSampleRate;
     private int microphoneChannels;
 
+    private SipCommunicator sipCommunicator;
+    private SipManager sipManager;
+
     boolean started;
 
     public MediaManagerImpl() {
@@ -153,6 +158,14 @@ public class MediaManagerImpl implements MediaManager {
 	 */
         Utils.setPreference(
 	    "com.sun.mc.softphone.media.MONITOR_MICROPHONE", "false");
+    }
+
+    public void setSipCommunicator(SipCommunicator sipCommunicator) {
+        this.sipCommunicator = sipCommunicator;
+    }
+
+    public void setSipManager(SipManager sipManager) {
+        this.sipManager = sipManager;
     }
 
     private void initSdpManager() {
@@ -208,7 +221,6 @@ if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)112, RtpPacket.PCMU_ENCODING, 16000, 1, false));
 
-if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)113, RtpPacket.PCMU_ENCODING, 16000, 2, false));
 
@@ -218,6 +230,7 @@ if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)115, RtpPacket.PCMU_ENCODING, 32000, 2, false));
 
+if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)116, RtpPacket.PCMU_ENCODING, 44100, 1, false));
 
@@ -299,6 +312,8 @@ if (false) {
 	    speakerSampleRate = (int) DEFAULT_SAMPLE_RATE;
 	}
 	
+	Logger.println("Speaker sample rate:  " + speakerSampleRate);
+
         int speakerChannels = 
 	    Utils.getIntPreference("com.sun.mc.softphone.media.CHANNELS");
 
@@ -960,10 +975,14 @@ if (false) {
 	    rtpSocket.getDatagramSocket().getLocalAddress(),
 	    rtpSocket.getDatagramSocket().getLocalPort());
 
-	String registrarAddress = SipManager.getRegistrarAddress();
-	int registrarPort = SipManager.getRegistrarPort();
+	String registrarAddress = sipManager.getRegistrarAddress();
+	int registrarPort = sipManager.getRegistrarPort();
 
-	if (registrarAddress != null && SipManager.isRegistrarStunServer()) {
+	Logger.println("generateSdp:  registrarAddress " + registrarAddress
+	    + " port " + registrarPort + " is stun=" 
+	    + sipManager.isRegistrarStunServer());
+
+	if (registrarAddress != null && sipManager.isRegistrarStunServer()) {
 	    try {
 	        isa = NetworkAddressManager.getPublicAddressFor(
 		    new InetSocketAddress(registrarAddress, registrarPort), 
@@ -974,11 +993,15 @@ if (false) {
 	    }
 	}
 
-        if (Logger.logLevel >= Logger.LOG_MOREINFO) {
-            Logger.println("Our isa " + isa + " callee " + callee);
-        }
+        Logger.println("generateSdp:  Our isa " + isa + " callee " + callee);
 
-        return sdpManager.generateSdp(Utils.getUserName(), isa);
+	String ourSdp = sdpManager.generateSdp(sipCommunicator.getUserName(), isa);
+
+	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	    Logger.println("generateSdp:  Our sdp:  " + ourSdp);
+	}
+
+	return ourSdp;
     }
 
     public synchronized String generateSdp(boolean answer) throws IOException {
@@ -986,18 +1009,14 @@ if (false) {
 	    rtpSocket.getDatagramSocket().getLocalAddress(),
 	    rtpSocket.getDatagramSocket().getLocalPort());
 
-	String registrarAddress = SipManager.getRegistrarAddress();
-	int registrarPort = SipManager.getRegistrarPort();
-
-	if (registrarAddress != null && SipManager.isRegistrarStunServer()) {
-	    try {
-	        isa = NetworkAddressManager.getPublicAddressFor(
-		    new InetSocketAddress(registrarAddress, registrarPort), 
-		    rtpSocket.getDatagramSocket());
-	    } catch (IOException e) {
-	        Logger.println("generateSdp couldn't get public address "
-		    + e.getMessage());
-	    }
+	try {
+	    isa = NetworkAddressManager.getPublicAddressFor(
+	        new InetSocketAddress(remoteSdpInfo.getRemoteHost(), 
+		remoteSdpInfo.getRemotePort()), 
+	        rtpSocket.getDatagramSocket());
+	} catch (IOException e) {
+	    Logger.println("generateSdp couldn't get public address "
+		+ e.getMessage());
 	}
 
 	while (remoteSdpInfo == null) {
@@ -1017,17 +1036,21 @@ if (false) {
 	    }
 	}
 
-        if (Logger.logLevel >= Logger.LOG_MOREINFO) {
-	    Logger.println("Our isa " + isa);
-	}
+	Logger.println("generateSdp:  Our isa " + isa);
 
 	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
 	    Logger.println("remoteSdp " + remoteSdpInfo);
 	}
 
-	return sdpManager.generateSdp(Utils.getUserName(), isa, remoteSdpInfo);
-    }
+	String ourSdp = sdpManager.generateSdp(sipCommunicator.getUserName(), isa, 
+	    remoteSdpInfo);
 
+	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	    Logger.println("Our sdp:  " + ourSdp);
+	}
+
+	return ourSdp;
+    }
     private Vector callDoneListeners = new Vector();
 
     public void addCallDoneListener(CallDoneListener listener) {

@@ -66,6 +66,7 @@ import javax.sip.*;
 import javax.sip.address.*;
 import javax.sip.header.*;
 import javax.sip.message.*;
+import com.sun.mc.softphone.SipCommunicator;
 import com.sun.mc.softphone.common.*;
 import com.sun.mc.softphone.media.MediaManager;
 import com.sun.mc.softphone.sip.event.*;
@@ -157,7 +158,7 @@ public class SipManager
     /**
      * Used for the contact header to provide firewall support.
      */
-    private static InetSocketAddress publicIsa = null;
+    private InetSocketAddress publicIsa = null;
 
     private DelayedInviteProcessor delayedInviteProcessor = null;
 
@@ -174,7 +175,6 @@ public class SipManager
 
     //mandatory stack properties
     private String stackAddress = null;
-    private String stackName = "sip-communicator";
 
     //Prebuilt Message headers
     private FromHeader fromHeader = null;
@@ -185,9 +185,9 @@ public class SipManager
     private long registrationTransaction = -1;
     private ArrayList listeners = new ArrayList();
 
-    private static String registrarAddress = null;
-    private static int registrarPort = 5060;
-    private static boolean registrarIsStunServer;
+    private String registrarAddress = null;
+    private int registrarPort = 5060;
+    private boolean registrarIsStunServer;
 
     //XxxProcessing managers
     /**
@@ -216,71 +216,98 @@ public class SipManager
 
     private DatagramSocket socket;
 
-    boolean started;
+    private boolean started;
 
-    static {
-	/*
-	 * Set properties for the NIST SIP Stack.
-	 */
-	setRegistrarAddress();
-	setRegistrarPort();
+    private SipCommunicator sipCommunicator;
+
+    private MediaManager mediaManager;
+
+    private static int stackInstance = 0;
+
+    private static Object stackNameLock = new Object();
+
+    public SipManager(SipCommunicator sipCommunicator, 
+	    MediaManager mediaManager, String registrarAddress) {
+
+	this.sipCommunicator = sipCommunicator;
+	this.mediaManager = mediaManager;
+	this.registrarAddress = registrarAddress;
+
+	String stackName;
+
+	synchronized (stackNameLock) {
+	    stackName = "sip-Communicator." + stackInstance++;
+	}
+
+	System.setProperty("javax.sip.STACK_NAME", stackName);
+
+	Logger.forcePrintln("Stack name is " + stackName + " IP_ADDRESS "
+	    + System.getProperty("javax.sip.IP_ADDRESS"));
+
+	initRegistrarAddress();
+
+        registerProcessing  = new RegisterProcessing(this);
+        callProcessing      = new CallProcessing(this);
+        sipSecurityManager  = new SipSecurityManager();
     }
 
-    private static void setRegistrarAddress() {
-        String s = Utils.getPreference(
-            "com.sun.mc.softphone.sip.REGISTRAR_ADDRESS");
+    private void initRegistrarAddress() {
+	if (registrarAddress == null || registrarAddress.length() == 0) {
+            registrarAddress = Utils.getPreference(
+                "com.sun.mc.softphone.sip.REGISTRAR_ADDRESS");
 
-        if (s == null || s.length() == 0) {
-	    noStunRegistrar();
-	    return;
+            if (registrarAddress == null || registrarAddress.length() == 0) {
+	        noStunRegistrar();
+	        return;
+	    }
 	}
+
+        String registrarPort = Utils.getPreference(
+            "com.sun.mc.softphone.sip.REGISTRAR_UDP_PORT");
+
+        if (registrarPort != null && registrarPort.length() > 0) {
+	    try {
+		this.registrarPort = Integer.parseInt(registrarPort);
+	    } catch (NumberFormatException e) {
+		Logger.println("Invalid registrar port " + registrarPort
+		    + " defaulting to " + this.registrarPort);
+	    }
+	}
+
+	String s = registrarAddress;
 
         int ix = s.indexOf(";sip-stun");
 
 	if (ix < 0) {
 	    noStunRegistrar();
-	} else {
-	    s = s.substring(0, ix);
-	    registrarIsStunServer = true;
-	}
-
-	try {
-            registrarAddress = InetAddress.getByName(s).getHostAddress();
-	
-	    if (registrarIsStunServer) {
-		s += ";sip-stun";
-	    }
-
-	    System.setProperty(
-                "com.sun.mc.softphone.sip.REGISTRAR_ADDRESS", s);
-        } catch (UnknownHostException e) {
-            Logger.println("No Registrar:  Unable to resolve host " + s);
-	    noStunRegistrar();
-        }
-    }
-
-    private static void setRegistrarPort() {
-        String s = Utils.getPreference(
-	    "com.sun.mc.softphone.sip.REGISTRAR_UDP_PORT");
-
-        if (s == null || s.length() == 0) {
 	    return;
 	}
 
-	try {
-            registrarPort = Integer.parseInt(s);
-        } catch (NumberFormatException e) {
-            Logger.println("Invalid registrar port " + s
-                + ".  Defaulting to " + registrarPort);
+	registrarIsStunServer = true;
 
-	    s = String.valueOf(registrarPort);
+	s = s.substring(0, ix);
+
+	try {
+            registrarAddress = InetAddress.getByName(s).getHostAddress();
+        } catch (UnknownHostException e) {
+            Logger.println("No Registrar:  Unable to resolve host " + registrarAddress);
+	    noStunRegistrar();
+	    return;
         }
 
-	System.setProperty(
-	    "com.sun.mc.softphone.sip.REGISTRAR_UDP_PORT", s);
+	if ((ix = s.indexOf(":")) >= 0) {
+	    s = s.substring(ix + 1);
+
+	    try {
+		this.registrarPort = Integer.parseInt(s);
+	    } catch (NumberFormatException e) {
+		Logger.println("Invalid registrar port " + s
+		    + " defaulting to " + this.registrarPort);
+	    }
+	}
     }
 
-    private static void noStunRegistrar() {
+    private void noStunRegistrar() {
 	Logger.println("No STUN Registrar specified!");
         Logger.println("IF YOU ARE BEHIND A FIREWALL OR NAT,");
         Logger.println(
@@ -289,26 +316,15 @@ public class SipManager
             "AND THE REGISTRAR MUST ALSO BE A STUN SERVER!");
     }
 
-    /**
-     * Constructor. It only creates a SipManager instance without initializing
-     * the stack itself.
-     */
-    public SipManager()
-    {
-        registerProcessing  = new RegisterProcessing(this);
-        callProcessing      = new CallProcessing(this);
-        sipSecurityManager  = new SipSecurityManager();
-    }
-
-    public static String getRegistrarAddress() {
+    public String getRegistrarAddress() {
 	return registrarAddress;
     }
 
-    public static boolean isRegistrarStunServer() {
+    public boolean isRegistrarStunServer() {
 	return registrarIsStunServer;
     }
 
-    public static int getRegistrarPort() {
+    public int getRegistrarPort() {
 	return registrarPort;
     }
 
@@ -350,6 +366,14 @@ public class SipManager
         register(userName);
     }
 
+    public void setRemoteSdpDescription(String sdp) {
+	mediaManager.setRemoteSdpData(sdp);
+    }
+
+    public String getAuthenticationUserName() {
+	return sipCommunicator.getAuthenticationUserName();
+    }
+
     /**
      * Creates and initializes JAIN SIP objects (factories, stack, listening
      * point and provider). Once this method is called the application is ready
@@ -388,6 +412,8 @@ public class SipManager
 
             try {
                 sipStack = sipFactory.createSipStack(System.getProperties());
+
+	        Logger.forcePrintln("SipStack is " + sipStack);
             }
             catch (PeerUnavailableException ex) {
                 console.error("Could not could not create SipStack!", ex);
@@ -736,8 +762,8 @@ if (false) {
             console.logEntry();
             checkIfStarted();
 
-	    String userName = Utils.getUserName();
-	    String authenticationUserName = Utils.getAuthenticationUserName();
+	    String userName = sipCommunicator.getUserName();
+	    String authenticationUserName = sipCommunicator.getAuthenticationUserName();
 
             UserCredentials defaultCredentials = new UserCredentials();
 
@@ -804,6 +830,10 @@ if (false) {
     public boolean isRegistered()
     {
         return (registerProcessing != null && registerProcessing.isRegistered());
+    }
+
+    public InetSocketAddress getPublicIsa() {
+	return publicIsa;
     }
 
     /**

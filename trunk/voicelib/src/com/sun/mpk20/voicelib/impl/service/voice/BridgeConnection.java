@@ -435,6 +435,63 @@ public class BridgeConnection extends VoiceBridgeConnection {
         }
     }
 
+    public void playTreatmentToCall(String callId, String treatment) 
+	    throws IOException {
+
+        BridgeResponse br = sendWithResponse("playTreatmentToCall="
+            + treatment + ":" + callId + "\n");
+
+        logger.finest("playTreatmentToCall status " + br.getStatus());
+
+        switch (br.getStatus()) {
+        case SUCCESS:
+            logger.finest("playTreatmentToCall success");
+            return;
+
+        default:
+            throw new IOException("playTreatmentToCall failed:  "
+              + br.getMessage());
+        }
+    }
+
+    public void pauseTreatmentToCall(String callId, String treatment)
+	    throws IOException {
+
+        BridgeResponse br = sendWithResponse("pauseTreatmentToCall="
+            + callId + ":" + treatment + "\n");
+
+        logger.finest("pauseTreatmentToCall status " + br.getStatus());
+
+        switch (br.getStatus()) {
+        case SUCCESS:
+            logger.finest("pauseTreatmentToCall success");
+            return;
+
+        default:
+            throw new IOException("pauseTreatmentToCall failed:  "
+              + br.getMessage());
+        }
+    }
+
+    public void stopTreatmentToCall(String callId, String treatment) 
+	    throws IOException {
+
+        BridgeResponse br = sendWithResponse("stopTreatmentToCall="
+            + callId  + ":" + treatment + "\n");
+
+        logger.finest("stopTreatmentToCall status " + br.getStatus());
+
+        switch (br.getStatus()) {
+        case SUCCESS:
+            logger.finest("stopTreatmentToCall success");
+            return;
+
+        default:
+            throw new IOException("stopTreatmentToCall failed:  "
+              + br.getMessage());
+        }
+    }
+
     public void setSpatialAudio(boolean enabled) throws IOException {
 	BridgeResponse br = sendWithResponse("spatialAudio="
             + enabled + "\n");

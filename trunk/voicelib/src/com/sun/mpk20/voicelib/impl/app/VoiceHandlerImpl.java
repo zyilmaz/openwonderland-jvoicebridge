@@ -30,7 +30,7 @@ import com.sun.mpk20.voicelib.app.ManagedCallStatusListener;
 import com.sun.mpk20.voicelib.app.ManagedCallBeginEndListener;
 import com.sun.mpk20.voicelib.app.VoiceHandler;
 import com.sun.mpk20.voicelib.app.VoiceManager;
-
+import com.sun.mpk20.voicelib.app.VoiceManagerParameters;
 
 import com.sun.sgs.app.AppContext;
 import com.sun.sgs.app.DataManager;
@@ -514,6 +514,42 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	}
     }
 
+    public void playTreatmentToCall(String callId, String treatment) {
+	try {
+	    VoiceManager voiceManager = 
+		AppContext.getManager(VoiceManager.class);
+	    voiceManager.playTreatmentToCall(callId, treatment);
+	} catch (IOException e) {
+	    logger.info("Unable to play treatment to call " + callId
+		+ " " + treatment + " " + e.getMessage());
+	}
+    }
+
+    public void pauseTreatmentToCall(String callId, String treatment) {
+	try {
+	    VoiceManager voiceManager = 
+		AppContext.getManager(VoiceManager.class);
+	    voiceManager.pauseTreatmentToCall(callId, treatment);
+	} catch (IOException e) {
+	    logger.info("Unable to pause treatment to call " + callId
+		+ " " + treatment + " " + e.getMessage());
+	}
+    }
+
+    public void stopTreatmentToCall(String callId, String treatment) {
+	logger.info("Stopping treatment " + treatment + " to call "
+	    + callId);
+
+	try {
+	    VoiceManager voiceManager = 
+		AppContext.getManager(VoiceManager.class);
+	    voiceManager.stopTreatmentToCall(callId, treatment);
+	} catch (IOException e) {
+	    logger.info("Unable to end treatment to call " + callId
+		+ " " + treatment + " " + e.getMessage());
+	}
+    }
+
     public void endCall(String callId) {
 	logger.fine("Ending call " + callId);
 
@@ -523,6 +559,21 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    VoiceManager voiceManager = 
 		AppContext.getManager(VoiceManager.class);
 	    voiceManager.endCall(callId);
+	} catch (IOException e) {
+	    logger.fine("Unable to end call " + callId
+		+ " " + e.getMessage());
+	}
+    }
+
+    public void disconnectCall(String callId) {
+	logger.fine("Disconnecting call " + callId);
+
+        DataManager dm = AppContext.getDataManager();
+
+	try {
+	    VoiceManager voiceManager = 
+		AppContext.getManager(VoiceManager.class);
+	    voiceManager.disconnectCall(callId);
 	} catch (IOException e) {
 	    logger.fine("Unable to end call " + callId
 		+ " " + e.getMessage());
@@ -780,10 +831,10 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	    treatmentDone(callId, false);
 
-	    try {
-	        voiceManager.endCall(callId);
-	    } catch (IOException e) {
-	    }
+	    //try {
+	    //    voiceManager.endCall(callId);
+	    //} catch (IOException e) {
+	    //}
 
 	    notifyCallBeginEndListeners(callStatus);
 	    break;
@@ -947,6 +998,18 @@ public class VoiceHandlerImpl implements VoiceHandler,
         } catch (IOException e) {
             logger.info(" addWall failed:  " + e.getMessage());
         }
+    }
+
+    public void setVoiceManagerParameters(VoiceManagerParameters parameters) {
+        VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	voiceManager.setParameters(parameters);
+    }
+
+    public VoiceManagerParameters getVoiceManagerParameters() {
+        VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	return voiceManager.getParameters();
     }
 
     static class AmbientSpatializer implements Spatializer {

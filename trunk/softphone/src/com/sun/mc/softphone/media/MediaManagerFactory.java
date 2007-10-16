@@ -23,6 +23,10 @@
 
 package com.sun.mc.softphone.media;
 
+import com.sun.mc.softphone.SipCommunicator;
+
+import com.sun.mc.softphone.sip.SipManager;
+
 public class MediaManagerFactory {
     private static MediaManager mediaManager;
 
@@ -67,4 +71,5 @@ public class MediaManagerFactory {
         
 	return mediaManager;
     }
+
 }

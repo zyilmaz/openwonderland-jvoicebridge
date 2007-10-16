@@ -281,9 +281,9 @@ public class SipSecurityManager
 			     * To header must contain the address being registered.
 			     * This is a workaround so that registration works.
 			     */
-			    String registrarAddress = SipManager.getRegistrarAddress();
+			    String registrarAddress = sipManCallback.getRegistrarAddress();
 
-			    int registrarPort = SipManager.getRegistrarPort();
+			    int registrarPort = sipManCallback.getRegistrarPort();
 
 			    String registrarTransport = Utils.getPreference(
 				"com.sun.mc.softphone.sip.REGISTRAR_TRANSPORT");
@@ -417,7 +417,7 @@ public class SipSecurityManager
             if( authHeader.getOpaque() != null)
                 authorization.setOpaque(authHeader.getOpaque());
             authorization.setResponse(response);
-            authorization.setUsername(Utils.getAuthenticationUserName());
+            authorization.setUsername(sipManCallback.getAuthenticationUserName());
         }
         catch (ParseException ex) {
             throw new

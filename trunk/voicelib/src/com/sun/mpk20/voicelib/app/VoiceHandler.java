@@ -49,7 +49,15 @@ public interface VoiceHandler {
 
     public void stopInputTreatment(String callId);
 
+    public void playTreatmentToCall(String callId, String treatment);
+
+    public void pauseTreatmentToCall(String callId, String treatment);
+
+    public void stopTreatmentToCall(String callId, String treatment);
+
     public void endCall(String callId);
+
+    public void disconnectCall(String callId);
     
     public void muteCall(String callId, boolean isMuted);
 
@@ -96,5 +104,9 @@ public interface VoiceHandler {
 
     public void addWall(double startX, double startY, double endX, double endY, 
 	double characteristic);
+
+    public void setVoiceManagerParameters(VoiceManagerParameters p);
+
+    public VoiceManagerParameters getVoiceManagerParameters();
 
 }
