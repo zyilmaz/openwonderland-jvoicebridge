@@ -224,7 +224,7 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nInitializeSpeaker(
 	return ret;
     }
 
-    ret = set_speaker_swparams(speaker_handle);
+    ret = set_speaker_swparams(speaker_handle, channels, bufferSize);
 
     if (ret < 0) {
 	return ret;

@@ -293,11 +293,19 @@ public class VoiceManagerImpl implements VoiceManager {
     }
 
     public void endCall(String callId) throws IOException {
-	logger.finer("call ending:  " + callId);
+	endCall(callId, true);
+    }
+
+    public void endCall(String callId, boolean tellBackingManager) 
+	    throws IOException {
+
+	logger.info("call ending:  " + callId);
 
 	players.remove(callId);
 
-	backingManager.endCall(callId);
+	if (tellBackingManager) {
+	    backingManager.endCall(callId);
+	}
     }
 
     public void disconnectCall(String callId) throws IOException {
@@ -490,7 +498,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
     }
 
-    private static int count = 0;
+    private static int count = -1;
 
     private void setPrivateMix(Player p1, Player p2) throws IOException {
 	if (p1.callId == null || p1.callId.length() == 0 ||
@@ -559,8 +567,8 @@ public class VoiceManagerImpl implements VoiceManager {
  
 	    if (privateMixParameters[3] == 0) {
 		if (p1.isInRange(p2) == false) {
-		    if ((count % 100) == 0 || logger.isLoggable(Level.FINEST)) {
-	    	        logger.fine("pmx for " + p1 + ": " + p2 
+		    if ((count % 1000) == 0 || logger.isLoggable(Level.FINEST)) {
+	    	        logger.info("pmx for " + p1 + ": " + p2 
 			    + " already out of range."); 
 		    }
 
@@ -571,19 +579,19 @@ public class VoiceManagerImpl implements VoiceManager {
 		    return;
 	        }
 
-	    	logger.fine("pmx for " + p1.callId + ": "
-	            + p2.callId + " no longer in range."); 
+	    	logger.info("pmx for " + p1 + ": "
+	            + p2 + " no longer in range."); 
 
 		p1.removePlayerInRange(p2);   // p2 is not in range any more
 	    } else {
-		if ((count % 100) == 0 || logger.isLoggable(Level.FINEST)) {
-	    	    logger.finest("pmx for " + p1.callId + ": "
-	                + p2.callId + " is in range."); 
+		if ((count % 1000) == 0 || logger.isLoggable(Level.FINEST)) {
+	    	    logger.info("pmx for " + p1 + ": "
+	                + p2 + " is in range."); 
 		}
 
 		if (p1.isInRange(p2) == false) {
-	    	    logger.fine("pmx for " + p1.callId + ": "
-	                + p2.callId + " setting in range."); 
+	    	    logger.info("pmx for " + p1 + ": "
+	                + p2 + " setting in range."); 
 
 		    p1.addPlayerInRange(p2);  // p2 is in range now
 		}
@@ -617,27 +625,28 @@ public class VoiceManagerImpl implements VoiceManager {
     }
 
     public void setParameters(VoiceManagerParameters parameters) {
-	logger.info("livePlayerFalloff set to " + parameters.livePlayerFalloff
+	logger.info("logLevel set to " + parameters.logLevel
+	    + " liveFalloff set to " + parameters.liveFalloff
 	    + " defaultFalloff set to " + parameters.defaultFalloff
-	    + " livePlayerFullVolumeRadius set to " 
-	    + parameters.livePlayerFullVolumeRadius 
-	    + " livePlayerZeroVolumeRadius set to "
-	    + parameters.livePlayerZeroVolumeRadius
-	    + " defaultFullVolumeRadius set to " 
-	    + parameters.defaultFullVolumeRadius 
-	    + " defaultZeroVolumeRadius set to "
-	    + parameters.defaultZeroVolumeRadius);
+	    + " liveFullVolRadius set to " 
+	    + parameters.liveFullVolRadius 
+	    + " liveZeroVolRadius set to "
+	    + parameters.liveZeroVolRadius
+	    + " defaultFullVolRadius set to " 
+	    + parameters.defaultFullVolRadius 
+	    + " defaultZeroVolRadius set to "
+	    + parameters.defaultZeroVolRadius);
 
-	livePlayerSpatializer.setFallOff(parameters.livePlayerFalloff);
+	livePlayerSpatializer.setFallOff(parameters.liveFalloff);
 	defaultSpatializer.setFallOff(parameters.defaultFalloff);
 	livePlayerSpatializer.setFullVolumeRadius(
-	    parameters.livePlayerFullVolumeRadius);
+	    parameters.liveFullVolRadius);
 	livePlayerSpatializer.setZeroVolumeRadius(
-	    parameters.livePlayerZeroVolumeRadius);
+	    parameters.liveZeroVolRadius);
 	defaultSpatializer.setFullVolumeRadius(
-	    parameters.defaultFullVolumeRadius);
+	    parameters.defaultFullVolRadius);
 	defaultSpatializer.setZeroVolumeRadius(
-	    parameters.defaultZeroVolumeRadius);
+	    parameters.defaultZeroVolRadius);
 
 	/*
 	 * Reset all private mixes
@@ -651,6 +660,7 @@ public class VoiceManagerImpl implements VoiceManager {
 
     public VoiceManagerParameters getParameters() {
 	VoiceManagerParameters parameters = new VoiceManagerParameters(
+	    0,
 	    livePlayerSpatializer.getFallOff(),
 	    defaultSpatializer.getFallOff(),
 	    livePlayerSpatializer.getFullVolumeRadius(),
@@ -659,6 +669,20 @@ public class VoiceManagerImpl implements VoiceManager {
 	    defaultSpatializer.getZeroVolumeRadius());
 
 	return parameters;
+    }
+
+    public void setLogLevel(Level level) {
+	logger.setLevel(level);
+	logger.info("set log level to " + logger.getLevel()
+	    + " int " + logger.getLevel().intValue());
+
+	if (backingManager != null) {
+	    backingManager.setLogLevel(level);
+	}
+    }
+
+    public Level getLogLevel() {
+	return logger.getLevel();
     }
 
     public double round(double v) {

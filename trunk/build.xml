@@ -11,7 +11,7 @@
     <property file="build.properties"/>
     
     <!-- build and package -->
-    <target name="jar" depends="jar-common, jar-bridge, jar-softphone, jar-voicelib"
+    <target name="jar" depends="jar-common, jar-bridge, jar-softphone, jar-voicelib, jar-bridgemonitor"
             description="Build all jar files"/>
     
     <target name="jar-common" description="Build common jar files">
@@ -34,8 +34,13 @@
         <ant dir="${voicelib.dir}" antfile="build.xml" target="jar"/>
     </target>
     
+    <target name="jar-bridgemonitor"
+            description="Build bridge monitor files">
+        <ant dir="${bridgemonitor.dir}" antfile="build.xml" target="jar"/>
+    </target>
+    
     <!-- copy to dist directory -->
-    <target name="dist" depends="jar, dist-bridge, dist-softphone, dist-voicelib, dist-doc"
+    <target name="dist" depends="jar, dist-bridge, dist-softphone, dist-voicelib, dist-bridgemonitor, dist-doc"
             description="Build distribution directory">
     
 	<mkdir dir="dist"/>
@@ -43,6 +48,7 @@
 	<mkdir dir="tmp/voicebridge"/>
 	<mkdir dir="tmp/voicebridge/nist-sip"/>
 	<mkdir dir="tmp/voicelib"/>
+	<mkdir dir="tmp/bridgemonitor"/>
 
 	<copy todir="tmp/voicebridge">
 	   <fileset file="${bridge.dir}/build/lib/bridge_connector.jar"/>
@@ -70,6 +76,10 @@
             <fileset file="${voicelib.dir}/build/lib/voicelib.jar"/>
 	</copy>
 
+	<copy todir="tmp/bridgemonitor">
+            <fileset file="${dist.dir}/BridgeMonitor.jar"/>
+	</copy>
+
         <zip zipfile="${dist.dir}/WonderlandAudio.zip">
             <fileset dir="tmp">
                 <include name="**"/>
@@ -85,7 +95,7 @@
             </fileset>
         </zip>
         
-        <delete dir="tmp"/>
+<!--        <delete dir="tmp"/> -->
     </target>
 
     <target name="dist-bridge" depends="jar-bridge"
@@ -131,6 +141,17 @@
 
         <copy todir="${dist.dir}/voicelib">
             <fileset dir="${voicelib.dir}/build/lib">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="dist-bridgemonitor" depends="jar-bridgemonitor"
+            description="Build bridgemonitor distribution directory">
+        <mkdir dir="${dist.dir}/bridgemonitor"/>
+
+        <copy todir="${dist.dir}/bridgemonitor">
+            <fileset dir="${bridgemonitor.dir}/dist">
                 <include name="*.jar"/>
             </fileset>
         </copy>

@@ -19,8 +19,9 @@
                   <Group type="102" alignment="0" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                          <Component id="bridgeInfoButton" alignment="0" max="32767" attributes="1"/>
                           <Component id="enableButton" alignment="0" max="32767" attributes="1"/>
+                          <Component id="bridgeInfoButton" alignment="0" max="32767" attributes="1"/>
+                          <Component id="monitorButton" alignment="0" max="32767" attributes="1"/>
                           <Component id="bridgeTextField" alignment="0" pref="131" max="32767" attributes="1"/>
                       </Group>
                   </Group>
@@ -49,11 +50,14 @@
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Component id="statusLabel" min="-2" pref="16" max="-2" attributes="0"/>
               <EmptySpace type="separate" max="-2" attributes="0"/>
-              <Component id="enableButton" min="-2" max="-2" attributes="0"/>
+              <Component id="monitorButton" min="-2" max="-2" attributes="0"/>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Component id="bridgeTextField" min="-2" pref="30" max="-2" attributes="0"/>
               <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
               <Component id="bridgeInfoButton" min="-2" max="-2" attributes="0"/>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Component id="enableButton" min="-2" max="-2" attributes="0"/>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -65,12 +69,12 @@
         <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="bridgeTextFieldKeyTyped"/>
       </Events>
     </Component>
-    <Component class="javax.swing.JButton" name="enableButton">
+    <Component class="javax.swing.JButton" name="monitorButton">
       <Properties>
         <Property name="text" type="java.lang.String" value="Enable"/>
       </Properties>
       <Events>
-        <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="enableButtonMouseClicked"/>
+        <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="monitorButtonMouseClicked"/>
       </Events>
     </Component>
     <Container class="javax.swing.JPanel" name="callBar">
@@ -89,6 +93,15 @@
       </Properties>
       <Events>
         <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="bridgeInfoButtonMouseClicked"/>
+      </Events>
+    </Component>
+    </Component>
+    <Component class="javax.swing.JButton" name="disbleButton">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Enable"/>
+      </Properties>
+      <Events>
+        <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="enableButtonMouseClicked"/>
       </Events>
     </Component>
     <Component class="javax.swing.JLabel" name="callLabel">

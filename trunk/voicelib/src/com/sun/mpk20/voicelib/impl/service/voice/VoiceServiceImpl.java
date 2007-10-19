@@ -385,7 +385,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	endCall(null, callId, true);
     }
 
-    private void endCall(String callId, boolean tellBridge) throws IOException {
+    public void endCall(String callId, boolean tellBridge) throws IOException {
 	endCall(null, callId, tellBridge);
     }
 
@@ -606,6 +606,11 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
     public VoiceManagerParameters getParameters() {
 	return new VoiceManagerParameters();
+    }
+
+    public void setLogLevel(Level level) {
+	logger.info("Setting log level to " + level);
+	logger.setLevel(level);
     }
 
     public void addCallStatusListener(ManagedCallStatusListener mcsl) {

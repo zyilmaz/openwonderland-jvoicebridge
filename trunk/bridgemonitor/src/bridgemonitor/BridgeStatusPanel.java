@@ -61,10 +61,11 @@ public class BridgeStatusPanel extends javax.swing.JPanel {
     private void initComponents() {
 
         bridgeTextField = new javax.swing.JTextField();
-        enableButton = new javax.swing.JButton();
+        monitorButton = new javax.swing.JButton();
         callBar = new javax.swing.JPanel();
         statusLabel = new javax.swing.JLabel();
         bridgeInfoButton = new javax.swing.JButton();
+        enableButton = new javax.swing.JButton();
         callLabel = new javax.swing.JLabel();
 
         bridgeTextField.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -76,10 +77,10 @@ public class BridgeStatusPanel extends javax.swing.JPanel {
             }
         });
 
-        enableButton.setText("Enable");
-        enableButton.addMouseListener(new java.awt.event.MouseAdapter() {
+        monitorButton.setText("Monitor");
+        monitorButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                enableButtonMouseClicked(evt);
+                monitorButtonMouseClicked(evt);
             }
         });
 
@@ -95,6 +96,13 @@ public class BridgeStatusPanel extends javax.swing.JPanel {
             }
         });
 
+        enableButton.setText("Enable");
+        enableButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                enableButtonMouseClicked(evt);
+            }
+        });
+
         callLabel.setText("           ");
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
@@ -106,8 +114,9 @@ public class BridgeStatusPanel extends javax.swing.JPanel {
                     .add(layout.createSequentialGroup()
                         .addContainerGap()
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                            .add(bridgeInfoButton, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .add(enableButton, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(bridgeInfoButton, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(monitorButton, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .add(bridgeTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 131, Short.MAX_VALUE)))
                     .add(layout.createSequentialGroup()
                         .add(61, 61, 61)
@@ -128,13 +137,18 @@ public class BridgeStatusPanel extends javax.swing.JPanel {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(statusLabel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 16, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .add(18, 18, 18)
-                .add(enableButton)
+                .add(monitorButton)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(bridgeTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 30, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .add(12, 12, 12)
-                .add(bridgeInfoButton))
+                .add(bridgeInfoButton)
+		.add(enableButton))
         );
     }// </editor-fold>//GEN-END:initComponents
+
+private void enableButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_enableButtonMouseClicked
+        bridgeMonitor.enableButtonMouseClicked(evt);
+}//GEN-LAST:event_enableButtonMouseClicked
 
     private void bridgeInfoButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_bridgeInfoButtonMouseClicked
         bridgeMonitor.bridgeInfoButtonMouseClicked(evt);
@@ -148,17 +162,18 @@ public class BridgeStatusPanel extends javax.swing.JPanel {
         bridgeMonitor.bridgeTextFieldKeyTyped(evt);
 }//GEN-LAST:event_bridgeTextFieldKeyTyped
 
-private void enableButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_enableButtonMouseClicked
-        bridgeMonitor.enableButtonMouseClicked(evt);
-}//GEN-LAST:event_enableButtonMouseClicked
+private void monitorButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_monitorButtonMouseClicked
+        bridgeMonitor.monitorButtonMouseClicked(evt);
+}//GEN-LAST:event_monitorButtonMouseClicked
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton enableButton;
     private javax.swing.JButton bridgeInfoButton;
     private javax.swing.JTextField bridgeTextField;
     private javax.swing.JPanel callBar;
     private javax.swing.JLabel callLabel;
-    private javax.swing.JButton enableButton;
+    private javax.swing.JButton monitorButton;
     private javax.swing.JLabel statusLabel;
     // End of variables declaration//GEN-END:variables
     
@@ -174,8 +189,8 @@ private void enableButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRS
 	return callLabel;
     }
 
-    public javax.swing.JButton getEnableButton() {
-	return enableButton;
+    public javax.swing.JButton getMonitorButton() {
+	return monitorButton;
     }
 
     public javax.swing.JLabel getStatusLabel() {
@@ -184,6 +199,10 @@ private void enableButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRS
 
     public javax.swing.JButton getBridgeInfoButton() {
 	return bridgeInfoButton;
+    }
+
+    public javax.swing.JButton getEnableButton() {
+	return enableButton;
     }
 
     public void callTableMouseClicked(java.awt.event.MouseEvent evt) {

@@ -108,12 +108,18 @@ public class Player {
 
     public void addPlayerInRange(Player p) {
 	synchronized (playersInRange) {
+	    if (playersInRange.contains(p)) {
+		System.out.println("playersInRange already contains " + p);
+	    }
 	    playersInRange.add(p);
 	}
     }
 
     public void removePlayerInRange(Player p) {
 	synchronized (playersInRange) {
+	    if (playersInRange.contains(p) == false) {
+		System.out.println("playersInRange doesn't contain " + p);
+	    }
 	    playersInRange.remove(p);
 	}
     }
