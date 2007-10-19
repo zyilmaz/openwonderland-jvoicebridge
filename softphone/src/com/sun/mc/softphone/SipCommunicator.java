@@ -320,6 +320,12 @@ public class SipCommunicator extends Thread implements
         }
     }
  
+    public void placeCall(String callerName, String callee,
+	    String conferenceId) throws IOException {
+
+	dial(conferenceId, callerName, callee);
+    }
+
     /**
      * Play a treatment to the call.
      * @param audioFile the file to play
@@ -459,6 +465,18 @@ public class SipCommunicator extends Thread implements
     private int previousLogLevel;
 
     public void processCommand(String command) {
+	if (command.indexOf("logLevel=") >= 0) {
+            String tokens[] = command.split("=");
+
+            try {
+                Utils.setPreference("com.sun.mc.softphone.media.LOG_LEVEL",
+                    tokens[1]);
+            } catch (NumberFormatException e) {
+                Logger.println("Invalid log level:  " + tokens[1]);
+            }
+            return;
+        }
+
 	if (command.indexOf("isConnected") >= 0) {
 	    if (callInProgressInterlocutor != null) {
 		Logger.println("Softphone is connected");
@@ -655,6 +673,51 @@ public class SipCommunicator extends Thread implements
 	    return;
 	}
 
+        if (command.indexOf("transmitSampleRate=") >= 0) {
+            String tokens[] = command.split("=");
+
+            if (tokens[1].equals("8000") || tokens[1].equals("16000") ||
+                    tokens[1].equals("32000") || tokens[1].equals("32000") ||
+                    tokens[1].equals("44100") || tokens[1].equals("48000")) {
+
+                Utils.setPreference(
+                    "com.sun.mc.softphone.media.TRANSMIT_SAMPLE_RATE", tokens[1]);
+            } else {
+                Logger.println("Invalid transmit sample rate:  " + command);
+            }
+
+            return;
+        }
+
+        if (command.indexOf("transmitChannels=") >= 0) {
+            String tokens[] = command.split("=");
+
+            if (tokens[1].equals("1") || tokens[1].equals("2")) {
+                Utils.setPreference("com.sun.mc.softphone.media.TRANSMIT_CHANNELS",
+                    tokens[1]);
+            } else {
+                Logger.println("Invalid number of transmit channels:  " + command);
+            }
+
+            return;
+        }
+
+	if (command.indexOf("transmitEncoding=") >= 0) {
+	    String tokens[] = command.split("=");
+
+	    if (tokens[1].equals("PCM") || tokens[1].equals("PCMU") ||
+		    tokens[1].equals("SPEEX")) {
+
+        	Utils.setPreference("com.sun.mc.softphone.media.TRANSMIT_ENCODING",
+		    tokens[1]);
+	    } else {
+		Logger.println("Transmit encoding must be PCMU, PCM, or SPEEX:  " 
+		    + command);
+	    }
+
+	    return;
+	}
+
         //** 1.5 only!
 
         if (command.indexOf("stack") >= 0) {
@@ -725,7 +788,9 @@ public class SipCommunicator extends Thread implements
 			+ command + " " + e.getMessage());
 		}
 		return;
-	    } else if (command.indexOf("speakerVolume=") >= 0) {
+	    } 
+
+	    if (command.indexOf("speakerVolume=") >= 0) {
                 try {
                     float volume = Float.parseFloat(command.substring(14));
                     mediaManager.setSpeakerVolume(volume);
@@ -734,8 +799,10 @@ public class SipCommunicator extends Thread implements
                         + command + " " + e.getMessage());
                 }
 		return;
-            } else if (command.indexOf("Mute") == 0 || 
-		command.indexOf("Unmute") == 0) {
+            } 
+
+	    if (command.indexOf("Mute") == 0 || 
+		    command.indexOf("Unmute") == 0) {
 
                 boolean mute = (command.indexOf("Mute") == 0);        
 
@@ -870,9 +937,15 @@ public class SipCommunicator extends Thread implements
         Logger.println("                     [-phoneNumber <phoneNumber for load generator>]");
         //Logger.println("                     [-playTreatment <treatment>[:<duty cycle %>]]");
         Logger.println("                     [-r <registrar> > specify the registrar address");
+        Logger.println("                     [-sampleRate <sampleRate> > specify the sampleRate");
+        Logger.println("                     [-channels <audio channels> > specify # of channels]");
+        Logger.println("                     [-encoding PCM | PCMU | SPEEX > specify encoding");
         Logger.println("                     [-silent > don't open the mic/speaker]");
         Logger.println("                     [-stun <server:port> > specify the stun server address");
         Logger.println("                     [-t <registrar timeout> specify the registrar timeout seconds");
+        Logger.println("                     [-transmitChannels <channels> specify the xmit channels");
+        Logger.println("                     [-transmitSampleRate <sampleRate> specify the xmit rate");
+        Logger.println("                     [-transmitEncoding PCM | PCMU | SPEEX > specify transmit encoding");
 	Logger.println("                     [-u <user name>]");
     }
 
@@ -1054,6 +1127,22 @@ public class SipCommunicator extends Thread implements
 		    throw new ParseException("Invalid registrar timeout:  "
 			+ e.getMessage(), 0);
 		}
+            } else if (args[i].equalsIgnoreCase("-sampleRate") && i < (args.length - 1)) {
+                Utils.setPreference("com.sun.mc.softphone.media.SAMPLE_RATE", args[++i]);
+            } else if (args[i].equalsIgnoreCase("-channels") && i < (args.length - 1)) {
+                Utils.setPreference("com.sun.mc.softphone.media.CHANNELS",
+                    args[++i]);
+
+            } else if (args[i].equalsIgnoreCase("-encoding") && i < (args.length - 1)) {
+                Utils.setPreference("com.sun.mc.softphone.media.ENCODING",
+                    args[++i]);
+            } else if (args[i].equalsIgnoreCase("-transmitSampleRate") && i < (args.length - 1)) {
+                Utils.setPreference("com.sun.mc.softphone.media.TRANSMIT_SAMPLE_RATE", args[++i]);
+            } else if (args[i].equalsIgnoreCase("-transmitChannels") && i < (args.length - 1)) {
+                Utils.setPreference("com.sun.mc.softphone.media.TRANSMIT_CHANNELS", args[++i]);
+            } else if (args[i].equalsIgnoreCase("-encoding") && i < (args.length - 1)) {
+                Utils.setPreference("com.sun.mc.softphone.media.TRANSMIT_ENCODING",
+                    args[++i]);
             } else {
 	        throw new ParseException("Invalid arguments", 0);
 	    }
