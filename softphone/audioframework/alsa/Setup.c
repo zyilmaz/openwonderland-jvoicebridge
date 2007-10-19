@@ -186,12 +186,14 @@ set_mic_swparams(snd_pcm_t *handle)
 }
 
 int
-set_speaker_swparams(snd_pcm_t *handle) 
+set_speaker_swparams(snd_pcm_t *handle, int channels, int bufferSize) 
 {
     // set software params
 
     snd_pcm_sw_params_t *swparams;
     snd_pcm_sw_params_alloca(&swparams);
+
+    int thresholdFrames;
 
     /* get the current swparams */
     int ret = snd_pcm_sw_params_current(handle, swparams);
@@ -231,8 +233,19 @@ set_speaker_swparams(snd_pcm_t *handle)
         return ret;
     }
 
+    thresholdFrames = (bufferSize - 20) / 2 / channels;
+
+    if (thresholdFrames <= 0) {
+	thresholdFrames = bufferSize / 2 / channels;
+    }
+
+    fprintf(stderr, "speaker buffer size %d., thresholdFrames %d\n",
+	 bufferSize, thresholdFrames);
+ 
     /* set silence threshold */
-    ret = snd_pcm_sw_params_set_silence_threshold(handle, swparams, 160);
+    ret = snd_pcm_sw_params_set_silence_threshold(handle, swparams, 
+	thresholdFrames);
+
     if (ret < 0) {
         fprintf(stderr, "Unable to set sw params for silence_threshold: %s\n", 
 	    snd_strerror(ret));
@@ -240,7 +253,9 @@ set_speaker_swparams(snd_pcm_t *handle)
     }
 
     /* set silence size */
-    ret = snd_pcm_sw_params_set_silence_size(handle, swparams, 160);
+    ret = snd_pcm_sw_params_set_silence_size(handle, swparams, 
+	thresholdFrames);
+
     if (ret < 0) {
         fprintf(stderr, "Unable to set sw params for silence_size: %s\n", 
 	    snd_strerror(ret));

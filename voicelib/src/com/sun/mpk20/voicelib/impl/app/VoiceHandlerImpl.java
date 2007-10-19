@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -102,6 +103,20 @@ public class VoiceHandlerImpl implements VoiceHandler,
 		logger.info("Invalid scale factor:  " + s);
 	    }
 	}
+
+if (false) {
+	logger.setLevel(Level.INFO);
+
+	s = System.getProperty(VoiceHandlerImpl.class.getName() + ".logging.level");
+
+	if (s != null) {
+	    try {
+		logger.setLevel(Level.parse(s));
+	    } catch (IllegalArgumentException e) {
+                logger.info("Invalid log level:  " + s);
+            }
+	}
+}
     }
 
     public static VoiceHandler getInstance() {
@@ -464,6 +479,20 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    } else {
 		treatmentCallIds.remove(callId);
 		treatmentInfo.remove(callId);
+
+		/*
+		 * Tell the voice manager that this call has ended
+		 * so it can remove the Player.
+		 */
+	        VoiceManager voiceManager = 
+		    AppContext.getManager(VoiceManager.class);
+
+		try {
+	            voiceManager.endCall(callId, false);
+		} catch (IOException e) {
+		    logger.info("Unabled to end treatment " + callId
+			+ " " + e.getMessage());
+		}
 	    }
 
 	    Enumeration<String> keys = treatmentGroup.keys();
@@ -551,7 +580,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void endCall(String callId) {
-	logger.fine("Ending call " + callId);
+	logger.info("Ending call " + callId);
 
         DataManager dm = AppContext.getDataManager();
 
@@ -1003,13 +1032,99 @@ public class VoiceHandlerImpl implements VoiceHandler,
     public void setVoiceManagerParameters(VoiceManagerParameters parameters) {
         VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
+	logger.info("setting log level to " + parameters.logLevel);
+	setLogLevel(parameters.logLevel);
 	voiceManager.setParameters(parameters);
     }
 
     public VoiceManagerParameters getVoiceManagerParameters() {
         VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
-	return voiceManager.getParameters();
+	VoiceManagerParameters parameters = voiceManager.getParameters();
+	
+	logger.info("log level is " + getLogLevel());
+
+	parameters.logLevel = getLogLevel();
+	return parameters;
+    }
+
+    private int getLogLevel() {
+	Level logLevel;
+
+	Logger l = logger;
+
+	while ((logLevel = l.getLevel()) == null) {
+	    l = l.getParent();
+	}
+
+	if (logLevel.equals(Level.SEVERE)) {
+	    return 0;
+	}
+	
+	if (logLevel.equals(Level.WARNING)) {
+	    return 1;
+	}
+	
+	if (logLevel.equals(Level.INFO)) {
+	    return 2;
+	}
+	
+	if (logLevel.equals(Level.FINE)) {
+	    return 3;
+	}
+	
+	if (logLevel.equals(Level.FINER)) {
+	    return 4;
+	}
+	
+	if (logLevel.equals(Level.ALL)) {
+	    return 5;
+	}
+
+	logger.info("Unknown log level " + logLevel
+	    + " using FINEST");
+
+	return 5;
+    }
+
+    private void setLogLevel(int logLevel) {
+	Level level;
+
+	switch (logLevel) {
+	case 0:
+	    level = Level.SEVERE;
+	    break;
+
+	case 1:
+	    level = Level.WARNING;
+	    break;
+
+	case 2:
+	    level = Level.INFO;
+	    break;
+
+	case 3:
+	    level = Level.FINE;
+	    break;
+
+	case 4:
+	    level = Level.FINER;
+	    break;
+
+	case 5:
+	    level = Level.ALL;
+	    break;
+
+	default:
+	    logger.info("Invalid log level " + logLevel);
+	    return;
+	}
+
+	logger.info("Setting log level to " + level);
+	logger.setLevel(level);
+	
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+	voiceManager.setLogLevel(level);
     }
 
     static class AmbientSpatializer implements Spatializer {

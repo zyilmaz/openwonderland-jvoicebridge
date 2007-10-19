@@ -83,14 +83,20 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
             }
 	});
 
-	setOffline();
+	setInitialState();
     }
     
     public void bridgeTextFieldKeyTyped(KeyEvent evt) {
-	//setEnableButton();
+	setMonitorButton();
+	setBridgeInfoButton();
+	setEnableButton();
     }
 
     private void connect() throws IOException {
+	if (bc != null && bc.isConnected()) {
+	    return;
+	}
+
 	String bridgeText = bsp.getBridgeTextField().getText();
 
         bridgeText = bridgeText.substring(0, bridgeText.length());
@@ -135,70 +141,74 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 	bc = new BridgeConnection(server, sipPort, controlPort, true);
 
 	bc.addBridgeOfflineListener(this);
-
-        new Thread(this).start();
     }
 
     public void bridgeTextFieldKeyReleased(KeyEvent evt) {
         String s = bsp.getBridgeTextField().getText(); 
 
         if (s.length() == 0) {
-            setOffline();
+            setInitialState();
         }
     }
 
-    public void enableButtonMouseClicked(MouseEvent evt) {
-	JButton enableButton = bsp.getEnableButton();
+    public void monitorButtonMouseClicked(MouseEvent evt) {
+	JButton monitorButton = bsp.getMonitorButton();
 
-        String s = enableButton.getText();
+        String s = monitorButton.getText();
 	
-	if (s.equalsIgnoreCase("Enable")) {
-	    try {
-	        connect();
-	        bc.suspend(false);
-	        setOnline();
-		showBridgeCalls();
-	    } catch (IOException e) {
-	        logger.info("Unable to resume " + bsp.getBridgeTextField().getText()
-		    + " " + e.getMessage());
-		setOffline();
-	    }
-	} else {
-	    if (bc.isConnected() == false) {
-		logger.info("Not connected:  " + bc);
-		setOffline();
-		return;
-	    }
-
-	    try {
-	        bc.suspend(true);
-	        bc.disconnect();
-	        setOffline();
-	    } catch (IOException e) {
-	        logger.info("Unable to suspend " + bsp.getBridgeTextField().getText()
-		    + " " + e.getMessage());
-		setOffline();
-	    }
+	try {
+	    connect();
+	} catch (IOException e) {
+	    logger.info("Unable to connect to bridge:  " + e.getMessage());
+	    return;
 	}
+
+	if (s.equalsIgnoreCase("Monitor")) {
+	    setMonitoring();
+	    showBridgeCalls();
+
+	    done = false;
+            new Thread(this).start();
+	    return;
+	}
+
+	done();
+	setInitialState();
     }
 
-    private void setOnline() {
+    private void setInitialState() {
+	setMonitorButton();
 	setEnableButton();
-        bsp.getEnableButton().setText("Disable");
+	setBridgeInfoButton();
+        bsp.getMonitorButton().setText("Monitor");
+        bsp.getStatusLabel().setText("");
+        bsp.getBridgeTextField().setEditable(true);
+    }
+
+    private void setMonitoring() {
+        bsp.getMonitorButton().setText("Stop Monitoring");
         bsp.getStatusLabel().setText("Online");
         bsp.getBridgeTextField().setEditable(false);
-	bsp.getBridgeInfoButton().setEnabled(true);
     }
 
     private void setOffline() {
+	bsp.getMonitorButton().setEnabled(false);
 	setEnableButton();
+	setBridgeInfoButton();
 
-        bsp.getEnableButton().setText("Enable");
+        bsp.getMonitorButton().setText("Monitor");
         bsp.getStatusLabel().setText("Offline");
         bsp.getBridgeTextField().setEditable(true);
-	bsp.getBridgeInfoButton().setEnabled(false);
 	bsp.getCallLabel().setVisible(true);
-	bsp.getCallLabel().setText("0 Calls");
+	bsp.getCallLabel().setText("");
+    }
+
+    private void setMonitorButton() {
+	if (bsp.getBridgeTextField().getText().length() == 0) {
+            bsp.getMonitorButton().setEnabled(false);
+	} else {
+	    bsp.getMonitorButton().setEnabled(true);
+	}
     }
 
     private void setEnableButton() {
@@ -209,8 +219,19 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 	}
     }
 
+    private void setBridgeInfoButton() {
+	if (bsp.getBridgeTextField().getText().length() == 0) {
+	    bsp.getBridgeInfoButton().setEnabled(false);
+	} else {
+	    bsp.getBridgeInfoButton().setEnabled(true);
+	}
+    }
+
     public void bridgeInfoButtonMouseClicked(MouseEvent evt) {
-	if (bc == null || bc.isConnected() == false) {
+	try {
+	    connect();
+	} catch (IOException e) {
+	    logger.info("Unable to connect to bridge:  " + e.getMessage());
 	    setOffline();
 	    return;
 	}
@@ -258,6 +279,48 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 	}
     }
 
+    public void enableButtonMouseClicked(MouseEvent evt) {
+	JButton enableButton = bsp.getEnableButton();
+
+        String s = enableButton.getText();
+	
+	try {
+	    connect();
+	} catch (IOException e) {
+	    logger.info("Unable to connect to bridge:  " + e.getMessage());
+	    return;
+	}
+
+	if (s.equalsIgnoreCase("Enable")) {
+	    try {
+	        bc.suspend(false);
+		enableButton.setText("Disable");
+		bsp.getMonitorButton().setEnabled(true);
+	    } catch (IOException e) {
+	        logger.info("Unable to resume " + bsp.getBridgeTextField().getText()
+		    + " " + e.getMessage());
+		setOffline();
+	    }
+
+	    return;
+	} 
+
+        monitorButtonMouseClicked(null);
+
+	done();
+
+	try {
+	    bc.suspend(true);
+	    bc.disconnect();
+	    setOffline();
+	    enableButton.setText("Enable");
+	} catch (IOException e) {
+	    logger.info("Unable to suspend " + bsp.getBridgeTextField().getText()
+		+ " " + e.getMessage());
+	    setOffline();
+	}
+    }
+
     public void insideCallBarMouseClicked(java.awt.event.MouseEvent evt) {
 	if (bc.isConnected() == false) {
 	    logger.info("Not connected:  " + bc);
@@ -272,7 +335,6 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 
     private void showBridgeCalls() {
         String status;
-        
         
 	try {
 	    status = bc.getCallInfo();
@@ -299,7 +361,6 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 	    DefaultTableModel model = (DefaultTableModel) callTable.getModel();
 
 	    if (callTableOwner != this) {	
-
 	        String[] columnIdentifiers = new String[3];
                 columnIdentifiers[0] = "CallID";
                 columnIdentifiers[1] = "Bridge " + bc;
@@ -314,7 +375,6 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
             int myCt = 0;
             
 	    for (int i = 0; i < tokens.length; i++) {
-                
                 String[] items = tokens[i].split("@");
                 String cID = items[0];
                 
@@ -344,15 +404,12 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
                     }
                 
                 String[] infoArr = {cID, fName, aQuality};
-                
-                       for(int j = 0; j < infoArr.length; j++) {
-                            model.setValueAt(infoArr[j], myCt, j);
-                        }
+                for(int j = 0; j < infoArr.length; j++) {
+                    model.setValueAt(infoArr[j], myCt, j);
+                }
                     
                 myCt++;
 	    }
-            
-          
 	}
     }
 
@@ -402,10 +459,27 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
         }
     }
 
+    private boolean done;
+
+    public void done() {
+	synchronized (this) {
+	    if (done) {
+		return;
+	    }
+
+	    done = true;
+
+	    try {
+	  	wait();
+	    } catch (InterruptedException e) {
+	    }
+	}
+    }
+
     public void run() {
 	int lastNumberOfCalls = 0;
 
-        while (true) {
+        while (!done) {
     	    try {
 		Thread.sleep(2000);
 	    } catch (InterruptedException e) {
@@ -449,10 +523,11 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 		if (n > lastTotalCalls) {
 		    lastTotalCalls = n;
 		}
+
+		bsp.getEnableButton().setText("Disable");
 	    } catch (IOException e) {
 		logger.info("Unable to get status for " + bc);
                 
-                insideCallBar.setCallCount(0);
 		setOffline();
 		break;
 	    }
@@ -468,12 +543,19 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 	        callTable.removeAll();
 	        callTableOwner = null;
 
-                String[] columnIdentifiers = new String[1];
-                columnIdentifiers[0] = "Calls";
+                //String[] columnIdentifiers = new String[1];
+                //columnIdentifiers[0] = "Calls";
 
-	        DefaultTableModel model = (DefaultTableModel) callTable.getModel();
-                model.setColumnIdentifiers(columnIdentifiers);
+	        //DefaultTableModel model = (DefaultTableModel) callTable.getModel();
+                //model.setColumnIdentifiers(columnIdentifiers);
             }
+	}
+
+	insideCallBar.setCallCount(0);
+	bsp.getCallLabel().setText("");
+
+	synchronized (this) {
+	    notifyAll();
 	}
     }
 

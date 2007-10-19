@@ -25,6 +25,8 @@ package com.sun.mpk20.voicelib.app;
 
 import java.io.IOException;
 
+import java.util.logging.Level;
+
 import com.sun.voip.CallParticipant;
 
 /**
@@ -64,6 +66,9 @@ public interface VoiceManager {
 	throws IOException;
 
     public void endCall(String callId) throws IOException;
+
+    public void endCall(String callId, boolean tellBackingManager) 
+	throws IOException;
 
     public void disconnectCall(String callId) throws IOException;
 
@@ -108,5 +113,7 @@ public interface VoiceManager {
     public void setParameters(VoiceManagerParameters p);
 
     public VoiceManagerParameters getParameters();
+
+    public void setLogLevel(Level level);
 
 }

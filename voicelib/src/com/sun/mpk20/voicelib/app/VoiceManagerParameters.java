@@ -28,28 +28,30 @@ package com.sun.mpk20.voicelib.app;
  */
 public class VoiceManagerParameters {
 
-    public double livePlayerFalloff;
+    public int logLevel;
+    public double liveFalloff;
     public double defaultFalloff;
-    public double livePlayerFullVolumeRadius;
-    public double livePlayerZeroVolumeRadius;
-    public double defaultFullVolumeRadius;
-    public double defaultZeroVolumeRadius;
+    public double liveFullVolRadius;
+    public double liveZeroVolRadius;
+    public double defaultFullVolRadius;
+    public double defaultZeroVolRadius;
 
     public VoiceManagerParameters() {
     }
 
-    public VoiceManagerParameters(double livePlayerFalloff,
-            double defaultFalloff, double livePlayerFullVolumeRadius,
-	    double livePlayerZeroVolumeRadius,
-	    double defaultFullVolumeRadius,
-	    double defaultZeroVolumeRadius) {
+    public VoiceManagerParameters(int logLevel, double liveFalloff,
+            double defaultFalloff, double liveFullVolRadius,
+	    double liveZeroVolRadius,
+	    double defaultFullVolRadius,
+	    double defaultZeroVolRadius) {
 
-        this.livePlayerFalloff = livePlayerFalloff;
+	this.logLevel = logLevel;
+        this.liveFalloff = liveFalloff;
         this.defaultFalloff = defaultFalloff;
-        this.livePlayerFullVolumeRadius = livePlayerFullVolumeRadius;
-        this.livePlayerZeroVolumeRadius = livePlayerZeroVolumeRadius;
-        this.defaultFullVolumeRadius = defaultFullVolumeRadius;
-        this.defaultZeroVolumeRadius = defaultZeroVolumeRadius;
+        this.liveFullVolRadius = liveFullVolRadius;
+        this.liveZeroVolRadius = liveZeroVolRadius;
+        this.defaultFullVolRadius = defaultFullVolRadius;
+        this.defaultZeroVolRadius = defaultZeroVolRadius;
     }
 
 }
