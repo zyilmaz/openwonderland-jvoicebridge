@@ -259,7 +259,7 @@ public class TreatmentManager implements MixDataSource {
 	try {
 	    linearData = audioSource.getLinearData(sampleTime);
 
-	    if (sampleRateConverter != null) {
+	    if (linearData != null && sampleRateConverter != null) {
 		linearData = sampleRateConverter.resample(linearData);
 	    }
 
