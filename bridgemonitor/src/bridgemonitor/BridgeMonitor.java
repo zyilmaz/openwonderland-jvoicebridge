@@ -555,6 +555,7 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 	bsp.getCallLabel().setText("");
 
 	synchronized (this) {
+	    done = true;
 	    notifyAll();
 	}
     }
