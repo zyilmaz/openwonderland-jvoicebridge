@@ -829,6 +829,8 @@ public class BridgeConnection extends VoiceBridgeConnection {
             
             socket = new Socket(privateHost, privateControlPort);
             
+	    socket.setSendBufferSize(256*1024);
+
 	    if (watchdogTimeout != 0) {
 	        new ConnectionWatchdog(this);
 		gotBridgePing();
@@ -1055,7 +1057,7 @@ public class BridgeConnection extends VoiceBridgeConnection {
 		    }
 
 		    try {
-		        Thread.sleep(watchdogTimeout);
+		        Thread.sleep(watchdogTimeout * 1000);
 		    } catch (InterruptedException e) {
 			logger.info("sleep interrupted!");
 		    }
