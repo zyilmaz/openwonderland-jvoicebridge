@@ -1268,7 +1268,14 @@ if (false) {
     }
 
     private int findFreePort(String portString) {
-	int port = Integer.parseInt(portString);
+	int port = 5060;
+
+	try {
+	    port = Integer.parseInt(portString);
+	} catch (NumberFormatException e) {
+	    Logger.println("Invalid preferred port '" + portString 
+		+ "'.  Defaulting to " + port);
+	}
 	
         //
         // Make sure port is available.  If not, start with 5060 until we
