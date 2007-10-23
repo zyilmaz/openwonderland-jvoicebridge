@@ -58,13 +58,27 @@ public class Player {
     }
 
     public void setPosition(double x, double y, double z) {
-    	this.x = x;
-	this.y = y;
-	this.z = z;
+    	this.x = Math.round(x * 1000) / 1000.;
+	this.y = Math.round(y * 1000) / 1000.;
+	this.z = Math.round(z * 1000) / 1000.;
     }
 
+    public boolean samePosition(double x, double y, double z) {
+    	x = Math.round(x * 1000) / 1000.;
+	y = Math.round(y * 1000) / 1000.;
+	z = Math.round(z * 1000) / 1000.;
+
+	return this.x == x && this.y == y && this.z == z;
+    }
+	
     public void setOrientation(double orientation) {
-	this.orientation = Math.toRadians(orientation);
+	this.orientation = Math.round(Math.toRadians(orientation) * 1000) / 1000.;
+    }
+
+    public boolean sameOrientation(double orientation) {
+	orientation = Math.round(Math.toRadians(orientation) * 1000) / 1000.;
+
+	return this.orientation == orientation;
     }
 
     public void setAttenuationRadius(double attenuationRadius) {

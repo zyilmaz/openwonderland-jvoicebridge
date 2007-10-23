@@ -76,6 +76,9 @@ public interface VoiceManager {
 
     public void restorePrivateMixes() throws IOException;
 
+    public void setPositionAndOrientation(String callId , double x, double y, 
+	double z, double orientation) throws IOException;
+
     public void setPosition(String callId, double x, double y, double z)
 	throws IOException;
 

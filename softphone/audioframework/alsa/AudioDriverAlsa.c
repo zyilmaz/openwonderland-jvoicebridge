@@ -309,7 +309,7 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nWriteSpeaker(
 	fprintf(stderr, "write speaker error:  %s\n", snd_strerror(ret));
 
 	if (snd_pcm_recover(speaker_handle, ret, 1) < 0) {
-	    fprintf(stderr, "failed to recover from writei:  %s\n", 
+	    fprintf(stderr, "nWriteSpeaker failed to recover from writei:  %s\n", 
 		snd_strerror(ret));
 	    return ret;
 	}
@@ -422,7 +422,7 @@ async_callback(snd_async_handler_t *ahandler)
 	    snd_strerror(ret));
 
         if (snd_pcm_recover(handle, ret, 0) < 0) {
-            fprintf(stderr, "failed to recover from writei:  %s\n",
+            fprintf(stderr, "async_callback failed to recover from writei:  %s\n",
                 snd_strerror(ret));
             return;
         }

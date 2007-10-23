@@ -92,6 +92,9 @@ public interface VoiceHandler {
 
     public void removeCallBeginEndListener(ManagedCallBeginEndListener listener);
 
+    public void setPositionAndOrientation(String callId , double x, double y, 
+	double z, double orientation);
+
     public void setPosition(String callId , double x, double y, double z);
 
     public void setOrientation(String callId, double orientation);
