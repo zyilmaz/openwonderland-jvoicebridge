@@ -199,8 +199,20 @@ public class SpeakerAlsaImpl implements Speaker {
 	try {
             len = audioDriver.writeSpeaker(data, 0, length);
         } catch (IOException e) {
-	    Logger.println("writeSpeaker failed:  " + e.getMessage());
-	    return 0;
+	    /*
+	     * Something is really wrong.
+	     * Let's reinitialize and try again.
+	     */
+	    try {
+	        audioDriver.initializeSpeaker(sampleRate, channels, bufferSize);
+	        flush();
+	        audioDriver.writeSpeaker(data, 0, length);
+	    } catch (IOException ex) {
+	        Logger.println("writeSpeaker failed:  " + e.getMessage());
+		Logger.println("Unable to re-initialize speaker:  "
+		    + ex.getMessage());
+	        return 0;
+	    }
 	}
 
 	numWrites++;

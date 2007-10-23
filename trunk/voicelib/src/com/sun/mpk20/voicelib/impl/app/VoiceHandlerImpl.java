@@ -103,20 +103,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
 		logger.info("Invalid scale factor:  " + s);
 	    }
 	}
-
-if (false) {
-	logger.setLevel(Level.INFO);
-
-	s = System.getProperty(VoiceHandlerImpl.class.getName() + ".logging.level");
-
-	if (s != null) {
-	    try {
-		logger.setLevel(Level.parse(s));
-	    } catch (IllegalArgumentException e) {
-                logger.info("Invalid log level:  " + s);
-            }
-	}
-}
     }
 
     public static VoiceHandler getInstance() {
@@ -964,12 +950,21 @@ if (false) {
         }
     }
 
-    public void setPosition(String callId, double x, double y, double z) {
-	logger.finest("setPosition for " + callId 
-	    + " (" + (Math.round(x * 1000) / 1000.) 
-	    + ", " + (Math.round(y * 1000) / 1000.)
-	    + ", " + (Math.round(z * 1000) / 1000.) + ")");
+    public void setPositionAndOrientation(String callId, double x, double y, 
+	    double z, double orientation) {
 
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	try {
+	    voiceManager.setPositionAndOrientation(callId, x / scale, y / scale, z / scale,
+		orientation);
+	} catch (IOException e) {
+	    logger.info("callId " + callId + " setPositionAndOrientation failed:  "
+		+ e.getMessage());
+	}
+    }
+
+    public void setPosition(String callId, double x, double y, double z) {
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
 	try {

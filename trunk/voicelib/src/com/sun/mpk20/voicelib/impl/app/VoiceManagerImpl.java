@@ -124,7 +124,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	if (p != null) {
 	    logger.info("Call " + callId + " exists, reset privateMixes.");
 
-	    setPrivateMixes();
+	    setPrivateMixes(p);
 	    return;
 	}
 
@@ -253,7 +253,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    logger.finer("Call Established:  Player already exists");
 	}
 
-	setPrivateMixes();
+	setPrivateMixes(findPlayer(callId));
     }
 
     public void newInputTreatment(String callId, String treatment) 
@@ -324,40 +324,77 @@ public class VoiceManagerImpl implements VoiceManager {
      * In 3-d graphics, y and z are switched around which is why
      * the second argument is z and the third y.
      */
-    public void setPosition(String callId, double x, double z, double y)
+    public void setPositionAndOrientation(String callId, double x, double z, 
+	    double y, double orientation) throws IOException {
+
+	Player player = findPlayer(callId);
+
+        if (player == null) {
+            logger.info("no Player for " + callId);
+            return;
+	}
+
+	boolean setPrivateMixes = false;
+
+	if (player.samePosition(x, y, z)) {
+	    //logger.info("same position:  " + player);
+	} else {
+	    player.setPosition(x, y, z);
+	    setPrivateMixes = true;
+	}
+
+	if (player.sameOrientation(orientation)) {
+	    //logger.info("same orientation:  " + player);
+	} else {
+	    player.setOrientation(orientation);
+	    setPrivateMixes = true;
+	}
+
+	if (setPrivateMixes == true) {
+	    setPrivateMixes(player);
+	}
+    }
+
+    /*
+     * In 3-d graphics, y and z are switched around which is why
+     * the second argument is z and the third y.
+     */
+    public void setPosition(String callId, double x, double z, double y) 
 	    throws IOException {
 
 	Player player = findPlayer(callId);
 
         if (player == null) {
-            logger.info("setPosition:  no Player for " + callId);
+            logger.info("no Player for " + callId);
             return;
 	}
 
-	if (player.x == x && player.y == y && player.z == z) {
+	if (player.samePosition(x, y, z)) {
+	    //logger.info("same position:  " + player);
 	    return;
 	}
 
 	player.setPosition(x, y, z);
 
-	setPrivateMixes();
+	setPrivateMixes(player);
     }
 
-    public void setOrientation(String callId, double angle) throws IOException {
+    public void setOrientation(String callId, double orientation) throws IOException {
 	Player player = findPlayer(callId);
 
         if (player == null) {
-            logger.info("setOrientation:  no Player for " + callId);
+            logger.info("no Player for " + callId);
             return;
 	}
 
-	if (player.orientation == angle) {
+	if (player.sameOrientation(orientation)) {
+	    //logger.info("same orientation:  " + player);
 	    return;
 	}
 
-	player.setOrientation(angle);
+	player.setOrientation(orientation);
 
-	setPrivateMixes();
+	setPrivateMixes(player);
     }
 
     public void setAttenuationRadius(String callId, double attenuationRadius) 
@@ -366,7 +403,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	Player player = findPlayer(callId);
 
         if (player == null) {
-            logger.info("setAttenuationRadius:  no Player for " + callId);
+            logger.info("no Player for " + callId);
             return;
 	}
 
@@ -380,7 +417,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	Player player = findPlayer(callId);
 
         if (player == null) {
-            logger.info("setAttenuationVolume:  no Player for " + callId);
+            logger.info("no Player for " + callId);
             return;
 	}
 
@@ -456,32 +493,85 @@ public class VoiceManagerImpl implements VoiceManager {
 
     private Player findPlayer(String callId) {
 	if (callId == null || callId.length() == 0) {
-            logger.info("move:  callId is null or 0 length");
+            logger.info("callId is null or 0 length");
             return null;
         }
 
         return players.get(callId);
     }
 
+    private int numberOfPrivateMixesSet;
+
+    private long timeToSetMixes;
+
+    private int n;
+
+    private int skipped;
+
+    private long startTime;
+
+    private long timeToSpatialize;
+
     private void setPrivateMixes() throws IOException {
+	setPrivateMixes(null);
+    }
+
+    private void setPrivateMixes(Player changedPlayer) throws IOException {
 	//Adjust private mixes for all calls
 	//For each call, we have to determine where it is
 	// in 3-space relative to each other call
 	// and set the private mix accordingly.
 
+	synchronized (this) {
+	    if (startTime == 0) {
+	        startTime = System.nanoTime();
+	    }
+	}
 
 	Player[] playersArray = players.values().toArray(new Player[0]);
 
-	for (int i = 0; i < playersArray.length; i++) {
-	    Player p1 = playersArray[i];
+	long start = System.nanoTime();
 
-	    for (int j = 0; j < playersArray.length; j++) {
-		Player p2 = playersArray[j];
+	if (changedPlayer == null) {
+	    for (int i = 0; i < playersArray.length; i++) {
+	        Player p1 = playersArray[i];
 
-		if (p1 == p2 ) {
+	        for (int j = 0; j < playersArray.length; j++) {
+		    Player p2 = playersArray[j];
+
+		    if (p1 == p2 ) {
+		        skipped++;
+		        continue;
+		    }
+   
+		    /*
+         	     * Set the private mix p1 has for p2
+	             */
+        	    if (p1.isLivePerson == false) {
+		        /*
+             	         * We only set private mixes for live players
+             	         * and not for audio sources.
+             	         */
+		        skipped++;
+	  	        continue;
+        	    }
+
+	            setPrivateMix(p1, p2);
+	        }
+	    }
+	} else {
+	    /*
+	     * We only need to adjust the private mixes between the
+	     * changed player and other calls.
+	     */
+	    for (int i = 0; i < playersArray.length; i++) {
+	        Player p1 = playersArray[i];
+
+		if (p1 == changedPlayer) {
+		    skipped++;
 		    continue;
 		}
-   
+
 		/*
          	 * Set the private mix p1 has for p2
 	         */
@@ -490,11 +580,51 @@ public class VoiceManagerImpl implements VoiceManager {
              	     * We only set private mixes for live players
              	     * and not for audio sources.
              	     */
-	  	    continue;
-        	}
+		    skipped++;
+        	} else {
+		    setPrivateMix(p1, changedPlayer);
+		}
 
-	        setPrivateMix(p1, p2);
+		if (changedPlayer.isLivePerson == false) {
+		    skipped++;
+		} else {
+		    setPrivateMix(changedPlayer, p1);
+		}
 	    }
+	}
+
+	long now = System.nanoTime();
+
+	synchronized (this) {
+	    timeToSetMixes += (now - start);
+
+	    if (n++ != 100) {
+		return;
+	    }
+
+	    if (false && numberOfPrivateMixesSet > 0) {
+	        long elapsed = (now - startTime) * 1000 / 1000000000;
+
+	        timeToSetMixes = timeToSetMixes * 1000 / 1000000000;
+
+	        double avg = (double) timeToSetMixes / numberOfPrivateMixesSet;
+		    
+	        logger.info("elapsed ms " + elapsed + ", time to set "
+		    + numberOfPrivateMixesSet + " mixes " 
+		    + timeToSetMixes + ", avg time to set a pm " + avg
+		    + ", number of players " + playersArray.length 
+		    + ", avg time to spatialize " 
+		    + (((double) timeToSpatialize) / 
+		      (numberOfPrivateMixesSet + skipped))
+		    + ", out of range " + skipped);
+	    }
+
+	    startTime = 0;
+	    numberOfPrivateMixesSet = 0;
+	    timeToSetMixes = 0;
+	    timeToSpatialize = 0;
+	    skipped = 0;
+	    n = 0;
 	}
     }
 
@@ -519,8 +649,12 @@ public class VoiceManagerImpl implements VoiceManager {
 	    spatializer = defaultSpatializer;
 	}
 
+	long start = System.currentTimeMillis();
+
 	double[] privateMixParameters = spatializer.spatialize(
 	    p2.x, p2.y, p2.z, p2.orientation, p1.x, p1.y, p1.z, p1.orientation);
+
+	timeToSpatialize += (System.currentTimeMillis() - start);
 
 	if (privateMixParameters[3] > .1) {
           logger.finest("p1=" + p1 + " p2=" + p2 + " mix " 
@@ -553,7 +687,6 @@ public class VoiceManagerImpl implements VoiceManager {
 	logger.finest("volume after wall attenuation: " 
 	    + round(privateMixParameters[3]));
 
-
 	count++;
 
 	if (backingManager != null) {
@@ -567,7 +700,7 @@ public class VoiceManagerImpl implements VoiceManager {
  
 	    if (privateMixParameters[3] == 0) {
 		if (p1.isInRange(p2) == false) {
-		    if ((count % 1000) == 0 || logger.isLoggable(Level.FINEST)) {
+		    if ((count % 1000) == 0 || logger.isLoggable(Level.FINE)) {
 	    	        logger.info("pmx for " + p1 + ": " + p2 
 			    + " already out of range."); 
 		    }
@@ -576,6 +709,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		     * This is an optimization.  p2 was not in range
 		     * and we already knew that.
 		     */
+		    skipped++;
 		    return;
 	        }
 
@@ -584,7 +718,7 @@ public class VoiceManagerImpl implements VoiceManager {
 
 		p1.removePlayerInRange(p2);   // p2 is not in range any more
 	    } else {
-		if ((count % 1000) == 0 || logger.isLoggable(Level.FINEST)) {
+		if ((count % 1000) == 0 || logger.isLoggable(Level.FINE)) {
 	    	    logger.info("pmx for " + p1 + ": "
 	                + p2 + " is in range."); 
 		}
@@ -596,6 +730,8 @@ public class VoiceManagerImpl implements VoiceManager {
 		    p1.addPlayerInRange(p2);  // p2 is in range now
 		}
 	    }
+
+	    numberOfPrivateMixesSet++;
 
             backingManager.setPrivateMix(p1.callId, p2.callId, 
 		privateMixParameters);
