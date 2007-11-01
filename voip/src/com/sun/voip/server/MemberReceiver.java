@@ -324,6 +324,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	    return;
 	}
 
+	Logger.println("My media info:  " + myMediaInfo);
+
 	int inSampleRate = myMediaInfo.getSampleRate();
 	int inChannels = myMediaInfo.getChannels();
 
@@ -332,19 +334,24 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	int outSampleRate = conferenceMediaInfo.getSampleRate();
 	int outChannels = conferenceMediaInfo.getChannels();
 
-	if (inSampleRate != outSampleRate || inChannels != outChannels) {
-	    try {
-		Logger.println("Call " + cp
-		    + " resample received data from " + inSampleRate + "/" 
-		    + inChannels + " to " + outSampleRate
-		    + "/" + outChannels);
+	/*
+	 * For input treatments, the treatment manager does the resampling.
+	 */
+	if (cp.getInputTreatment() == null) {
+	    if (inSampleRate != outSampleRate || inChannels != outChannels) {
+	        try {
+		    Logger.println("Call " + cp
+		        + " resample received data from " + inSampleRate + "/" 
+		        + inChannels + " to " + outSampleRate
+		        + "/" + outChannels);
 
-	        inSampleRateConverter = new SampleRateConverter(
-		    this.toString(), inSampleRate, inChannels, 
-		    outSampleRate, outChannels);
-	    } catch (IOException e) {
-	        callHandler.cancelRequest(e.getMessage());
-		return;
+	            inSampleRateConverter = new SampleRateConverter(
+		        this.toString(), inSampleRate, inChannels, 
+		        outSampleRate, outChannels);
+	        } catch (IOException e) {
+	            callHandler.cancelRequest(e.getMessage());
+		    return;
+	        }
 	    }
 	}
 

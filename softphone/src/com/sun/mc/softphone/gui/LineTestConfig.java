@@ -108,7 +108,7 @@ public class LineTestConfig extends JFrame {
   	    if (Utils.isLinux() && mediaManager.isStarted()) {
                 Object[] options = { "OK", "CANCEL" };
                 int option = JOptionPane.showOptionDialog(null, 
-		    "The call will be disconnected.  If running Wonderland, you can use \"Tools / Connect Softphone\" to reconnect.  Click OK to continue", 
+		    "The call will be disconnected.  When you click Done it will be reconnected.  Click OK to continue", 
 		    "Warning", JOptionPane.DEFAULT_OPTION, 
 		    JOptionPane.WARNING_MESSAGE, null, options, options[0]);
 
@@ -240,10 +240,11 @@ public class LineTestConfig extends JFrame {
     }
     
     private void restart() throws IOException {
-        System.out.println("*** Restart softphone now");
         JOptionPane.showMessageDialog(this, "The softphone will restart " +
                 "shortly with your new configuration.", 
                 "Configuration complete", JOptionPane.INFORMATION_MESSAGE);
+
+        System.out.println("*** Restart softphone now");
     }
     
     private void done() {

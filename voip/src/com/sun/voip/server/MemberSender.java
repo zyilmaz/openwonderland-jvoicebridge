@@ -207,19 +207,25 @@ public class MemberSender {
 	outSampleRate = conferenceMediaInfo.getSampleRate();
 	outChannels = conferenceMediaInfo.getChannels();
 
-	if (inSampleRate != outSampleRate || inChannels != outChannels) {
-	    try {
+	/*
+	 * No data is ever sent to an input treatment so there's no need
+	 * for a resampler.
+	 */
+	if (cp.getInputTreatment() == null) {
+	    if (inSampleRate != outSampleRate || inChannels != outChannels) {
                 Logger.println("Call " + cp
                     + " resample data to send from " + inSampleRate + "/"
                     + inChannels + " to " + outSampleRate
                     + "/" + outChannels);
 
-	        outSampleRateConverter = new SampleRateConverter(
-		    this.toString(), outSampleRate, outChannels, 
-		    inSampleRate, inChannels);
-	    } catch (IOException e) {
-	        callHandler.cancelRequest(e.getMessage());
-		return;
+	        try {
+	            outSampleRateConverter = new SampleRateConverter(
+		        this.toString(), outSampleRate, outChannels, 
+		        inSampleRate, inChannels);
+	        } catch (IOException e) {
+	            callHandler.cancelRequest(e.getMessage());
+    		    return;
+	        }
 	    }
 	}
 

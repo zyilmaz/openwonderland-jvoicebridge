@@ -113,6 +113,9 @@ class RequestHandler extends Thread implements CallEventListener {
      */
     private CallParticipant cp;		// most recent call
 
+    private long startTime;
+    private int requestCount;
+
     /**
      * Thread to read input from the client, parse it, and start a call.
      */
@@ -150,7 +153,21 @@ class RequestHandler extends Thread implements CallEventListener {
 		String request = null;
 
 	        try {
+		    if (startTime == 0) {
+			startTime = System.nanoTime();
+		    }
+
 		    request = bufferedReader.readLine(); // read from socket
+
+		    if (Logger.logLevel > Logger.LOG_INFO && ++requestCount == 500) {
+			long elapsed = System.nanoTime() - startTime;
+
+			Logger.println("elapsed " + (elapsed / 1000000000.)
+			    + ", 500 requests, " + (requestCount / (elapsed / 1000000000.))
+			    + " requests per second");
+			startTime = 0;
+			requestCount = 0;
+		    }
 	        } catch (IOException e) {
 		    endAllCalls("client socket closed");
 		    removeHandler(this);
