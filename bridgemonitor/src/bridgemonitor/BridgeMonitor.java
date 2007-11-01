@@ -201,7 +201,7 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
     }
 
     private void setOffline() {
-	bsp.getMonitorButton().setEnabled(false);
+	setMonitorButton();
 	setEnableButton();
 	setBridgeInfoButton();
 
