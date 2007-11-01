@@ -46,13 +46,14 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
  
     private boolean callAnswered = false;
 
+    private MediaInfo mixerMediaPreference;
+
     public NSOutgoingCallAgent(CallHandler callHandler) {
 	super(callHandler);
 
 	cp = callHandler.getCallParticipant();
 
-        MediaInfo mixerMediaPreference =
-            callHandler.getConferenceManager().getMediaInfo();
+        mixerMediaPreference = callHandler.getConferenceManager().getMediaInfo();
 
         sipUtil = new SipUtil(mixerMediaPreference);
     }
@@ -66,13 +67,16 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
 
 	setState(CallState.INVITED);
 
+	TreatmentManager treatmentManager = null;
+
 	if (cp.getInputTreatment() != null) {
 	    try {
 		/*
 		 * Just make sure we can open the file
 		 */
-		new TreatmentManager(cp.getInputTreatment(),
-                    0, 8000, 1);
+		treatmentManager = new TreatmentManager(cp.getInputTreatment(),
+                    RtpPacket.PCM_ENCODING, mixerMediaPreference.getSampleRate(), 
+		    mixerMediaPreference.getChannels());
 	    } catch (IOException e) {
 		Logger.println("Invalid input treatment:  " + cp.getInputTreatment());
 		throw new IOException(
@@ -85,7 +89,7 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
 	     * There is no remote endpoint.
 	     */
 	    try {
-	        setRemoteMediaInfo();
+	        setRemoteMediaInfo(treatmentManager);
 	    } catch (ParseException e) {
 		throw new IOException(e.getMessage());
 	    }
@@ -175,7 +179,9 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
      * and no data is ever sent to the call.
      * The looks like any other call but is used only as a source of sound.
      */
-    public void setRemoteMediaInfo() throws ParseException {
+    public void setRemoteMediaInfo(TreatmentManager treatmentManager) 
+	    throws ParseException {
+
 	if (getState() != CallState.INVITED) {
 	    Logger.println("Call " + cp
 		+ ":  NSOutgoingCallAgent:  bad state "
@@ -183,7 +189,15 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
 	    return;
 	}
 
-	MediaInfo mediaInfo = callHandler.getConferenceManager().getMediaInfo();
+	MediaInfo mediaInfo;
+
+	try {
+	   mediaInfo = MediaInfo.findMediaInfo(RtpPacket.PCM_ENCODING,
+		treatmentManager.getSampleRate(),
+		treatmentManager.getChannels());
+	} catch (IOException e) {
+	   throw new ParseException(e.getMessage(), 0);
+	}
 
         InetSocketAddress isa = 
 	    callHandler.getMember().getMemberReceiver().getReceiveAddress();

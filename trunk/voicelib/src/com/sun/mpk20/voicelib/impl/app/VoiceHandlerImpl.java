@@ -74,7 +74,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
     private static final String DS_CALL_BEGIN_END_LISTENERS =
         DS_PREFIX + "CallBeginEndListeners";
     
-    private final static String DEFAULT_CONFERENCE_ID = "Test:PCM/44100/2";
+    private final static String DEFAULT_CONFERENCE = "Test:PCM/16000/2";
 
     private final static String AUDIO_DIR =
             "com.sun.mpk20.gdcdemo.server.AUDIO_DIR";
@@ -155,11 +155,11 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	     * Also so we start monitoring the conference status in case someone
 	     * places a call from outside the client.
 	     */
-	    String conferenceId = System.getProperty(
-	        "com.sun.mpk20.gdcdemo.client.sample.CONFERENCE_ID",
-	        DEFAULT_CONFERENCE_ID);
+	    String conference = System.getProperty(
+	        "com.sun.sgs.impl.app.voice.conference",
+	        DEFAULT_CONFERENCE);
 
-	    voiceManager.monitorConference(conferenceId);
+	    voiceManager.monitorConference(conference);
 	} catch (IOException e) {
 	    logger.severe("Unable to communicate with voice bridge:  " 
 		+ e.getMessage());
@@ -197,11 +197,11 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	CallParticipant cp = new CallParticipant();
 
-	String conferenceId = System.getProperty(
-	    "com.sun.mpk20.gdcdemo.client.sample.CONFERENCE_ID",
-	    DEFAULT_CONFERENCE_ID);
+        String conference = System.getProperty(
+	   "com.sun.sgs.impl.app.voice.conference",
+	   DEFAULT_CONFERENCE);
 
-	cp.setConferenceId(conferenceId);
+	cp.setConferenceId(conference);
 
 	String name = "Anonymous";
 
@@ -328,11 +328,11 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	CallParticipant cp = new CallParticipant();
 
-	String conferenceId = System.getProperty(
-	    "com.sun.mpk20.gdcdemo.client.sample.CONFERENCE_ID",
-	    DEFAULT_CONFERENCE_ID);
+        String conference = System.getProperty(
+	   "com.sun.sgs.impl.app.voice.conference",
+	   DEFAULT_CONFERENCE);
 
-	cp.setConferenceId(conferenceId);
+	cp.setConferenceId(conference);
 
 	cp.setInputTreatment(getTreatmentFile(treatment));
 	cp.setName(id);

@@ -233,7 +233,7 @@ public class VoiceManagerImpl implements VoiceManager {
     }
 
     public void callEstablished(String callId) throws IOException {
-	logger.fine("call established: " + callId);
+	logger.info("call established: " + callId);
 
 	/*
 	 * XXX We don't need to do this any more.  Audio treatments are already
@@ -609,7 +609,7 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	    double avg = timeToSetMixes / 1000000000. / numberOfPrivateMixesSet;
 
-	    logger.fine("avg time to set " + numberOfPrivateMixesSet + " mixes "
+	    logger.info("avg time to set " + numberOfPrivateMixesSet + " mixes "
 		+ avg + ", number of players " + playersArray.length 
 		+ ", avg time to spatialize " 
 		+ (timeToSpatialize / 1000000000. / 

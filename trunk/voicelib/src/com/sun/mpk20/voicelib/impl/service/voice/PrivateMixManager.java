@@ -160,7 +160,8 @@ public class PrivateMixManager extends Thread {
 
 			    logger.info(this + ": elapsed " + seconds 
 				+ " seconds " + ", n " + n + ", avg " 
-				+ (seconds / n) + " seconds");
+				+ (seconds / n) + " seconds, "
+				+ (500. / elapsed) + " pm's / second");
 
 		            elapsed = 0;
 		            n = 0;
