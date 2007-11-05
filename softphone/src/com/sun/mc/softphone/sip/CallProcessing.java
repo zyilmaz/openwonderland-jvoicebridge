@@ -844,21 +844,20 @@ public class CallProcessing
 
             callee = callee.trim();
             //Handle default domain name (i.e. transform 1234 -> 1234@sip.com
-            String domain = sipManCallback.getRegistrarAddress();
 
-	    if (domain == null) {
-                domain =
-		    Utils.getPreference("com.sun.mc.softphone.sip.DOMAIN_NAME");
-	    } else {
-		int port = sipManCallback.getRegistrarPort();
+	    String domain = null;
 
-		domain += ":" + port;
-	    }
+            if (callee.indexOf('@') == -1) {
+		domain = getDomain();
 
-            if (domain != null && callee.indexOf('@') == -1) {
+		if (domain == null) {
+                    throw new CommunicationsException(callee +
+                        " is not a legal SIP uri!");
+		}
+
                 callee = callee + "@" + domain;
-            }
-
+	    }
+	
             //Let's be uri fault tolerant
             if (callee.toLowerCase().indexOf("sip:") == -1 && 
 		    callee.indexOf('@') != -1) {
@@ -1024,6 +1023,43 @@ public class CallProcessing
             console.logExit();
         }
 
+    }
+
+    private String getDomain() {
+	/*
+	 * Try the default domain
+	 */
+        String domain = Utils.getPreference("com.sun.mc.softphone.sip.DOMAIN_NAME");
+
+	if (domain == null || domain.length() == 0) {
+	    /*
+	     * Try using the proxy
+	     */
+	    domain = Utils.getPreference("javax.sip.OUTBOUND_PROXY_ADDRESS");
+
+	    if (domain != null && domain.length() > 0) {
+		int ix = domain.indexOf("/");
+
+		if (ix >= 0) {
+		    domain = domain.substring(0, ix);
+		}
+	    }
+	}
+
+	if (domain == null || domain.length() == 0) {
+	    /*
+	     * Try using the registrar
+	     */
+            domain = sipManCallback.getRegistrarAddress();
+
+	    if (domain != null && domain.length() > 0) {
+		int port = sipManCallback.getRegistrarPort();
+
+		domain += ":" + port;
+	    }
+	}
+    
+	return domain;
     }
 
     //end call

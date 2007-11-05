@@ -722,8 +722,19 @@ if (false) {
 	        Logger.println("Registrar port " + registrarPort);
 	    }
 
-	    registrationsExpiration = 
-		Integer.parseInt(Utils.getPreference("com.sun.mc.softphone.sip.WAIT_UNREGISTGRATION_FOR"));
+	    registrationsExpiration = 3600;
+
+	    String s = Utils.getPreference(
+		 "com.sun.mc.softphone.sip.WAIT_UNREGISTGRATION_FOR");
+
+	    if (s != null && s.length() > 0) {
+	        try {
+	            registrationsExpiration = Integer.parseInt(Utils.getPreference(
+		        "com.sun.mc.softphone.sip.WAIT_UNREGISTGRATION_FOR"));
+	        } catch (NumberFormatException e) {
+		    Logger.println("Invalid registrations expiration:  " + e.getMessage());
+	        }
+	    }
 
 	    if (registrarAddress != null && registrarAddress.length() > 0) {
 		int ix = registrarAddress.indexOf(";sip-stun");
