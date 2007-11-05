@@ -317,7 +317,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    double lowerLeftX, double lowerLeftY, double lowerLeftZ, 
 	    double upperRightX, double upperRightY, double upperRightZ) {
 
-	logger.finer("setupTreatment:  id " + id + " treatment " + treatment
+	logger.info("setupTreatment:  id " + id + " treatment " + treatment
             + " group: " + group);
         
         if (treatment == null) {
@@ -413,28 +413,18 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	return callId;
     }
 
-    private void treatmentDone(String callId, boolean restart) {
-	TreatmentInfo t = treatmentInfo.get(callId);
-
-	treatmentDone(callId, t, restart);
-    }
-
-    private void treatmentDone(String callId, TreatmentInfo t, 
-	    boolean restart) {
-
-	logger.finest("treatment done " + callId + " restart " + restart);
+    private void treatmentDone(String callId) {
+	logger.info("treatment done " + callId);
 
 	if (treatmentCallIds == null) {
 	    return;   // there haven't been any treatments
 	}
 
-	if (t != null) {
-	    if (t.listener != null && restart == false) {
- 		removeCallStatusListener(t.listener);
-		t.listener = null;
-	    }
-	} else {
-	    logger.fine("callId " + callId + " treatment info is null");
+	TreatmentInfo t = treatmentInfo.get(callId);
+
+	if (t == null) {
+	    logger.info("callId " + callId + " treatment info is null");
+	    return;
 	}
 
 	/*
@@ -455,31 +445,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    Hashtable<String, Boolean> treatmentGroup = 
 		treatmentGroups.get(treatmentGroupId);
 
-	    /*
-	     * Treatment is now done
-	     */
-	    treatmentGroup.remove(callId);
-
-	    if (restart == true) {
-	        treatmentGroup.put(callId, new Boolean(true));
-	    } else {
-		treatmentCallIds.remove(callId);
-		treatmentInfo.remove(callId);
-
-		/*
-		 * Tell the voice manager that this call has ended
-		 * so it can remove the Player.
-		 */
-	        VoiceManager voiceManager = 
-		    AppContext.getManager(VoiceManager.class);
-
-		try {
-	            voiceManager.endCall(callId, false);
-		} catch (IOException e) {
-		    logger.info("Unable to end treatment " + callId
-			+ " " + e.getMessage());
-		}
-	    }
+	    treatmentGroup.put(callId, new Boolean(true));
 
 	    Enumeration<String> keys = treatmentGroup.keys();
 
@@ -515,17 +481,43 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void stopInputTreatment(String callId) {
-	logger.finest("stop treatment" + callId);
+	logger.info("stop treatment for callId " + callId);
 
-	treatmentDone(callId, false);  // don't restart treatment
+	removeTreatment(callId);
 
 	try {
 	    VoiceManager voiceManager = 
 		AppContext.getManager(VoiceManager.class);
-	    voiceManager.stopInputTreatment(callId);
+	    voiceManager.endCall(callId);
 	} catch (IOException e) {
 	    logger.info("Unable to end call " + callId
 		+ " " + e.getMessage());
+	}
+    }
+
+    private void removeTreatment(String callId) {
+	TreatmentInfo t = treatmentInfo.get(callId);
+
+	if (t == null) {
+	    return;
+	}
+
+	removeCallStatusListener(t.listener);
+
+        Hashtable<String, Boolean> treatmentGroup = 
+	    treatmentGroups.get(t.group);
+
+	treatmentGroup.remove(callId);
+
+	treatmentCallIds.remove(callId);
+        treatmentInfo.remove(callId);
+
+	Enumeration<String> keys = treatmentGroup.keys();
+
+	if (keys.hasMoreElements() == false) {
+	    logger.info("Removing last treatment in group " + t.group);
+
+	    treatmentGroups.remove(t.group);
 	}
     }
 
@@ -844,14 +836,14 @@ public class VoiceHandlerImpl implements VoiceHandler,
         case CallStatus.ENDED:
 	    logger.info(callStatus.toString());
 
-	    treatmentDone(callId, false);
+	    removeTreatment(callId);
 
 	    notifyCallBeginEndListeners(callStatus);
 	    break;
 
 	case CallStatus.TREATMENTDONE:
 	    logger.finer("Treatment done: " + callStatus);
-	    treatmentDone(callId, true);
+	    treatmentDone(callId);
 	    break;
 
 	case CallStatus.BRIDGE_OFFLINE:
