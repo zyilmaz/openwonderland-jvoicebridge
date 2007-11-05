@@ -228,6 +228,16 @@ public abstract class CallHandler extends Thread {
         return csa.isCallEstablished();
     }
 
+    /*
+     * true is call is ending
+     */
+    public boolean isCallEnding() {
+        if (done || csa == null) {
+            return true;
+        }
+        return csa.isCallEnding();
+    }
+
     public void addCallEventListener(CallEventListener listener) {
         synchronized (callEventListeners) {
             callEventListeners.add(listener);

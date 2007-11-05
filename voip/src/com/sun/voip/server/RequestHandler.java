@@ -116,6 +116,8 @@ class RequestHandler extends Thread implements CallEventListener {
     private long startTime;
     private int requestCount;
 
+    private long blockedTime;
+
     /**
      * Thread to read input from the client, parse it, and start a call.
      */
@@ -157,16 +159,23 @@ class RequestHandler extends Thread implements CallEventListener {
 			startTime = System.nanoTime();
 		    }
 
+		    long readLineStartTime = System.nanoTime();
+
 		    request = bufferedReader.readLine(); // read from socket
+
+		    blockedTime += (System.nanoTime() - readLineStartTime);
 
 		    if (Logger.logLevel > Logger.LOG_INFO && ++requestCount == 500) {
 			long elapsed = System.nanoTime() - startTime;
 
 			Logger.println("elapsed " + (elapsed / 1000000000.)
+			    + " blocked " + (blockedTime * 100. / 1000000000.)
+			    + " (" + ((double)blockedTime / elapsed) + "%) "
 			    + ", 500 requests, " + (requestCount / (elapsed / 1000000000.))
 			    + " requests per second");
 			startTime = 0;
 			requestCount = 0;
+			blockedTime = 0;
 		    }
 	        } catch (IOException e) {
 		    endAllCalls("client socket closed");
@@ -345,11 +354,17 @@ class RequestHandler extends Thread implements CallEventListener {
 	    }
 
 	    if (cp.migrateCall() == false) {
-	        if (CallHandler.findCall(callId) != null) {
-		    Logger.error("CallId " + callId + " is already in use");
-		    writeToSocket("CallId " + callId + " is already in use");
-		    throw new ParseException(
-			"CallId " + callId + " is already in use", 0);
+		CallHandler callHandler = CallHandler.findCall(callId);
+
+	        if (callHandler != null) { 
+		    if (callHandler.isCallEnding() == false) {
+		        Logger.error("CallId " + callId + " is already in use");
+		        writeToSocket("CallId " + callId + " is already in use");
+		        throw new ParseException(
+			    "CallId " + callId + " is already in use", 0);
+		    } else {
+			Logger.println("Reusing callId for ending call " + callId);
+		    }
 	        }
 	    }
 	}
@@ -907,13 +922,6 @@ class RequestHandler extends Thread implements CallEventListener {
                     conferenceMonitors.get(i);
 
                 if (conferenceId.equals(m.getConferenceId())) {
-		    if (s.indexOf("ESTABLISHED") >= 0 ||
-			    s.indexOf("END") >= 0) {
-
-		        Logger.println("Notifying " + 
-			m.getRequestHandler().getSocket().getRemoteSocketAddress());
-		    }
-
 		    m.getRequestHandler().writeToSocket(s);
 		}
 	    }

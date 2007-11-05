@@ -199,6 +199,11 @@ public class CallSetupAgent implements TreatmentDoneListener, Runnable {
 	    getState() == CallState.ENDING;
     }
 
+    public boolean isCallEnding() {
+	return getState() == CallState.ENDING || 
+	    getState() == CallState.ENDED;
+    }
+
     /**
      * Setup the call answerered treatment manager
      */
