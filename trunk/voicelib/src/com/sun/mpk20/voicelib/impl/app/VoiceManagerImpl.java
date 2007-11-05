@@ -607,9 +607,12 @@ public class VoiceManagerImpl implements VoiceManager {
 		return;
 	    }
 
-	    double avg = timeToSetMixes / 1000000000. / numberOfPrivateMixesSet;
+	    double elapsed = timeToSetMixes / 1000000000.;
 
-	    logger.info("avg time to set " + numberOfPrivateMixesSet + " mixes "
+	    double avg = elapsed / numberOfPrivateMixesSet;
+
+	    logger.info("elapsed " + elapsed + " avg time to set " 
+		+ numberOfPrivateMixesSet + " mixes "
 		+ avg + ", number of players " + playersArray.length 
 		+ ", avg time to spatialize " 
 		+ (timeToSpatialize / 1000000000. / 
@@ -803,13 +806,17 @@ public class VoiceManagerImpl implements VoiceManager {
     }
 
     public void setLogLevel(Level level) {
-	logger.setLevel(level);
-	logger.info("set log level to " + logger.getLevel()
-	    + " int " + logger.getLevel().intValue());
 
-	if (backingManager != null) {
-	    backingManager.setLogLevel(level);
+	logger.setLevel(level);
+
+	logger.info("level " + level + " set log level to " 
+	    + logger.getLevel() + " int " + logger.getLevel().intValue());
+
+	if (backingManager == null) {
+	    return;
 	}
+
+	backingManager.setLogLevel(level);
     }
 
     public Level getLogLevel() {
