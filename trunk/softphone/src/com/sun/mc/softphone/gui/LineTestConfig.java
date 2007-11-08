@@ -143,6 +143,8 @@ public class LineTestConfig extends JFrame {
     
     /** Creates a new instance of LineTestConfig */
     public LineTestConfig(MediaManager mediaManager) {
+	super("Audio Configuration");
+
         this.mediaManager = mediaManager;
 
 	micComboBox = new JComboBox();
