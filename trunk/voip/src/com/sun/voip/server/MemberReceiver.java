@@ -1835,7 +1835,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
     }
 
     public InetSocketAddress getReceiveAddress() {
-	return new InetSocketAddress(Bridge.getLocalHost(),
+	return new InetSocketAddress(Bridge.getPrivateHost(),
 	    datagramChannel.socket().getLocalPort());
     }
  

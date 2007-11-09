@@ -80,10 +80,12 @@ public class BridgeConnection extends VoiceBridgeConnection {
     private PrintWriter writer;
     
     private String privateHost;
-    private int privateSipPort;
     private int privateControlPort;
+    private int privateSipPort;
 
-    private String publicAddress;
+    private String publicHost;
+    private int publicControlPort;
+    private int publicSipPort;
 
     private boolean synchronous;
 
@@ -141,14 +143,27 @@ public class BridgeConnection extends VoiceBridgeConnection {
     /**
      * Creates a new instance of BridgeConnection
      */
-    public BridgeConnection(String privateHost, int privateSipPort, 
-	    int privateControlPort, boolean synchronous) throws IOException {
+    public BridgeConnection(
+	    String privateHost, int privateControlPort, int privateSipPort,
+	    boolean synchronous) throws IOException {
+
+	this(privateHost, privateControlPort, privateSipPort,
+	     privateHost, privateControlPort, privateSipPort, synchronous);
+    }
+
+    public BridgeConnection(
+	    String privateHost, int privateControlPort, int privateSipPort,
+	    String publicHost, int publicControlPort, int publicSipPort, 
+	    boolean synchronous) throws IOException {
 
         super(privateHost, privateControlPort);
 
 	this.privateHost = privateHost;
-	this.privateSipPort = privateSipPort;
 	this.privateControlPort = privateControlPort;
+	this.privateSipPort = privateSipPort;
+	this.publicHost = publicHost;
+	this.publicControlPort = publicControlPort;
+	this.publicSipPort = publicSipPort;
 	this.synchronous = synchronous;
 
 	/*
@@ -192,16 +207,28 @@ public class BridgeConnection extends VoiceBridgeConnection {
 	return privateHost;
     }
 
-    public int getPrivateSipPort() {
-	return privateSipPort;
-    }
-
     public int getPrivateControlPort() {
 	return privateControlPort;
     }
 
+    public int getPrivateSipPort() {
+	return privateSipPort;
+    }
+
+    public String getPublicHost() {
+	return publicHost;
+    }
+
+    public int getPublicControlPort() {
+	return publicControlPort;
+    }
+
+    public int getPublicSipPort() {
+	return publicSipPort;
+    }
+
     public String getPublicAddress() {
-	return publicAddress;
+	return publicHost + ":" + publicSipPort;
     }
 
     public void monitorConference(String conferenceId) throws IOException {
@@ -903,7 +930,7 @@ if (false) {
             writer.flush();
             String s = reader.readLine(); // read first line
 
-	    publicAddress = privateHost + ":" + privateSipPort;
+	    String publicAddress = publicHost + ":" + publicSipPort;
 
 	    String pattern = "BridgePublicAddress='";
 
@@ -946,6 +973,8 @@ if (false) {
     }
     
     public void disconnect() {
+	logger.info("disconnect");
+
 	super.disconnect();
 
 	try {
@@ -959,6 +988,8 @@ if (false) {
      * @throws IOException if there is an error closing the connection
      */
     private void closeConnection() throws IOException {
+	logger.info("closeConnection");
+
         if (socket != null) {
             socket.close();
         }
@@ -1013,7 +1044,7 @@ if (false) {
     }
 
     public void bridgeOffline(BridgeConnection bc) {
-	String s = bc.getPrivateHost() + "_" + bc.getPrivateSipPort();
+	String s = bc.getPrivateHost() + "_" + bc.getPrivateControlPort();
 
 	ArrayList<CallParticipant> cpArray = getCallParticipantArray();
 
@@ -1061,12 +1092,21 @@ if (false) {
 
     public boolean equals(BridgeConnection bc) {
 	return bc.privateHost.equals(privateHost) && 
+	    bc.privateControlPort == privateControlPort &&
 	    bc.privateSipPort == privateSipPort &&
-	    bc.privateControlPort == privateControlPort;
+	    bc.publicHost.equals(publicHost) &&
+	    bc.publicControlPort == publicControlPort &&
+	    bc.publicSipPort == publicSipPort;
+    }
+
+    public boolean equals(String publicHost, String publicSipPort) {
+	return this.publicHost.equals(publicHost) && 
+	    String.valueOf(this.publicSipPort).equals(publicSipPort);
     }
 
     public String toString() {
-	return privateHost + ":" + privateSipPort + ":" + privateControlPort;
+	return privateHost + ":" + privateControlPort + ":" + privateSipPort + ":" 
+	    + publicHost + ":" + publicControlPort + ":" + publicSipPort;
     }
 
     private boolean offlineNotificationSent;
@@ -1127,8 +1167,8 @@ if (false) {
 			+ " calls");
 	        } else {
 	            logger.info("Bridge " + bridgeConnection.toString()
-		        + " went offline, elapsed ms " + elapsed 
-			+ ", " + callParticipantMap.size() + " calls");
+		        + " went offline, elapsed " + (elapsed / 1000.)
+			+ " seconds, " + callParticipantMap.size() + " calls");
 	        }
 		
 		disconnect();

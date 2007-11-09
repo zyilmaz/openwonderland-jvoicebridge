@@ -47,6 +47,9 @@ public interface VoiceManager {
     public void setPrivateSpatializer(String targetCallId, String sourceCallId,
 	Spatializer spatializer);
 
+    public void setIncomingSpatializer(String targetCallId,
+	Spatializer spatializer);
+
     public void callEstablished(String callId) throws IOException;
 
     public void newInputTreatment(String callId, String treatment) 
@@ -91,7 +94,7 @@ public interface VoiceManager {
     public void setAttenuationVolume(String callId, double attenuationVolume)
 	throws IOException;
 
-    public void setPrivateMix(String sourceCallId, String targetCallId, 
+    public void setPrivateMix(String targetCallId, String fromCallId, 
 	double[] privateMixParameters) throws IOException;
 
     public void addCallStatusListener(ManagedCallStatusListener mcsl);

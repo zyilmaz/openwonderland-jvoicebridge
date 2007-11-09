@@ -57,10 +57,14 @@ import com.sun.stun.StunServerImpl;
  * For details on the command syntax see RequestParser.java
  */
 public class Bridge {
-    private static InetAddress localHost;
-    private static InetAddress publicHost;
-    private static int publicPort;
-    private static int controlPort = 6666;
+
+    private static String privateHost;
+    private static int privateControlPort = 6666;
+    private static int privateSipPort = 5060;
+
+    private static String publicHost;
+    private static int publicControlPort = 6666;
+    private static int publicSipPort = 5060;
 
     private static String bridgeLocation;
     private static String logDirectory;
@@ -86,20 +90,28 @@ public class Bridge {
 	return System.getProperty("user.dir") + fileSep + logDirectory;
     }
 
-    public static InetAddress getLocalHost() {
-	return localHost;
+    public static String getPrivateHost() {
+	return privateHost;
     }
 
-    public static int getControlPort() {
-	return controlPort;
+    public static int getPrivateControlPort() {
+	return privateControlPort;
     }
 
-    public static InetAddress getPublicHost() {
+    public static int getPrivateSipPort() {
+	return privateSipPort;
+    }
+
+    public static String getPublicHost() {
 	return publicHost;
     }
 
-    public static int getPublicPort() {
-	return publicPort;
+    public static int getPublicControlPort() {
+	return publicControlPort;
+    }
+
+    public static int getPublicSipPort() {
+	return publicSipPort;
     }
 
     public static void setLocalhostSecurity(boolean localhostSecurity) {
@@ -119,8 +131,8 @@ public class Bridge {
     }
 
     public static InetSocketAddress getLocalBridgeAddress() {
-	return (InetSocketAddress) new InetSocketAddress(localHost,
-	    controlPort);
+	return (InetSocketAddress) new InetSocketAddress(privateHost,
+	    privateControlPort);
     }
 
     public static void main(String[] args) {
@@ -187,10 +199,8 @@ public class Bridge {
 
 	Logger.println("user.dir = " + System.getProperty("user.dir"));
 
-        String localHostAddress = null;
-
 	try {
-	    localHostAddress = initLocalHost();
+	    initAddresses();
 	} catch (IOException e) {
 	    Logger.error(e.getMessage());
             System.exit(1);
@@ -199,9 +209,11 @@ public class Bridge {
         Logger.println("Bridge started in location '"
             + getBridgeLocation() + "'");
 
-	Logger.println("Bridge server control port:  " + controlPort);
+	Logger.println("Bridge server private control port:  " + privateControlPort);
 
-	new SipServer(localHostAddress, properties);   // Initialize SIP stack.
+	new SipServer(privateHost, properties);   // Initialize SIP stack.
+
+	publicSipPort = SipServer.getSipAddress().getPort();
 
 	try {
 	    new StunServerImpl().startServer();
@@ -237,11 +249,9 @@ public class Bridge {
         startSocketServer();
     }
     
-    public static String initLocalHost() throws IOException {
-        String localHostAddress;
-
+    public static void initAddresses() throws IOException {
         try {
-            localHostAddress =
+            String localHostAddress =
                     System.getProperty("javax.sip.IP_ADDRESS");
 	    
             if (localHostAddress == null || localHostAddress.length() == 0) {
@@ -263,7 +273,7 @@ public class Bridge {
 		}
             }
             
-            localHost = InetAddress.getByName(localHostAddress);
+            privateHost = InetAddress.getByName(localHostAddress).getHostAddress();
         } catch (UnknownHostException e) {
 	    Logger.error("Unable to determine local IP Address:  "
 		+ e.getMessage());
@@ -273,71 +283,74 @@ public class Bridge {
 		+ "-Djavax.sip.IP_ADDRESS=<ip address>");
         }
 
-	if (localHost == null) {
-	    localHost = InetAddress.getLocalHost();
+	if (privateHost == null) {
+	    privateHost = InetAddress.getLocalHost().getHostAddress();
 
-	    Logger.println("Defaulting to localHost:  " + localHost);
+	    Logger.println("Defaulting to localHost:  " + privateHost);
 	}
 
-	publicHost = localHost;
+	System.setProperty("com.sun.voip.server.BRIDGE_SERVER_ADDRESS", privateHost);
 
-	String s = System.getProperty("com.sun.voip.server.PUBLIC_IP_ADDRESS");
+	String s = System.getProperty(
+	    "com.sun.voip.server.BRIDGE_CONTROL_PORT", 
+	    String.valueOf(privateControlPort));
+
+	try {
+	    privateControlPort = Integer.parseInt(s);
+	} catch (NumberFormatException e) {
+            Logger.error("NumberFormatException for " 
+		+ "com.sun.voip.server.Bridge.controlPort, " 
+		+ "using default value " + privateControlPort);
+        }
+
+	System.setProperty("com.sun.voip.server.BRIDGE_CONTROL_PORT",
+	    String.valueOf(privateControlPort));
+
+	try {
+	    s = System.getProperty("gov.nist.jainsip.stack.enableUDP");
+	    privateSipPort = Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+	    Logger.println("Invalid private sip port:  " + s + " " 
+		+ e.getMessage());
+        }
+
+	publicHost = privateHost;
+
+	s = System.getProperty("com.sun.voip.server.PUBLIC_IP_ADDRESS");
 
 	try {
 	    if (s != null && s.length() > 0) {
-		publicHost = InetAddress.getByName(s);
+		publicHost = InetAddress.getByName(s).getHostAddress();
 	    }
 	} catch (UnknownHostException e) {
 	    Logger.println("Invalid public IP Address:  " + s 
-		+ " " + e.getMessage());
+		+ ".  Defaulting to private address " + privateHost + " " 
+		+ e.getMessage());
 	}
 
-	if (publicHost.getHostAddress().equals("127.0.0.1") ||
-	        publicHost.getHostAddress().equalsIgnoreCase("localhost")) {
+	if (publicHost.equals("127.0.0.1") ||
+	        publicHost.equalsIgnoreCase("localhost")) {
 
 	    /*
 	     * This can't be a public address so use the same address as localHost
 	     */
-	    publicHost = localHost;
+	    publicHost = privateHost;
 
-	    System.setProperty("com.sun.voip.server.PUBLIC_IP_ADDRESS", 
-		publicHost.getHostAddress());
+	    System.setProperty("com.sun.voip.server.PUBLIC_IP_ADDRESS", publicHost);
 	}
 
-	try {
-            s = System.getProperty("com.sun.voip.server.PUBLIC_SIP_PORT");
-
-            if (s == null || s.length() == 0) {
-		Logger.println("Public SIP Port not set, defaulting to local port "
-		    + s);
-
-		s = System.getProperty("gov.nist.jainsip.stack.enableUDP");
-	    }
-	    publicPort = Integer.parseInt(s);
-        } catch (NumberFormatException e) {
-	    Logger.println("Invalid public sip port:  " + s + " " 
-		+ e.getMessage());
-        }
-
-	System.setProperty("com.sun.voip.server.BRIDGE_SERVER_ADDRESS",
-	    localHost.getHostAddress());
-
 	s = System.getProperty(
-	    "com.sun.voip.server.BRIDGE_CONTROL_PORT", 
-	    String.valueOf(controlPort));
+	    "com.sun.voip.server.BRIDGE_PUBLIC_CONTROL_PORT", 
+	    String.valueOf(privateControlPort));
+
+	publicControlPort = privateControlPort;
 
 	try {
-	    controlPort = Integer.parseInt(s);
+	    publicControlPort = Integer.parseInt(s);
 	} catch (NumberFormatException e) {
-            Logger.error("NumberFormatException for " 
-		+ "com.sun.voip.server.Bridge.controlPort, " 
-		+ "using default value " + controlPort);
+            Logger.error("NumberFormatException for public control port. " 
+		+ "Using default value " + publicControlPort);
         }
-
-	System.setProperty("com.sun.voip.server.BRIDGE_CONTROL_PORT",
-	    String.valueOf(controlPort));
-
-        return localHost.getHostAddress();
     }
 
     /**
@@ -346,7 +359,7 @@ public class Bridge {
      */ 
     private void startSocketServer() {
 	try {
-	    ServerSocket serverSocket = new ServerSocket(controlPort);
+	    ServerSocket serverSocket = new ServerSocket(privateControlPort);
 
 	    String s = 
 		System.getProperty("com.sun.voip.server.BRIDGE_STATUS_LISTENERS");
@@ -416,8 +429,8 @@ public class Bridge {
 		}
 	    }
 	} catch (IOException e) {
-	    Logger.error("can't create server socket with port " + controlPort
-		+ " " + e.getMessage());
+	    Logger.error("can't create server socket with port " 
+		+ privateControlPort + " " + e.getMessage());
 	    System.exit(-1);
 	}
     }

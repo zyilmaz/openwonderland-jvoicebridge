@@ -146,7 +146,7 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 	logger.info(" trying to connect to " + server + ":" 
 	    + sipPort + ":" + controlPort);
 
-	bc = new BridgeConnection(server, sipPort, controlPort, true);
+	bc = new BridgeConnection(server, controlPort, sipPort, true);
 
 	bc.addBridgeOfflineListener(this);
     }

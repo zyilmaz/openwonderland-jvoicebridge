@@ -494,7 +494,7 @@ public class IncomingCallHandler extends CallHandler
 	    + " ConferencePayload='" 
 	    +  newConferenceManager.getMediaInfo().getPayload() + "'"
 	    +  " BridgeIPAddress='"
-	    + Bridge.getLocalHost().getHostAddress() + "'");
+	    + Bridge.getPrivateHost() + "'");
 
 	callHandler.sendCallEventNotification(event);
 

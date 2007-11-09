@@ -74,9 +74,9 @@ class RequestHandler extends Thread implements CallEventListener {
 	new ArrayList<RequestHandler>();
 
     static {
-	bridgePublicAddress = Bridge.getPublicHost().getHostAddress();
+	bridgePublicAddress = Bridge.getPublicHost();
 
-	bridgeSipPort = Bridge.getPublicPort();
+	bridgeSipPort = Bridge.getPublicSipPort();
     }
 
     public RequestHandler(Socket socket) throws IOException {

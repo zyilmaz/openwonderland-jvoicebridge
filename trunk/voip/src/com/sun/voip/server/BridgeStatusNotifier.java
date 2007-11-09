@@ -112,14 +112,15 @@ public class BridgeStatusNotifier extends Thread {
 	        DataOutputStream output = new DataOutputStream(
 		    socket.getOutputStream());
 	
-		int publicPort = Bridge.getPublicPort();
+	        String s = "BridgeUP:";
 
-		if (publicPort == 0) {
-		    publicPort = SipServer.getSipAddress().getPort();
-		}
+		s += Bridge.getPrivateHost() + ":" 
+		    + Bridge.getPrivateControlPort() + ":"
+		    + Bridge.getPrivateSipPort(); 
 
-	        String s = "BridgeUP:" + Bridge.getPublicHost().getHostAddress() 
-		    + ":" + publicPort + ":" + Bridge.getControlPort() + "\r\n";
+		s += ":" + Bridge.getPublicHost() + ":" 
+		    + Bridge.getPublicControlPort()+ ":"
+		    + Bridge.getPublicSipPort() + "\r\n";
 
 		while (!done) {
 		    if (suspendPing == false) {
