@@ -144,7 +144,7 @@ public class CallSetupAgent implements TreatmentDoneListener, Runnable {
 
             s += " ConferencePayload='" +  mediaInfo.getPayload() + "'";
 	    s += " BridgeIPAddress='" 
-		+ Bridge.getLocalHost().getHostAddress() + "'";
+		+ Bridge.getPrivateHost() + "'";
 	} 
 
 	if (info != null) {
@@ -293,7 +293,7 @@ public class CallSetupAgent implements TreatmentDoneListener, Runnable {
 		    setState(CallState.ESTABLISHED,
 			"ConferencePayload='" +  mediaInfo.getPayload() + "'"
 	    		+ " BridgeIPAddress='" 
-			+ Bridge.getLocalHost().getHostAddress() + "'");
+			+ Bridge.getPrivateHost() + "'");
 		}
 	    }
 	}
@@ -353,7 +353,7 @@ public class CallSetupAgent implements TreatmentDoneListener, Runnable {
 	    setState(CallState.ESTABLISHED,
 		"ConferencePayload='" +  mediaInfo.getPayload() + "'"
 		+ " BridgeIPAddress='" 
-		+ Bridge.getLocalHost().getHostAddress() + "'");
+		+ Bridge.getPrivateHost() + "'");
             break;
 
 	case CallState.ENDING:

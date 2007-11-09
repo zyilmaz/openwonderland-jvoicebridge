@@ -44,6 +44,11 @@ public class Player {
 
     public Spatializer spatializer;
 
+    /*
+     * Determines what the player hears
+     */
+    private Spatializer incomingSpatializer;
+
     public boolean positionChanged;
     public boolean orientationChanged;
 
@@ -125,6 +130,14 @@ public class Player {
 
     public Spatializer getPrivateSpatializer(String callId) {
 	return privateSpatializers.get(callId);
+    }
+
+    public void setIncomingSpatializer(Spatializer incomingSpatializer) {
+	this.incomingSpatializer = incomingSpatializer;
+    }
+
+    public Spatializer getIncomingSpatializer() {
+	return incomingSpatializer;
     }
 
     public boolean isInRange(Player p) {

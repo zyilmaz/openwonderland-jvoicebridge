@@ -39,6 +39,11 @@ public interface VoiceHandler {
     public void removePrivateSpatializer(String targetCallId, 
 	String sourceCallId);
 
+    public void setIncomingSpatializer(String targetCallId,
+	Spatializer spatializer);
+
+    public void removeIncomingSpatializer(String targetCallId);
+
     public String setupTreatment(String id, String treatment, String group, 
 	ManagedCallStatusListener listener,
 	double lowerLeftX, double lowerLeftY, double lowerLeftZ,

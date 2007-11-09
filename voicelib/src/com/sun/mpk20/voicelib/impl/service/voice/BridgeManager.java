@@ -97,67 +97,20 @@ public class BridgeManager extends Thread
     }
 
     public void configure(Properties properties) {
-        String s = properties.getProperty(
-            "com.sun.server.impl.services.voice.BRIDGE_SERVERS");
-
-        if (s != null) {
-            logger.info("Using specified bridge servers:  " + s);
-
-            String[] bridgeServers = s.split(",");
-
-            for (int i = 0; i < bridgeServers.length; i++) {
-                try {
-                    connect(bridgeServers[i]);
-                } catch (IOException e) {
-                    logger.info(e.getMessage());
-                }
-            }
-        }
-
-	if (bridgeConnections.size() == 0) {
-	    logger.info("There are currently no voice bridges available");
-	}
     }
 
+    /*
+     * The bridge address is composed of Strings separated
+     * by ":" as follows:
+     *
+     * <bridge private address>:
+     * <bridge private control port>:
+     * <bridge private sip port>:
+     * <bridge public address>:
+     * <bridge public control port>:
+     * <bridge public sip port>
+     */
     public void connect(String bridgeServer) throws IOException {
-	String[] tokens = bridgeServer.split(":");
-
-        String privateHost = tokens[0];
-
-	try {
-            privateHost =
-                InetAddress.getByName(tokens[0]).getHostAddress();
-	} catch (UnknownHostException e) {
-            throw new IOException("Unknown host " + tokens[0]);
-        }
-
-	bridgeServer = privateHost;
-
-	int sipPort = 5060;
-	int controlPort = 6666;
-
-	if (tokens.length >= 2) {
-	    try {
-		sipPort = Integer.parseInt(tokens[1]);
-	    } catch (NumberFormatException e) {
-		logger.warning("Invalid sip port:  " + bridgeServer
-		    + ".  Defaulting to " + sipPort);
-	    }
-	}
-
-	bridgeServer += ":" + sipPort;
-
-	if (tokens.length >= 3) {
-	    try {
-		controlPort = Integer.parseInt(tokens[2]);
-	    } catch (NumberFormatException e) {
-		logger.warning("Invalid control port:  " + bridgeServer
-		    + ".  Defaulting to " + controlPort);
-	    }
-	}
-
-	bridgeServer += ":" + controlPort;
-
 	BridgeConnection bc = findBridge(bridgeServer);
 
 	if (bc != null) {
@@ -186,12 +139,60 @@ public class BridgeManager extends Thread
 	        + " came online:  '" + bridgeServer + "'");
 	}
 
+	String[] tokens = bridgeServer.split(":");
+	
+	if (tokens.length != 6) {
+	    throw new IOException("Invalid bridge server:  " + bridgeServer);
+	}
+
+	String privateHost = tokens[0];
+
+	int privateControlPort = 6666;
+
+	try {
+	    privateControlPort = Integer.parseInt(tokens[1]);
+	} catch (NumberFormatException e) {
+	    logger.info("Invalid private control port " + tokens[1]
+		+ ".  Defaulting to " + privateControlPort);
+	}
+
+	int privateSipPort = 5060;
+
+	try {
+	    privateSipPort = Integer.parseInt(tokens[2]);
+	} catch (NumberFormatException e) {
+	    logger.info("Invalid private sip port " + tokens[2]
+		+ ".  Defaulting to " + privateSipPort);
+	}
+
+	String publicHost = tokens[3];
+
+	int publicControlPort = privateControlPort;
+
+	try {
+	    publicControlPort = Integer.parseInt(tokens[4]);
+	} catch (NumberFormatException e) {
+	    logger.info("Invalid public control port " + tokens[4]
+		+ ".  Defaulting to " + publicControlPort);
+	}
+
+	int publicSipPort = privateSipPort;
+
+	try {
+	    publicSipPort = Integer.parseInt(tokens[5]);
+	} catch (NumberFormatException e) {
+	    logger.info("Invalid public SIP port " + tokens[5]
+		+ ".  Defaulting to " + publicSipPort);
+	}
+
 	try {
 	    /*
 	     * This connection is used to send commands to the bridge
 	     * and get status
 	     */
-	    bc = new BridgeConnection(privateHost, sipPort, controlPort, true);
+	    bc = new BridgeConnection(privateHost, privateControlPort,
+		privateSipPort, publicHost, publicControlPort, publicSipPort, 
+		true);
 
 	    bc.addBridgeOfflineListener(this);
 	    bc.addCallStatusListener(this);
@@ -203,8 +204,8 @@ public class BridgeManager extends Thread
 	    }
 	} catch (IOException e) {
 	    throw new IOException("Unable to connect to bridge "
-		+ privateHost + ":" + sipPort + ":" + controlPort 
-		+ " " + e.getMessage());
+		+ privateHost + ":" +  privateControlPort + ":"
+		+ publicHost + ":" + publicSipPort + " " + e.getMessage());
 	}
 
 	synchronized (bridgeConnections) {
@@ -215,9 +216,7 @@ public class BridgeManager extends Thread
 
 	    bridgeConnections.add(bc);
 
-	    if (bridgeConnections.size() == 1) {
-		reconnector.bridgeOnline();
-	    }
+	    reconnector.bridgeOnline();
 
 	    bridgeConnections.notifyAll();
 	}
@@ -283,6 +282,10 @@ public class BridgeManager extends Thread
 	initiateCall(cp, null);
     }
 
+    /*
+     * Initiate a call.  bridgeInfo must be what was returned
+     * from getVoiceBridge().  This is <bridge public address>:<public sip port>
+     */
     public void initiateCall(CallParticipant cp, String bridgeInfo) 
 	    throws IOException, ParseException {
 
@@ -298,7 +301,13 @@ public class BridgeManager extends Thread
 		    "No voice bridge available " + cp + " " + e.getMessage());
 	    }
 	} else {
-	    bc = findBridge(bridgeInfo);
+	    String tokens[] = bridgeInfo.split(":");
+
+	    if (tokens.length != 2) {
+		throw new IOException("Invalid bridge info: " + bridgeInfo);
+	    }
+
+	    bc = findBridge(tokens[0], tokens[1]);
 
 	    if (bc == null) {
 		throw new IOException("Unable to find bridge for '"
@@ -498,18 +507,29 @@ public class BridgeManager extends Thread
         }
     }
 
+    /*
+     * Find the bridge for a new call.
+     */
+    public BridgeConnection findBridge(String publicHost, String publicSipAddress) {
+	synchronized (bridgeConnections) {
+	    for (BridgeConnection bc : bridgeConnections) {
+		if (bc.equals(publicHost, publicSipAddress)) {
+		    return bc;
+		}
+	    }
+	}
+
+	return null;
+    }
+
     public BridgeConnection findBridge(String bridgeInfo) {
 	String[] tokens = bridgeInfo.split(":");
 
 	synchronized (bridgeConnections) {
 	    for (BridgeConnection bc : bridgeConnections) {
-		String s = bc.toString();
-
-		String[] t = s.split(":");
-
-		if (tokens[0].equals(t[0]) && tokens[1].equals(t[1])) {
+		if (bc.toString().equals(bridgeInfo)) {
 		    return bc;
-		}	
+		}
 	    }
 	}
 
@@ -576,7 +596,7 @@ public class BridgeManager extends Thread
 
     public BridgeConnection waitForBridge() {
 	synchronized (bridgeConnections) {
-	    while (bridgeConnections.size() == 0) {
+	    while (isBridgeAvailable() == false) {
 		logger.info("Waiting for a bridge to come online "
 		    + " to finish processing calls");
 
@@ -588,6 +608,20 @@ public class BridgeManager extends Thread
 
 	    return bridgeConnections.get(0);
 	}
+    }
+
+    private boolean isBridgeAvailable() {
+	if (bridgeConnections.size() == 0) {
+	    return false;
+	}
+
+	for (BridgeConnection bc : bridgeConnections) {
+	    if (bc.isConnected() == true) {
+		return true;
+	    }
+	}
+
+	return false;
     }
 
     public void run() {
@@ -753,6 +787,16 @@ public class BridgeManager extends Thread
 			break;
 		    }
 
+		    /*
+		     * The bridge address is composed of Strings separated
+		     * by ":" as follows:
+		     * <bridge private address>:
+		     * <bridge private control port>:
+		     * <bridge private sip port>:
+		     * <bridge public address>:
+		     * <bridge public control port>:
+		     * <bridge public sip port>
+		     */
 	            String s = "BridgeUP:";
 
 	            int ix = bridgeAddress.indexOf(s);

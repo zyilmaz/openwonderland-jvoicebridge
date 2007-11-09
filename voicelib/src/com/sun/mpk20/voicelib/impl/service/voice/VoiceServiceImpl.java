@@ -169,13 +169,21 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
 	getTxnState();
 
-        localWorkToDo.get().add(new Work(cp, bridgeInfo));
+	Work work = new Work(Work.SETUPCALL);
+	work.cp = cp;
+	work.bridgeInfo = bridgeInfo;
+
+        localWorkToDo.get().add(work);
     }
 
     public void setSpatializer(String callId, Spatializer spatializer) {
     }
 
-    public void setPrivateSpatializer(String sourceCallId, String targetCallId,
+    public void setPrivateSpatializer(String fromCallId, String targetCallId,
+	    Spatializer spatializer) {
+    }
+
+    public void setIncomingSpatializer(String targetCallId,
 	    Spatializer spatializer) {
     }
 
@@ -188,22 +196,23 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
 	getTxnState();
 
-	localWorkToDo.get().add(new Work(Work.NEWINPUTTREATMENT, callId, 
-	    treatment));
+	Work work = new Work(Work.NEWINPUTTREATMENT, callId);
+
+	work.treatment = treatment;
+
+	localWorkToDo.get().add(work);
     }
 
     public void stopInputTreatment(String callId) throws IOException {
 	getTxnState();
 
-	localWorkToDo.get().add(new Work(Work.STOPINPUTTREATMENT, callId, 
-	    null));
+	localWorkToDo.get().add(new Work(Work.STOPINPUTTREATMENT, callId));
     }
 
     public void restartInputTreatment(String callId) throws IOException {
 	getTxnState();
 
-	localWorkToDo.get().add(new Work(Work.RESTARTINPUTTREATMENT, callId, 
-	    null));
+	localWorkToDo.get().add(new Work(Work.RESTARTINPUTTREATMENT, callId));
     }
 
     public void restorePrivateMixes() throws IOException {
@@ -212,19 +221,34 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     public void playTreatmentToCall(String callId, String treatment) 
 	    throws IOException {
 
-	bridgeManager.playTreatmentToCall(callId, treatment);
+	getTxnState();
+
+	Work work = new Work(Work.PLAYTREATMENTTOCALL, callId);
+	work.treatment = treatment;
+
+	localWorkToDo.get().add(work);
     }
 
     public void pauseTreatmentToCall(String callId, String treatment)
 	     throws IOException {
 
-	bridgeManager.pauseTreatmentToCall(callId, treatment);
+	getTxnState();
+
+	Work work = new Work(Work.PAUSETREATMENTTOCALL, callId);
+	work.treatment = treatment;
+
+	localWorkToDo.get().add(work);
     }
 
     public void stopTreatmentToCall(String callId, String treatment)
 	     throws IOException {
 
-	bridgeManager.stopTreatmentToCall(callId, treatment);
+	getTxnState();
+
+	Work work = new Work(Work.STOPTREATMENTTOCALL, callId);
+	work.treatment = treatment;
+
+	localWorkToDo.get().add(work);
     }
 
     public void disconnectCall(String callId) throws IOException {
@@ -238,11 +262,20 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     }
 
     public void endCall(String callId) throws IOException {
-	bridgeManager.endCall(callId);
+	getTxnState();
+
+	Work work = new Work(Work.ENDCALL, callId);
+
+	localWorkToDo.get().add(work);
     }
 
     public void muteCall(String callId, boolean isMuted) throws IOException {
- 	bridgeManager.muteCall(callId, isMuted);
+	getTxnState();
+
+	Work work = new Work(Work.MUTECALL, callId);
+	work.isMuted = isMuted;
+
+	localWorkToDo.get().add(work);
     }
 
     public void setSpatialAudio(boolean enabled) throws IOException {
@@ -277,28 +310,32 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	bridgeManager.setSpatialBehindVolume(spatialBehindVolume);
     }
 
-    public void setPrivateMix(String sourceCallId, String targetCallId,
+    public void setPrivateMix(String targetCallId, String fromCallId,
 	    double[] privateMixParameters) throws IOException {
 
 	getTxnState();
-
-	if (sourceCallId == null) {
-	    throw new IOException("Invalid sourceCallId " + sourceCallId);
-	}
 
 	if (targetCallId == null) {
 	    throw new IOException("Invalid targetCallId " + targetCallId);
 	}
 
-	logger.finest("setPrivateMix for source " 
-	    + sourceCallId + " target " + targetCallId
+	if (fromCallId == null) {
+	    throw new IOException("Invalid fromCallId " + fromCallId);
+	}
+
+	logger.finest("setPrivateMix for " + targetCallId 
+	    + " from " + fromCallId
 	    + " privateMixParameters: " + privateMixParameters[0] 
 	    + "," + privateMixParameters[1] + "," + privateMixParameters[2]
 	    + "," + privateMixParameters[3]);
 
-	//localWorkToDo.get().add(
-	bridgeManager.setPrivateMix(
-	    new Work(sourceCallId, targetCallId, privateMixParameters));
+	Work work = new Work(Work.SETPRIVATEMIX, targetCallId);
+	work.fromCallId = fromCallId;
+	work.privateMixParameters = privateMixParameters;
+
+	//    localWorkToDo.get().add(work);
+
+	bridgeManager.setPrivateMix(work);
     }
 
     public void setPositionAndOrientation(String callId, double x, double y, 
@@ -481,7 +518,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
      * {@inheritDoc}
      */
     public void commit(Transaction txn) {
-        logger.finest("committing txn: " + txn);
+        logger.finest("VS:  committing txn: " + txn);
 
         // see if we we're committing the configuration transaction
         if (isConfiguring) {
@@ -510,7 +547,9 @@ public class VoiceServiceImpl implements VoiceManager, Service,
                                             "not been prepared");
         }
 
-        ArrayList<Work> workToDo = localWorkToDo.get();
+        ArrayList<Work> workToDo;
+
+        workToDo = localWorkToDo.get();
 
 	for (int i = 0; i < workToDo.size(); i++) {
 	    Work work = workToDo.get(i);
@@ -543,9 +582,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
 	    case Work.SETPRIVATEMIX:
 		// XXX Shouldn't get here.  Private Mixes are applied immediately
-                logger.finest("commit setting private mix for"
-                    + " source " + work.sourceCallId
-                    + " target " + work.targetCallId
+                logger.finest("commit setting private mix for "
+                    + work.targetCallId + " from " + work.fromCallId
                     + " privateMixParameters "
                     +  work.privateMixParameters[0] + ":"
                     +  work.privateMixParameters[1] + ":"
@@ -571,7 +609,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 		    bridgeManager.stopInputTreatment(work.targetCallId);
 		} catch (IOException e) {
 		    logger.warning("Unable to stop input treatment for "
-			+ work.targetCallId);
+			+ work.targetCallId + " " + e.getMessage());
 		}
 		break;
 
@@ -581,6 +619,59 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 		} catch (IOException e) {
 		    logger.warning("Unable to restart input treatment for "
 			+ work.targetCallId + " " + e.getMessage());
+		}
+		break;
+
+	    case Work.PLAYTREATMENTTOCALL:
+		try {
+		    bridgeManager.playTreatmentToCall(work.targetCallId, 
+		        work.treatment);
+		} catch (IOException e) {
+		    logger.info("Unable to play treatment " 
+			+ work.treatment + " to call " + work.targetCallId
+			+ " " + e.getMessage());
+		}
+		break;
+
+	    case Work.PAUSETREATMENTTOCALL:
+		try {
+		    bridgeManager.pauseTreatmentToCall(work.targetCallId, 
+		        work.treatment);
+		} catch (IOException e) {
+		    logger.info("Unable to pause treatment " 
+			+ work.treatment + " to call " + work.targetCallId
+			+ " " + e.getMessage());
+		}
+		break;
+
+	    case Work.STOPTREATMENTTOCALL:
+		try {
+		    bridgeManager.stopTreatmentToCall(work.targetCallId, 
+		        work.treatment);
+		} catch (IOException e) {
+		    logger.info("Unable to stop treatment " 
+			+ work.treatment + " to call " + work.targetCallId
+			+ " " + e.getMessage());
+		}
+		break;
+
+	    case Work.ENDCALL:
+		try {
+		    bridgeManager.endCall(work.targetCallId);
+		} catch (IOException e) {
+		    logger.info("Unable to end call " + work.targetCallId
+			+ " " + e.getMessage());
+		}
+		break;
+
+	    case Work.MUTECALL:
+		try {
+ 		    bridgeManager.muteCall(work.targetCallId, work.isMuted);
+		} catch (IOException e) {
+		    logger.info("Unable to " 
+			+ (work.isMuted ? " Mute " : " Unmute ")
+			+ " call " + work.targetCallId
+			+ " " + e.getMessage());
 		}
 		break;
 

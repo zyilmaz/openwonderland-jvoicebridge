@@ -37,33 +37,32 @@ public class Work {
 
     public static final int STOPINPUTTREATMENT = 4;
 
+    public static final int PLAYTREATMENTTOCALL = 5;
+
+    public static final int PAUSETREATMENTTOCALL = 6;
+
+    public static final int STOPTREATMENTTOCALL = 7;
+
+    public static final int MUTECALL = 8;
+
+    public static final int ENDCALL = 9;
+
     public int command;
     public CallParticipant cp;
-    public String sourceCallId;
+    public String fromCallId;
     public String targetCallId;
     public double[] privateMixParameters;
     public String treatment;
     public String bridgeInfo;
+    public boolean isMuted;
 
-    public Work(CallParticipant cp, String bridgeInfo) {
-	this.cp = cp;
-	this.bridgeInfo = bridgeInfo;
-	command = SETUPCALL;
-    }
-
-    public Work(String sourceCallId, String targetCallId, 
-	    double[] privateMixParameters) {
-
-	this.sourceCallId = sourceCallId;
-	this.targetCallId = targetCallId;
-	this.privateMixParameters = privateMixParameters;
-	command = SETPRIVATEMIX;
-    }
-
-    public Work(int command, String callId, String treatment) {
+    public Work(int command) {
 	this.command = command;
-	this.targetCallId = callId;
-	this.treatment = treatment;
+    }
+
+    public Work(int command, String targetCallId) {
+	this.command = command;
+	this.targetCallId = targetCallId;
     }
 
 }

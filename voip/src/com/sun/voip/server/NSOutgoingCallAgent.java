@@ -100,7 +100,7 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
         InetSocketAddress isa;
 
 	if (cp.getInputTreatment() != null) {
-	    isa = new InetSocketAddress(Bridge.getLocalHost(), 0);
+	    isa = new InetSocketAddress(Bridge.getPrivateHost(), 0);
 	} else {
 	    isa = callHandler.getReceiveAddress();
 	}

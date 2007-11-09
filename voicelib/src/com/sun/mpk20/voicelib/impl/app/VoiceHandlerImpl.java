@@ -40,7 +40,11 @@ import com.sun.sgs.app.NameNotBoundException;
 
 import java.io.IOException;
 import java.io.Serializable;
+
+import java.math.BigInteger;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -167,14 +171,14 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	} 
     }
 
-    public static final class CallStatusListeners extends HashMap<ManagedReference, String> 
-    	    implements ManagedObject, Serializable {
+    public static final class CallStatusListeners extends HashMap<BigInteger, 
+	    ListenerInfo> implements ManagedObject, Serializable {
 
          private static final long serialVersionUID = 1;
     }
 
-    private static final class CallBeginEndListeners extends
-            ArrayList<ManagedReference> implements ManagedObject, Serializable {
+    private static final class CallBeginEndListeners extends HashMap<BigInteger, 
+	    ListenerInfo> implements ManagedObject, Serializable {
 
          private static final long serialVersionUID = 1;
     }
@@ -266,6 +270,20 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	voiceManager.setPrivateSpatializer(targetCallId, sourceCallId, null);
     }
 
+    public void setIncomingSpatializer(String targetCallId, 
+	    Spatializer spatializer) {
+
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	voiceManager.setIncomingSpatializer(targetCallId, spatializer);
+    }
+
+    public void removeIncomingSpatializer(String targetCallId) {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	voiceManager.setIncomingSpatializer(targetCallId, null);
+    }
+
     private static Object treatmentLock = new Object();
 
     /* Maps callId's to treatmentGroupId */
@@ -281,7 +299,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
     class TreatmentInfo {
 	public String treatment;
 	public String group;
-	public ManagedCallStatusListener listener;
+	public ManagedReference listener;
 	public double lowerLeftX;
 	public double lowerLeftY; 
 	public double lowerLeftZ;
@@ -290,7 +308,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	public double upperRightZ;
 
 	public TreatmentInfo(String treatment, String group,
-                ManagedCallStatusListener listener,
+                ManagedReference listener,
                 double lowerLeftX, double lowerLeftY, double lowerLeftZ,
                 double upperRightX, double upperRightY, double upperRightZ) {
 
@@ -304,12 +322,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    this.upperRightY = upperRightY;
 	    this.upperRightZ = upperRightZ;
 	}
-    }
-
-    private String setupTreatment(String id, TreatmentInfo t) {
-	return setupTreatment(id, t.treatment, t.group,
-	    t.listener, t.lowerLeftX, t.lowerLeftY, t.lowerLeftZ,
-            t.upperRightX, t.upperRightY, t.upperRightZ);
     }
 
     public String setupTreatment(String id, String treatment, String group, 
@@ -342,8 +354,14 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	cp.setCallId(callId);
 
+        ManagedReference mr = null;
+
 	if (listener != null) {
-	    addCallStatusListener(listener, callId);
+            DataManager dm = AppContext.getDataManager();
+        
+	    mr = dm.createReference(listener);
+
+	    addCallStatusListener(mr, callId);
 	}
 
         // get a spatializer
@@ -373,7 +391,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
         DataManager dm = AppContext.getDataManager();
         
 	treatmentInfo.put(callId, new TreatmentInfo(treatment, group,
-            listener, lowerLeftX, lowerLeftY, lowerLeftZ,
+            mr, lowerLeftX, lowerLeftY, lowerLeftZ,
             upperRightX, upperRightY, upperRightZ));
 
 	synchronized (treatmentLock) {
@@ -414,7 +432,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     private void treatmentDone(String callId) {
-	logger.info("treatment done " + callId);
+	logger.fine("treatment done " + callId);
 
 	if (treatmentCallIds == null) {
 	    return;   // there haven't been any treatments
@@ -467,7 +485,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
     public void newInputTreatment(String callId, String treatment, 
 	    String group) {
 
-	logger.info("new treatment " + callId);
+	logger.fine("new treatment " + callId);
 
 	try {
 	    VoiceManager voiceManager = 
@@ -481,7 +499,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void stopInputTreatment(String callId) {
-	logger.info("stop treatment for callId " + callId);
+	logger.fine("stop treatment for callId " + callId);
 
 	removeTreatment(callId);
 
@@ -502,7 +520,9 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    return;
 	}
 
-	removeCallStatusListener(t.listener);
+	if (t.listener != null) {
+	    removeCallStatusListener(t.listener);
+	}
 
         Hashtable<String, Boolean> treatmentGroup = 
 	    treatmentGroups.get(t.group);
@@ -515,7 +535,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	Enumeration<String> keys = treatmentGroup.keys();
 
 	if (keys.hasMoreElements() == false) {
-	    logger.info("Removing last treatment in group " + t.group);
+	    logger.fine("Removing last treatment in group " + t.group);
 
 	    treatmentGroups.remove(t.group);
 	}
@@ -558,8 +578,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void endCall(String callId) {
-	logger.info("Ending call " + callId);
-
         DataManager dm = AppContext.getDataManager();
 
 	try {
@@ -567,7 +585,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 		AppContext.getManager(VoiceManager.class);
 	    voiceManager.endCall(callId);
 	} catch (IOException e) {
-	    logger.fine("Unable to end call " + callId
+	    logger.info("Unable to end call " + callId
 		+ " " + e.getMessage());
 	}
     }
@@ -582,16 +600,16 @@ public class VoiceHandlerImpl implements VoiceHandler,
 		AppContext.getManager(VoiceManager.class);
 	    voiceManager.disconnectCall(callId);
 	} catch (IOException e) {
-	    logger.fine("Unable to end call " + callId
+	    logger.info("Unable to end call " + callId
 		+ " " + e.getMessage());
 	}
     }
 
     public void muteCall(String callId, boolean isMuted) {
 	if (isMuted) {
-            logger.info("muting call " + callId);
+            logger.fine("muting call " + callId);
 	} else {
-            logger.info("unmuting call " + callId);
+            logger.fine("unmuting call " + callId);
 	}
 
         try {
@@ -736,11 +754,27 @@ public class VoiceHandlerImpl implements VoiceHandler,
         }
     }
 
+    static class ListenerInfo implements Serializable {
+	private static final long serialVersionUID = 1;
+
+	public ManagedReference mr;
+	public String callId;
+
+	public ListenerInfo(ManagedReference mr) {
+	    this(mr, null);
+	}
+
+	public ListenerInfo(ManagedReference mr, String callId) {
+	    this.mr = mr;
+	    this.callId = callId;
+	}
+    }
+
     /*
      * Add a listener for all calls
      */
     public void addCallStatusListener(ManagedCallStatusListener listener) {
-	 addCallStatusListener(listener, null);
+	addCallStatusListener(listener, null);
     }
 
     /*
@@ -748,34 +782,48 @@ public class VoiceHandlerImpl implements VoiceHandler,
      */
     public void addCallStatusListener(ManagedCallStatusListener listener, 
 	    String callId) {
+
+        DataManager dm = AppContext.getDataManager();
+
+	ManagedReference mr = dm.createReference(listener);
 	
-	logger.fine("Adding listener " + listener + " for callId " + callId);
+	addCallStatusListener(mr, callId);
+    }
+
+    public void addCallStatusListener(ManagedReference mr, String callId) {
+
+	logger.finer("Adding listener " + mr + " for callId " + callId);
 
         DataManager dm = AppContext.getDataManager();
 
         CallStatusListeners listeners =
             dm.getBinding(DS_CALL_STATUS_LISTENERS, CallStatusListeners.class);
 
-        /*
-         * Create a reference to listener and keep that.
-         */
-        listeners.put(dm.createReference(listener), callId);
+        listeners.put(mr.getId(), new ListenerInfo(mr, callId));
 
-        logger.finest("VS:  listeners size " + listeners.size());
+        logger.fine("listeners size " + listeners.size() + " added mr " + mr.getId());
     }
 
     public void removeCallStatusListener(ManagedCallStatusListener listener) {
-	logger.fine("removing listener " + listener); 
+        DataManager dm = AppContext.getDataManager();
+
+	ManagedReference mr = dm.createReference(listener);
+
+	removeCallStatusListener(mr);
+    }
+
+    public void removeCallStatusListener(ManagedReference mr) {
+	logger.finer("removing listener " + mr); 
 
         DataManager dm = AppContext.getDataManager();
 
         CallStatusListeners listeners =
             dm.getBinding(DS_CALL_STATUS_LISTENERS, CallStatusListeners.class);
 
-	//ManagedCallStatusListener ml = listener.get(ManagedCallStatusListener.class);
+	logger.fine("removing listener mr " + mr.getId());
 
-	if (listeners.remove(dm.createReference(listener)) == null) {
-	    logger.info("listener " + listener 
+	if (listeners.remove(mr.getId()) == null) {
+	    logger.info("mr " + mr + " id " + mr.getId()
 		+ " is not in map of call status listeners!");
 	}
     }
@@ -789,7 +837,11 @@ public class VoiceHandlerImpl implements VoiceHandler,
         /*
          * Create a reference to listener and keep that.
          */
-        listeners.add(dm.createReference(listener));
+        ManagedReference mr = dm.createReference(listener);
+
+	logger.finer("adding listener " + mr);
+
+        listeners.put(mr.getId(), new ListenerInfo(mr));
 
         logger.finest("VS:  listeners size " + listeners.size());
     }
@@ -800,10 +852,14 @@ public class VoiceHandlerImpl implements VoiceHandler,
         CallBeginEndListeners listeners =
             dm.getBinding(DS_CALL_BEGIN_END_LISTENERS, CallBeginEndListeners.class);
 
-	//ManagedCallBeginEndListener ml =
-        //        listener.get(ManagedCallBeginEndListener.class);
+        ManagedReference mr = dm.createReference(listener);
 
-	listeners.remove(dm.createReference(listener));
+	logger.finer("removing listener " + mr);
+
+	if (listeners.remove(mr.getId()) == null) {
+	    logger.info("mr " + mr + " id " + mr.getId()
+		+ " is not in map of call status listeners!");
+	}
     }
 
     public void callStatusChanged(CallStatus callStatus) {
@@ -887,30 +943,25 @@ public class VoiceHandlerImpl implements VoiceHandler,
         CallStatusListeners callStatusListeners =
             dm.getBinding(DS_CALL_STATUS_LISTENERS, CallStatusListeners.class);
 
-        ArrayList<ManagedReference> listenerList = new ArrayList<ManagedReference>();
-	ArrayList<String> callIdList = new ArrayList<String>();
+        ArrayList<ListenerInfo> listenerList = new ArrayList<ListenerInfo>();
 
         synchronized (callStatusListeners) {
-	    Set<ManagedReference> set = callStatusListeners.keySet();
+	    Collection<ListenerInfo> c = callStatusListeners.values();
 
-            Iterator<ManagedReference> iterator = set.iterator();
+            Iterator<ListenerInfo> iterator = c.iterator();
 
 	    while (iterator.hasNext()) {
-		ManagedReference mr = iterator.next();
+		ListenerInfo info = iterator.next();
 
-		listenerList.add(mr);
-
-		callIdList.add(callStatusListeners.get(mr));
+		listenerList.add(info);
 	    }
 	}
 	
-        for (int i = 0; i < listenerList.size(); i++) {
+        for (ListenerInfo info : listenerList) {
             ManagedCallStatusListener listener =
-                listenerList.get(i).get(ManagedCallStatusListener.class);
+                info.mr.get(ManagedCallStatusListener.class);
 
-	    String callId = callIdList.get(i);
-	    
-	    if (callId == null || callId.equals(status.getCallId())) {
+	    if (info.callId == null || info.callId.equals(status.getCallId())) {
                 listener.callStatusChanged(status);
 	    } 
         }
@@ -922,17 +973,24 @@ public class VoiceHandlerImpl implements VoiceHandler,
         CallBeginEndListeners callBeginEndListeners =
             dm.getBinding(DS_CALL_BEGIN_END_LISTENERS, CallBeginEndListeners.class);
 
-        ManagedReference[] listenerList;
+        ArrayList<ListenerInfo> listenerList = new ArrayList<ListenerInfo>();
 
         synchronized (callBeginEndListeners) {
-            listenerList = callBeginEndListeners.toArray(new ManagedReference[0]);
-        }
+	    Collection<ListenerInfo> c = callBeginEndListeners.values();
 
-        for (int i = 0; i < listenerList.length; i++) {
+            Iterator<ListenerInfo> iterator = c.iterator();
+
+	    while (iterator.hasNext()) {
+		ListenerInfo info = iterator.next();
+
+		listenerList.add(info);
+	    }
+	}
+	
+        for (ListenerInfo info : listenerList) {
             ManagedCallBeginEndListener listener =
-                listenerList[i].get(ManagedCallBeginEndListener.class);
+                info.mr.get(ManagedCallBeginEndListener.class);
 
-            logger.finest("Notifying listener " + i + " status " + status);
             listener.callBeginEndNotification(status);
         }
     }
