@@ -50,8 +50,6 @@ public interface VoiceManager {
     public void setIncomingSpatializer(String targetCallId, 
         Spatializer spatializer);
 
-    public void removeIncomingSpatializer(String targetCallId);
-
     public void setListeningVolume(String callId, double listeningVolume);
  
     public double getListeningVolume(String callId);
