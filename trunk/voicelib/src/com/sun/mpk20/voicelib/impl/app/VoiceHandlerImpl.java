@@ -319,6 +319,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	public double upperRightY;
 	public double upperRightZ;
 
+ 	public boolean isCallEstablished;
+
 	public TreatmentInfo(String treatment, String group,
                 ManagedReference listener,
                 double lowerLeftX, double lowerLeftY, double lowerLeftZ,
@@ -439,11 +441,11 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    treatmentGroup.put(callId, new Boolean(false));
 	}
 
-	restartInputTreatments(treatmentGroupId);
+	//restartInputTreatments(treatmentGroupId);
 	return callId;
     }
 
-    private void treatmentDone(String callId) {
+    private void restartTreatment(String callId) {
 	logger.fine("treatment done " + callId);
 
 	if (treatmentCallIds == null) {
@@ -529,6 +531,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	TreatmentInfo t = treatmentInfo.get(callId);
 
 	if (t == null) {
+	    logger.fine("No treatment info for " + callId);
 	    return;
 	}
 
@@ -590,6 +593,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void endCall(String callId) {
+	logger.info("ending call " + callId);
+
         DataManager dm = AppContext.getDataManager();
 
 	try {
@@ -641,15 +646,27 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	logger.finer("Restarting input treatments for " + treatmentGroupId);
 
 	synchronized (treatmentLock) {
-	    Hashtable treatmentGroup = treatmentGroups.get(treatmentGroupId);
+	    Hashtable<String, Hashtable<String, Boolean>> treatmentGroup = 
+		treatmentGroups.get(treatmentGroupId);
 
-	    Enumeration keys = treatmentGroup.keys();
+	    Enumeration<String> keys = treatmentGroup.keys();
 
 	    VoiceManager voiceManager = 
 		AppContext.getManager(VoiceManager.class);
 
 	    while (keys.hasMoreElements()) {
-	        String id = (String) keys.nextElement();
+	        String id = keys.nextElement();
+
+		TreatmentInfo t = treatmentInfo.get(id);
+
+		if (t == null) {
+		    logger.info("No treatment info for " + id);
+		    continue;
+		}
+
+		if (t.isCallEstablished == false) {
+		    continue;
+		}
 
 	        try {
 		    logger.finer("Restarting input treatment for call " + id);
@@ -883,6 +900,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
         
 	notifyCallStatusListeners(callStatus);
 
+	TreatmentInfo t;
+
 	switch (code) {
         case CallStatus.ESTABLISHED:
             logger.fine("callEstablished: " + callId);
@@ -892,6 +911,14 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    } catch (IOException e) {
 		logger.info(e.getMessage());
 	    }
+
+	    t = treatmentInfo.get(callId);
+
+	    if (t != null) {
+	        t.isCallEstablished = true;
+		restartTreatment(callId);
+	    }
+
 	    notifyCallBeginEndListeners(callStatus);
             break;
 
@@ -901,17 +928,17 @@ public class VoiceHandlerImpl implements VoiceHandler,
         case CallStatus.STOPPEDSPEAKING:
             break;
 
+	case CallStatus.TREATMENTDONE:
+	    logger.finer("Treatment done: " + callStatus);
+	    restartTreatment(callId);
+	    break;
+
         case CallStatus.ENDED:
 	    logger.info(callStatus.toString());
 
 	    removeTreatment(callId);
 
 	    notifyCallBeginEndListeners(callStatus);
-	    break;
-
-	case CallStatus.TREATMENTDONE:
-	    logger.finer("Treatment done: " + callStatus);
-	    treatmentDone(callId);
 	    break;
 
 	case CallStatus.BRIDGE_OFFLINE:
@@ -922,7 +949,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	     * Clients are notified that the bridge went down
 	     * and they notify the softphone which then reconnects.
 	     */
-	    TreatmentInfo t = treatmentInfo.get(callId);
+	    t = treatmentInfo.get(callId);
 
 	    if (t != null) {
 		logger.fine("Restarting treatment " + t.treatment);
@@ -945,7 +972,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
 		}
 	    }
 	    break;
-
         }
     }
 

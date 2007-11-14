@@ -269,6 +269,12 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     }
 
     public void endCall(String callId) throws IOException {
+	try {
+	    bridgeManager.getBridgeConnection(callId);
+	} catch (IOException e) {
+	    return;	// nothing to do
+	}
+
 	getTxnState();
 
 	Work work = new Work(Work.ENDCALL, callId);
@@ -556,6 +562,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         ArrayList<Work> workToDo;
 
         workToDo = localWorkToDo.get();
+
+	logger.finest("workToDo size " + workToDo.size());
 
 	for (int i = 0; i < workToDo.size(); i++) {
 	    Work work = workToDo.get(i);
