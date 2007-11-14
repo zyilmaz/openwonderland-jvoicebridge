@@ -45,9 +45,9 @@ public class Player {
     public Spatializer spatializer;
 
     /*
-     * Determines what the player hears
+     * Determines the volume level the player hears
      */
-    private Spatializer incomingSpatializer;
+    public double listeningVolume = 1.0;
 
     public boolean positionChanged;
     public boolean orientationChanged;
@@ -132,12 +132,12 @@ public class Player {
 	return privateSpatializers.get(callId);
     }
 
-    public void setIncomingSpatializer(Spatializer incomingSpatializer) {
-	this.incomingSpatializer = incomingSpatializer;
+    public void setListeningVolume(double listeningVolume) {
+	this.listeningVolume = listeningVolume;
     }
 
-    public Spatializer getIncomingSpatializer() {
-	return incomingSpatializer;
+    public double getListeningVolume() {
+	return listeningVolume;
     }
 
     public boolean isInRange(Player p) {

@@ -284,6 +284,18 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	voiceManager.setIncomingSpatializer(targetCallId, null);
     }
 
+    public void setListeningVolume(String callId, double listeningVolume) {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	voiceManager.setListeningVolume(callId, listeningVolume);
+    }
+
+    public double getListeningVolume(String callId) {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	return voiceManager.getListeningVolume(callId);
+    }
+
     private static Object treatmentLock = new Object();
 
     /* Maps callId's to treatmentGroupId */

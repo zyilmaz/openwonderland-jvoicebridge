@@ -47,8 +47,14 @@ public interface VoiceManager {
     public void setPrivateSpatializer(String targetCallId, String sourceCallId,
 	Spatializer spatializer);
 
-    public void setIncomingSpatializer(String targetCallId,
-	Spatializer spatializer);
+    public void setIncomingSpatializer(String targetCallId, 
+        Spatializer spatializer);
+
+    public void removeIncomingSpatializer(String targetCallId);
+
+    public void setListeningVolume(String callId, double listeningVolume);
+ 
+    public double getListeningVolume(String callId);
 
     public void callEstablished(String callId) throws IOException;
 
