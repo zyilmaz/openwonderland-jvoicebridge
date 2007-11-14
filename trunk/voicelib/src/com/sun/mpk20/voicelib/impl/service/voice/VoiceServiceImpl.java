@@ -184,7 +184,14 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     }
 
     public void setIncomingSpatializer(String targetCallId,
-	    Spatializer spatializer) {
+            Spatializer spatializer) {
+    }
+
+    public void setListeningVolume(String callId, double listeningVolume) {
+    }
+ 
+    public double getListeningVolume(String callId) {
+	return 0;
     }
 
     public void callEstablished(String callId) throws IOException {
@@ -455,8 +462,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
     /*
      * Get voice bridge notification and pass it along.
-     * When called, this is not in a transaction or one of the
-     * DarkStar threads.  In the future, we should use DarkStar threads.
+     * When called, this is not in a transaction.
      *
      * The work here must be done in a transaction.
      */

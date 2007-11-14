@@ -256,6 +256,34 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
     }
 
+    public void setListeningVolume(String callId, double listeningVolume) {
+	Player player = findPlayer(callId);
+
+        if (player == null) {
+            logger.fine("no Player for " + callId);
+            return;
+	}
+
+	player.setListeningVolume(listeningVolume);
+
+	try {
+	    setPrivateMixes(player);
+	} catch (IOException e) {
+	    logger.info("Unable to set private mixes:  " + e.getMessage());
+	}
+    }    
+ 
+    public double getListeningVolume(String callId) {
+	Player player = findPlayer(callId);
+
+        if (player == null) {
+            logger.fine("no Player for " + callId);
+            return 0;
+	}
+
+	return player.getListeningVolume();
+    }
+
     public void callEstablished(String callId) throws IOException {
 	logger.info("call established: " + callId);
 
@@ -698,10 +726,16 @@ public class VoiceManagerImpl implements VoiceManager {
 	    return;
 	}
 
+	double listeningVolume = 1.0;
+
 	Spatializer spatializer = p1.getPrivateSpatializer(p2.callId);
 
 	if (spatializer == null) {
 	    spatializer = p1.getIncomingSpatializer();
+	}
+
+	if (spatializer == null) {
+	    listeningVolume = p1.getListeningVolume();
 	}
 
 	if (spatializer == null) {
@@ -736,6 +770,11 @@ public class VoiceManagerImpl implements VoiceManager {
 	    privateMixParameters[3] *= p2.attenuationVolume;
 	    logger.finest("p1.AttenuationVolume " + p1.attenuationVolume 
 		+  " volume " + round(privateMixParameters[3]));
+	} else {
+            /*
+             * Multiply by the listening volume for the live player
+             */
+            privateMixParameters[3] *= listeningVolume;
 	}
 
 	if (p1.isLivePerson == true) {

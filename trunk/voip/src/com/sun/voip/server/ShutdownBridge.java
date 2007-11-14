@@ -45,9 +45,10 @@ public class ShutdownBridge {
             try {
                 serverName = InetAddress.getLocalHost().getHostName();
             } catch (Exception e) {
-                Logger.error("Can't get Local Host's IP Address!  "
+                Logger.error(
+		    "ShudownBridge:  Can't get Local Host's IP Address!  "
                     + e.getMessage());
-                System.exit(1);
+                System.exit(0);
             }
         }
 
@@ -63,9 +64,8 @@ public class ShutdownBridge {
 	    Thread.sleep(1000);	  // give command a chance to happen
 	} catch (IOException e) {
 	} catch (Exception e) {
-	    System.err.println(
-		"Can't create socket " + serverName + ":" + serverPort 
-		+ e.getMessage());
+	    System.err.println("ShutdownBridge:  Can't create socket " 
+		+ serverName + ":" + serverPort + e.getMessage());
 	    return;
 	}
     }
