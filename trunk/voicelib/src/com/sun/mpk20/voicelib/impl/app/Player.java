@@ -44,6 +44,8 @@ public class Player {
 
     public Spatializer spatializer;
 
+    public Spatializer incomingSpatializer;
+
     /*
      * Determines the volume level the player hears
      */
@@ -113,6 +115,14 @@ public class Player {
 
     public Spatializer getSpatializer() {
 	return spatializer;
+    }
+
+    public void setIncomingSpatializer(Spatializer incomingSpatializer) {
+	this.incomingSpatializer = incomingSpatializer;
+    }
+
+    public Spatializer getIncomingSpatializer() {
+	return incomingSpatializer;
     }
 
     public void setLivePerson() {
