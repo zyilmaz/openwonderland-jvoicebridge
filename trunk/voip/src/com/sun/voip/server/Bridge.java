@@ -243,7 +243,15 @@ public class Bridge {
 	try {
 	    new ModuleLoader(modPath);
 	} catch (IOException e) {
-	    Logger.println("Optional modules failed to load:  " + e.getMessage());
+	    Logger.println("Optional modules failed to load:  " 
+		+ e.getMessage());
+	}
+
+	try {
+	    new ReceiveMonitor();
+	} catch (IOException e) {
+	    Logger.println("Unable to start ReceiveMonitor:  " 
+		+ e.getMessage());
 	}
 
         startSocketServer();

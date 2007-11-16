@@ -24,21 +24,21 @@
 package com.sun.mpk20.voicelib.app;
 
 public interface Spatializer {
-     /**
-      * Determine the private mix parameters for audio from the given source
-      * going to the given destination.
-      * @param source the position of the audio source
-      * @param dest the position of the audio destination
-      * @return an array of 3 doubles:
-      *  <ul<li>[0] - the front/back value of the private mix, 
-      * a double from 1 (all the way front) to -1 (all the way back)
-      *  <li>[1] - the left/right value of the private mix, 
-      * a double from 1 (all the way left) to -1 (all the way right)
-      *  <li>[2] - the up/down value of the private mix, 
-      * a double from 1 (all the way up) to -1 (all the way down)
-      *  <li>[3] - the volume of the private mix, from 0 to 10
-      */
-     public double[] spatialize(double sourceX, double sourceY,
+    /**
+     * Determine the private mix parameters for audio from the given source
+     * going to the given destination.
+     * @param source the position of the audio source
+     * @param dest the position of the audio destination
+     * @return an array of 3 doubles:
+     *  <ul<li>[0] - the front/back value of the private mix, 
+     * a double from 1 (all the way front) to -1 (all the way back)
+     *  <li>[1] - the left/right value of the private mix, 
+     * a double from 1 (all the way left) to -1 (all the way right)
+     *  <li>[2] - the up/down value of the private mix, 
+     * a double from 1 (all the way up) to -1 (all the way down)
+     *  <li>[3] - the volume of the private mix, from 0 to 10
+     */
+    public double[] spatialize(double sourceX, double sourceY,
 	double sourceZ, double sourceOrientation, double destX, 
 	double destY, double destZ, double destOrientation);
 

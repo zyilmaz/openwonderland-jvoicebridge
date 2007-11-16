@@ -123,7 +123,7 @@ public class VoiceManagerImpl implements VoiceManager {
 
         p = new Player(callId, x, y, z, orientation);
 
-	p.setSpatializer(spatializer);
+	p.setPublicSpatializer(spatializer);
 
 	if (cp.getInputTreatment() == null) {
 	    /*
@@ -133,11 +133,11 @@ public class VoiceManagerImpl implements VoiceManager {
 	    p.setLivePerson();
 	}
 
-	if (p.spatializer == null) {
+	if (p.getPublicSpatializer() == null) {
 	    if (cp.getInputTreatment() == null) {
-	        p.spatializer = livePlayerSpatializer;
+	        p.setPublicSpatializer(livePlayerSpatializer);
 	    } else {
-	        p.spatializer = defaultSpatializer;
+	        p.setPublicSpatializer(defaultSpatializer);
 	    }
 	}
 
@@ -150,7 +150,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	return findPlayer(callId);
     }
 
-    public void setSpatializer(String callId, Spatializer spatializer) {
+    public void setPublicSpatializer(String callId, Spatializer publicSpatializer) {
 	Player player = findPlayer(callId);
 
         if (player == null) {
@@ -158,7 +158,7 @@ public class VoiceManagerImpl implements VoiceManager {
             return;
 	}
 
-	player.setSpatializer(spatializer);
+	player.setPublicSpatializer(publicSpatializer);
 
 	/*
 	 * Update everything
@@ -181,7 +181,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		while (iterator.hasNext()) {
 		    Player player = iterator.next();
 
-		    if (player.isLivePerson == false ||
+		    if (player.isLivePerson() == false ||
 			    player.callId.equals(sourceCallId)) {
 
 			continue;
@@ -233,7 +233,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	setPrivateMixes();
     }
 
-    public void setListeningVolume(String callId, double listeningVolume) {
+    public void setPrivateAttenuator(String callId, double privateAttenuator) {
 	Player player = findPlayer(callId);
 
         if (player == null) {
@@ -241,12 +241,12 @@ public class VoiceManagerImpl implements VoiceManager {
             return;
 	}
 
-	player.setListeningVolume(listeningVolume);
+	player.setPrivateAttenuator(privateAttenuator);
 
 	setPrivateMixes(player);
-    }    
- 
-    public double getListeningVolume(String callId) {
+    }
+
+    public double getPrivateAttenuator(String callId) {
 	Player player = findPlayer(callId);
 
         if (player == null) {
@@ -254,11 +254,59 @@ public class VoiceManagerImpl implements VoiceManager {
             return 0;
 	}
 
-	return player.getListeningVolume();
+	return player.getPrivateAttenuator();
+    }
+
+    public void setTalkAttenuator(String callId, double talkAttenuator) {
+	Player player = findPlayer(callId);
+
+        if (player == null) {
+            logger.fine("no Player for " + callId);
+            return;
+	}
+
+	player.setTalkAttenuator(talkAttenuator);
+
+	setPrivateMixes(player);
+    }
+
+    public double getTalkAttenuator(String callId) {
+	Player player = findPlayer(callId);
+
+        if (player == null) {
+            logger.fine("no Player for " + callId);
+            return 0;
+	}
+
+	return player.getTalkAttenuator();
+    }
+
+    public void setListenAttenuator(String callId, double listenAttenuator) {
+	Player player = findPlayer(callId);
+
+        if (player == null) {
+            logger.fine("no Player for " + callId);
+            return;
+	}
+
+	player.setListenAttenuator(listenAttenuator);
+
+	setPrivateMixes(player);
+    }    
+ 
+    public double getListenAttenuator(String callId) {
+	Player player = findPlayer(callId);
+
+        if (player == null) {
+            logger.fine("no Player for " + callId);
+            return 0;
+	}
+
+	return player.getListenAttenuator();
     }
 
     public void callEstablished(String callId) throws IOException {
-	logger.info("call established: " + callId);
+	logger.fine("call established: " + callId);
 
 	/*
 	 * XXX We don't need to do this any more.  Audio treatments are already
@@ -351,7 +399,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    while (iterator.hasNext()) {
 		Player p = iterator.next();
 
-		if (p.isLivePerson == false || p.isInRange(player) == false) {
+		if (p.isLivePerson() == false || p.isInRange(player) == false) {
 		    continue;
 		}
 
@@ -395,7 +443,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    setPrivateMixes = true;
 	}
 
-	logger.fine("setting pos and orient for " + player);
+	logger.finest("setting pos and orient for " + player);
 
 	if (player.sameOrientation(orientation)) {
 	    logger.finest("same orientation:  " + player);
@@ -430,7 +478,7 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	player.setPosition(x, y, z);
 
-	logger.fine("setting position for " + player);
+	logger.finest("setting position for " + player);
 
 	setPrivateMixes(player);
     }
@@ -590,7 +638,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		        continue;
 		    }
    
-        	    if (p1.isLivePerson == false) {
+        	    if (p1.isLivePerson() == false) {
 		        /*
              	         * We only set private mixes for live players
              	         * and not for audio sources.
@@ -626,7 +674,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		 * the changed player's sound coming from.
 		 */
 		if (changedPlayer.positionChanged == true &&
-		        p1.isLivePerson == true) {
+		        p1.isLivePerson() == true) {
 
 		    /*
 		     * Set the private mix p1 has for the changed player
@@ -636,7 +684,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		    skipped++;
 		}
 
-		if (changedPlayer.isLivePerson == false) {
+		if (changedPlayer.isLivePerson() == false) {
 		    /*
 		     * Only live players have private mixes
 		     */
@@ -699,24 +747,34 @@ public class VoiceManagerImpl implements VoiceManager {
 	    return;
 	}
 
-	double listeningVolume = 1.0;
-
 	Spatializer spatializer = p1.getPrivateSpatializer(p2.callId);
 
-	if (spatializer == null) {
-	    spatializer = p1.getIncomingSpatializer();
-	}
+	double attenuator = p1.getPrivateAttenuator();
 
+	/*
+	 * If there is a private spatializer, use it.
+	 */
 	if (spatializer == null) {
-	    listeningVolume = p1.getListeningVolume();
-	}
+	    attenuator = p1.getListenAttenuator() * p2.getTalkAttenuator();
 
-	if (spatializer == null) {
-	    spatializer = p2.getSpatializer();
-	}
+	    /*
+	     * If there is a public spatializer, use that.
+	     */
+	    spatializer = p2.getPublicSpatializer();
 
-	if (spatializer == null) {
-	    spatializer = defaultSpatializer;
+	    if (spatializer == null) {
+	        /*
+	         * If p1 has an incoming spatializer, use that.
+	         */
+		spatializer = p1.getIncomingSpatializer();
+
+		if (spatializer == null) {
+		    /*
+		     * Just use the default spatializer.
+		     */
+	            spatializer = defaultSpatializer;
+		}
+	    }
 	}
 
 	long start = System.nanoTime();
@@ -738,19 +796,19 @@ public class VoiceManagerImpl implements VoiceManager {
 	 * If we are setting a private mix for a placeable, the
 	 * p1's attenuationVolume is used to attenuate the final volume.
 	 */
-	if (p2.isLivePerson == false) {
+	if (p2.isLivePerson() == false) {
 	    privateMixParameters[3] *= p1.attenuationVolume;
 	    privateMixParameters[3] *= p2.attenuationVolume;
 	    logger.finest("p1.AttenuationVolume " + p1.attenuationVolume 
 		+  " volume " + round(privateMixParameters[3]));
 	} else {
-            /*
-             * Multiply by the listening volume for the live player
-             */
-            privateMixParameters[3] *= listeningVolume;
+	    /*
+	     * Apply attenuators
+	     */
+            privateMixParameters[3] *= attenuator;
 	}
 
-	if (p1.isLivePerson == true) {
+	if (p1.isLivePerson() == true) {
           logger.finer("p1=" + p1 + " p2=" + p2 + " mix " 
 	    + round(privateMixParameters[0]) + ", " 
 	    + round(privateMixParameters[1]) + ", "

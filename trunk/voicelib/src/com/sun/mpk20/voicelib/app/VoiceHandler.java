@@ -31,7 +31,9 @@ public interface VoiceHandler {
 
     public String setupCall(String callId, String sipUrl, String bridge);
 
-    public void setSpatializer(String callId, Spatializer spatializer);
+    public void setPublicSpatializer(String callId, Spatializer spatializer);
+
+    public void removePublicSpatializer(String callId);
 
     public void setPrivateSpatializer(String targetCallId, String sourceCallId,
 	Spatializer spatializer);
@@ -44,9 +46,17 @@ public interface VoiceHandler {
 
     public void removeIncomingSpatializer(String targetCallId);
 
-    public void setListeningVolume(String callId, double listeningVolume);
- 
-    public double getListeningVolume(String callId);
+    public void setPrivateAttenuator(String callId, double privateAttenuator);
+
+    public double getPrivateAttenuator(String callId);
+
+    public void setTalkAttenuator(String callId, double talkAttenuator);
+
+    public double getTalkAttenuator(String callId);
+
+    public void setListenAttenuator(String callId, double listenAttenuator);
+
+    public double getListenAttenuator(String callId);
 
     public String setupTreatment(String id, String treatment, String group, 
 	ManagedCallStatusListener listener,

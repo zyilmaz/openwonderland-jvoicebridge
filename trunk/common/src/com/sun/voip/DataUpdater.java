@@ -21,7 +21,7 @@
  * code.
  */
 
-package com.sun.mc.softphone.gui;
+package com.sun.voip;
 
 public interface DataUpdater {
 

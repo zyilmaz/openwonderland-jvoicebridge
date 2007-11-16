@@ -42,7 +42,7 @@ public interface VoiceManager {
 	double orientation, Spatializer spatializer, String bridge) 
 	throws IOException;
 
-    public void setSpatializer(String callId, Spatializer spatializer);
+    public void setPublicSpatializer(String callId, Spatializer spatializer);
 
     public void setPrivateSpatializer(String targetCallId, String sourceCallId,
 	Spatializer spatializer);
@@ -50,9 +50,17 @@ public interface VoiceManager {
     public void setIncomingSpatializer(String targetCallId, 
         Spatializer spatializer);
 
-    public void setListeningVolume(String callId, double listeningVolume);
- 
-    public double getListeningVolume(String callId);
+    public void setPrivateAttenuator(String callId, double privateAttenuator);
+
+    public double getPrivateAttenuator(String callId);
+
+    public void setTalkAttenuator(String callId, double talkAttenuator);
+
+    public double getTalkAttenuator(String callId);
+
+    public void setListenAttenuator(String callId, double listenAttenuator);
+
+    public double getListenAttenuator(String callId);
 
     public void callEstablished(String callId) throws IOException;
 

@@ -40,16 +40,15 @@ public class Player {
     public double attenuationRadius;
     public double attenuationVolume = 1.0;
 
-    public boolean isLivePerson;
+    private boolean isLivePerson;
 
-    public Spatializer spatializer;
+    private Spatializer publicSpatializer;
 
-    public Spatializer incomingSpatializer;
+    private Spatializer incomingSpatializer;
 
-    /*
-     * Determines the volume level the player hears
-     */
-    public double listeningVolume = 1.0;
+    private double privateAttenuator = 1.0;
+    private double talkAttenuator = 1.0;
+    private double listenAttenuator = 1.0;
 
     public boolean positionChanged;
     public boolean orientationChanged;
@@ -109,12 +108,12 @@ public class Player {
         this.attenuationVolume = attenuationVolume;
     }
 
-    public void setSpatializer(Spatializer spatializer) {
-	this.spatializer = spatializer;
+    public void setPublicSpatializer(Spatializer publicSpatializer) {
+	this.publicSpatializer = publicSpatializer;
     }
 
-    public Spatializer getSpatializer() {
-	return spatializer;
+    public Spatializer getPublicSpatializer() {
+	return publicSpatializer;
     }
 
     public void setIncomingSpatializer(Spatializer incomingSpatializer) {
@@ -127,6 +126,10 @@ public class Player {
 
     public void setLivePerson() {
 	isLivePerson = true;
+    }
+
+    public boolean isLivePerson() {
+	return isLivePerson;
     }
 
     public void setPrivateSpatializer(String callId, Spatializer spatializer) {
@@ -142,12 +145,28 @@ public class Player {
 	return privateSpatializers.get(callId);
     }
 
-    public void setListeningVolume(double listeningVolume) {
-	this.listeningVolume = listeningVolume;
+    public void setPrivateAttenuator(double privateAttenuator) {
+	this.privateAttenuator = privateAttenuator;
     }
 
-    public double getListeningVolume() {
-	return listeningVolume;
+    public double getPrivateAttenuator() {
+	return privateAttenuator;
+    }
+
+    public void setTalkAttenuator(double talkAttenuator) {
+	this.talkAttenuator = talkAttenuator;
+    }
+
+    public double getTalkAttenuator() {
+	return talkAttenuator;
+    }
+
+    public void setListenAttenuator(double listenAttenuator) {
+	this.listenAttenuator = listenAttenuator;
+    }
+
+    public double getListenAttenuator() {
+	return listenAttenuator;
     }
 
     public boolean isInRange(Player p) {

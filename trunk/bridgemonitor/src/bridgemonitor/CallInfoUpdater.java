@@ -23,6 +23,12 @@
 
 package bridgemonitor;
 
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Point;
+
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -33,7 +39,7 @@ import java.util.logging.Logger;
 
 import com.sun.mpk20.voicelib.impl.service.voice.BridgeConnection;
 
-public class CallInfoUpdater extends Thread {
+public class CallInfoUpdater extends Thread implements CallMonitorListener {
 
     private static final Logger logger =
             Logger.getLogger(BridgeMonitor.class.getName());
@@ -45,15 +51,25 @@ public class CallInfoUpdater extends Thread {
     private JFrame jFrame;
     private JTextArea jTextArea;
     
+    private CallMonitor callMonitor;
+
     private boolean done;
 
-    public CallInfoUpdater(int x, BridgeConnection bc, String callId) {
+    public CallInfoUpdater(int x, final BridgeConnection bc, 
+	    final String callId) {
+
 	this.x = x;
 	this.bc = bc;
 	this.callId = callId;
 
 	jFrame = new JFrame("CallStatus for " + callId);
         
+        GridBagLayout gridBag = new GridBagLayout();
+        GridBagConstraints constraints;
+        Insets insets;
+
+	jFrame.setLayout(gridBag);
+
 	String text;
 
 	try {
@@ -66,7 +82,55 @@ public class CallInfoUpdater extends Thread {
         jTextArea = new JTextArea(text);
         JScrollPane jScrollPane = new JScrollPane(jTextArea);
 
+        insets = new Insets(12, 12, 0, 0);  // top, left, bottom, right
+        constraints = new GridBagConstraints(
+            0, 0, 1, 1,                     // x, y, width, height
+            0.0, 0.0,                       // weightx, weighty
+            GridBagConstraints.NORTH,        // anchor
+            GridBagConstraints.NONE,        // fill
+            insets,                         // insets
+            0, 0);                          // ipadx, ipady
+        gridBag.setConstraints(jScrollPane, constraints);
         jFrame.add(jScrollPane);
+
+	JButton monitorCallButton = new JButton("Monitor");
+
+	monitorCallButton.addActionListener(
+	    new java.awt.event.ActionListener() {
+
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                if (callMonitor != null) {
+		    callMonitor.quit();
+		}
+
+		try {
+		    Point location = new Point(
+			(int) jFrame.getLocation().getX(),
+			jFrame.getY());
+
+		    callMonitor = new CallMonitor(location, jFrame.getHeight(),
+			getCallMonitorListener(), bc.getPrivateHost(), 
+			callId);
+		} catch (IOException e) {
+		    logger.info("Unable to start call monitor:  " 
+			+ e.getMessage());
+		}
+            }
+        });
+
+        insets = new Insets(12, 7, 0, 12);  // top, left, bottom, right
+
+        constraints = new GridBagConstraints(
+            0, 1, 1, 1,                     // x, y, width, height
+            0.0, 0.0,                       // weightx, weighty
+            GridBagConstraints.SOUTH,        // anchor
+            GridBagConstraints.NONE,        // fill
+            insets,                         // insets
+            0, 0);                          // ipadx, ipady
+        gridBag.setConstraints(monitorCallButton, constraints);
+
+	jFrame.add(monitorCallButton, -1);
+
 	jFrame.pack();
 	jFrame.setLocation(x, 0);
 	jFrame.setVisible(true);
@@ -75,6 +139,10 @@ public class CallInfoUpdater extends Thread {
 	start();
     }
     
+    public CallMonitorListener getCallMonitorListener() {
+	return this;
+    }
+
     public void done() {
         done = true;
     }
@@ -100,6 +168,10 @@ public class CallInfoUpdater extends Thread {
 		break;
 	    }
 	}
+    }
+
+    public void callMonitorDone() {
+	callMonitor = null;
     }
 
 }

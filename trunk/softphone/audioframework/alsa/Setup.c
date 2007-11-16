@@ -206,7 +206,7 @@ set_speaker_swparams(snd_pcm_t *handle, int channels, int bufferSize)
 
     /* start the transfer when the second buffer is written
     ret = snd_pcm_sw_params_set_start_threshold(handle, swparams, 
-	2 * period_frames);
+	3 * period_frames);
     if (ret < 0) {
         fprintf(stderr, 
 	    "Unable to set start threshold mode for playback: %s\n", 
@@ -214,8 +214,7 @@ set_speaker_swparams(snd_pcm_t *handle, int channels, int bufferSize)
         return ret;
     }
 
-    /* allow transfer when at least period_frames can be processed */
-
+    /* Notify asynchronously when data can be written */
     ret = snd_pcm_sw_params_set_avail_min(handle, swparams, 
 	get_period_frames(handle));
 
@@ -244,7 +243,7 @@ set_speaker_swparams(snd_pcm_t *handle, int channels, int bufferSize)
  
     /* set silence threshold */
     ret = snd_pcm_sw_params_set_silence_threshold(handle, swparams, 
-	thresholdFrames);
+    	thresholdFrames);
 
     if (ret < 0) {
         fprintf(stderr, "Unable to set sw params for silence_threshold: %s\n", 

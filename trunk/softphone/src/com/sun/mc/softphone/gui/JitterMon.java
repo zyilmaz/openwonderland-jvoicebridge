@@ -30,6 +30,9 @@ import javax.swing.JRadioButton;
 import com.sun.mc.softphone.media.MediaManagerImpl;
 import com.sun.mc.softphone.media.MediaManagerFactory;
 
+import com.sun.voip.PerfMon;
+import com.sun.voip.DataUpdater;
+
 public class JitterMon implements DataUpdater {
     private PerfMon perfMon;
 

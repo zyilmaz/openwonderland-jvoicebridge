@@ -21,7 +21,7 @@
  * code.
  */
 
-package com.sun.mc.softphone.gui;
+package com.sun.voip;
 
 import java.awt.*;
 import java.util.*;
@@ -156,6 +156,7 @@ public class PerfMon extends Frame implements Runnable {
 
     public void stop() {
 	quit = true;
+	setVisible(false);
     }
 
     public void run() {

@@ -26,6 +26,7 @@ package com.sun.voip.server;
 import com.sun.voip.AudioConversion;
 import com.sun.voip.CallParticipant;
 import com.sun.voip.CallEvent;
+import com.sun.voip.DataUpdater;
 import com.sun.voip.JitterManager;
 import com.sun.voip.JitterObject;
 import com.sun.voip.Logger;
@@ -64,6 +65,8 @@ import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 
 import java.text.ParseException;
+
+import java.awt.Point;
 
 /**
  * Receive RTP data for this ConferenceMember, add it to the mix
@@ -218,6 +221,18 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
     public boolean traceCall() {
 	return traceCall;
+    }
+
+    public String getPerformanceData() throws IOException {
+	if (done) {
+	    throw new IOException("Call " + cp + " has ended");
+	}
+
+	String s = "PacketsReceived=" + packetsReceived;
+	
+	s += ":JitterBufferSize=" + jitterManager.getJitterBufferSize();
+
+	return s;
     }
 
     public void setCnThresh(int cnThresh) {

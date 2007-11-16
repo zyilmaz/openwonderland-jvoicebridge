@@ -124,7 +124,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 
 	    double secondsToApply = applyTime / 1000000000.;
 
-	    if (++applyCount == 500) {
+	    if (++applyCount == 500 && Logger.logLevel >= Logger.LOG_INFO) {
 		double elapsed = (now - startTime) / 1000000000.;
 
 		Logger.println("elapsed " + elapsed + " seconds, applied " 
