@@ -389,17 +389,22 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
             int myCt = 0;
             
 	    for (int i = 0; i < tokens.length; i++) {
-                String[] items = tokens[i].split("@");
-                String cID = items[0];
-                
 	        if (tokens[i].startsWith("    ") == false) {
 		    continue;
 	        }
                 
-               
+                String[] items = tokens[i].split("@");
+                String cID = items[0];
+                
+		System.out.println(tokens[i]);
+
                 String[] callDetails = items[1].split(" ");
                 int cdLen = callDetails.length;
-                String aQualityTmp = callDetails[cdLen -1];
+
+                String aQualityTmp = callDetails[1];
+
+		System.out.println("aQualityTmp " + aQualityTmp);
+
                 String[] aQTarr = aQualityTmp.split(":");
                 String aQuality = aQTarr[1];
                 String fName = callDetails[0];

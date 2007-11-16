@@ -1253,8 +1253,6 @@ public class SipCommunicator extends Thread implements
 
     public synchronized void handleHangupRequest(UserCallControlEvent evt) {
         try {
-            console.logEntry();
-
             sipManager.endCall(evt.getAssociatedInterlocutor().getID());
 	    callInProgressInterlocutor = null;
         } catch (CommunicationsException exc) {
@@ -1262,8 +1260,6 @@ public class SipCommunicator extends Thread implements
                                   + "(This is not a fatal error)",
                                   exc
                                   );
-        } finally {
-            console.logExit();
         }
     }
 

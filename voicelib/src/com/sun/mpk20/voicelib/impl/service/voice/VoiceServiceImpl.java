@@ -176,7 +176,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         localWorkToDo.get().add(work);
     }
 
-    public void setSpatializer(String callId, Spatializer spatializer) {
+    public void setPublicSpatializer(String callId, Spatializer publicSpatializer) {
     }
 
     public void setPrivateSpatializer(String fromCallId, String targetCallId,
@@ -187,10 +187,24 @@ public class VoiceServiceImpl implements VoiceManager, Service,
             Spatializer spatializer) {
     }
 
-    public void setListeningVolume(String callId, double listeningVolume) {
+    public void setPrivateAttenuator(String callId, double privateAttenuator) {
     }
- 
-    public double getListeningVolume(String callId) {
+
+    public double getPrivateAttenuator(String callId) {
+	return 0;
+    }
+
+    public void setTalkAttenuator(String callId, double talkAttenuator) {
+    }
+
+    public double getTalkAttenuator(String callId) {
+	return 0;
+    }
+
+    public void setListenAttenuator(String callId, double listenAttenuator) {
+    }
+
+    public double getListenAttenuator(String callId) {
 	return 0;
     }
 
@@ -274,6 +288,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	} catch (IOException e) {
 	    return;	// nothing to do
 	}
+
+	logger.info("ending call " + callId);
 
 	getTxnState();
 

@@ -249,12 +249,18 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	return null;
     }
     
-    public void setSpatializer(String callId, Spatializer spatializer) {
+    public void setPublicSpatializer(String callId, Spatializer spatializer) {
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
-	voiceManager.setSpatializer(callId, spatializer);
+	voiceManager.setPublicSpatializer(callId, spatializer);
     }
     
+    public void removePublicSpatializer(String callId) {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	voiceManager.setPublicSpatializer(callId, null);
+    }
+
     public void setPrivateSpatializer(String targetCallId, String sourceCallId,
 	    Spatializer spatializer) {
 
@@ -284,16 +290,40 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	voiceManager.setIncomingSpatializer(targetCallId, null);
     }
 
-    public void setListeningVolume(String callId, double listeningVolume) {
+    public void setPrivateAttenuator(String callId, double privateAttenuator) {
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
-
-	voiceManager.setListeningVolume(callId, listeningVolume);
+	
+	voiceManager.setPrivateAttenuator(callId, privateAttenuator);
     }
 
-    public double getListeningVolume(String callId) {
+    public double getPrivateAttenuator(String callId) {
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+	
+	return voiceManager.getPrivateAttenuator(callId);
+    }
 
-	return voiceManager.getListeningVolume(callId);
+    public void setTalkAttenuator(String callId, double talkAttenuator) {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+	
+	voiceManager.setTalkAttenuator(callId, talkAttenuator);
+    }
+
+    public double getTalkAttenuator(String callId) {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+	
+	return voiceManager.getTalkAttenuator(callId);
+    }
+
+    public void setListenAttenuator(String callId, double listenAttenuator) {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+	
+	voiceManager.setListenAttenuator(callId, listenAttenuator);
+    }
+
+    public double getListenAttenuator(String callId) {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+	
+	return voiceManager.getListenAttenuator(callId);
     }
 
     private static Object treatmentLock = new Object();
@@ -446,7 +476,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     private void restartTreatment(String callId) {
-	logger.fine("treatment done " + callId);
+	logger.fine("restarting treatment " + callId);
 
 	if (treatmentCallIds == null) {
 	    return;   // there haven't been any treatments
@@ -528,10 +558,12 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     private void removeTreatment(String callId) {
+	logger.fine("remove treatment " + callId);
+
 	TreatmentInfo t = treatmentInfo.get(callId);
 
 	if (t == null) {
-	    logger.fine("No treatment info for " + callId);
+	    logger.info("No treatment info for " + callId);
 	    return;
 	}
 
@@ -579,7 +611,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void stopTreatmentToCall(String callId, String treatment) {
-	logger.info("Stopping treatment " + treatment + " to call "
+	logger.fine("Stopping treatment " + treatment + " to call "
 	    + callId);
 
 	try {
@@ -593,7 +625,9 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void endCall(String callId) {
-	logger.info("ending call " + callId);
+	logger.finer("ending call " + callId);
+
+        removeTreatment(callId);
 
         DataManager dm = AppContext.getDataManager();
 
@@ -643,7 +677,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
      * Restart treatments in the group if there's more than one call
      */
     private void restartInputTreatments(String treatmentGroupId) {
-	logger.finer("Restarting input treatments for " + treatmentGroupId);
+	logger.fine("Restarting input treatments for " + treatmentGroupId);
 
 	synchronized (treatmentLock) {
 	    Hashtable<String, Hashtable<String, Boolean>> treatmentGroup = 
@@ -669,7 +703,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 		}
 
 	        try {
-		    logger.finer("Restarting input treatment for call " + id);
+		    logger.fine("Restarting input treatment for call " + id);
 	            voiceManager.restartInputTreatment(id);
 	        } catch (IOException e) {
 	            logger.warning("Unable to restart treatment for " + id
@@ -904,7 +938,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	switch (code) {
         case CallStatus.ESTABLISHED:
-            logger.fine("callEstablished: " + callId);
+            logger.info("callEstablished: " + callId);
 
             try {
 	        voiceManager.callEstablished(callId);
@@ -917,6 +951,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    if (t != null) {
 	        t.isCallEstablished = true;
 		restartTreatment(callId);
+	    } else {
+		logger.info("No treatment info for " + callId);
 	    }
 
 	    notifyCallBeginEndListeners(callStatus);
@@ -935,8 +971,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
         case CallStatus.ENDED:
 	    logger.info(callStatus.toString());
-
-	    removeTreatment(callId);
 
 	    notifyCallBeginEndListeners(callStatus);
 	    break;
@@ -1110,7 +1144,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
     public void setVoiceManagerParameters(VoiceManagerParameters parameters) {
         VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
-	logger.info("setting log level to " + parameters.logLevel);
 	setLogLevel(parameters.logLevel);
 	voiceManager.setParameters(parameters);
     }

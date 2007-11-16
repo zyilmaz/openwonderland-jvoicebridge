@@ -32,9 +32,15 @@
 #include "com_sun_mc_softphone_media_alsa_AudioDriverAlsa.h"
 
 snd_pcm_t *microphone_handle;
+char *microphone_device;
+int microphone_buffer_size;
+int microphone_sample_rate;
 int microphone_channels;
 
 snd_pcm_t *speaker_handle;
+char *speaker_device;
+int speaker_buffer_size;
+int speaker_sample_rate;
 int speaker_channels;
 snd_pcm_uframes_t speaker_buffer_frames;
 
@@ -47,6 +53,20 @@ void closeSpeaker();
 snd_pcm_uframes_t get_period_frames(snd_pcm_t *);
 int set_callback(snd_pcm_t *handle);
 void async_callback(snd_async_handler_t *ahandler);
+
+typedef struct speaker_data {
+    struct speaker_data *next;
+    int frames;
+    jshort *data;
+} speaker_data_t;
+
+speaker_data_t *speaker_data;
+
+speaker_data_t *last_speaker_data;
+
+short *silence;
+snd_pcm_uframes_t silence_frames;
+snd_pcm_uframes_t period_frames;
 
 /******************************************************************************/
 JNIEXPORT void JNICALL 
@@ -63,17 +83,23 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nInitializeMicrophone(
 	JNIEnv * env, jobject jobj, jstring device, jint sampleRate, 
 	jint channels, jint bufferSize) 
 {
-    closeMic();
-
-    int ret;
-
     const char *str = (*env)->GetStringUTFChars(env, device, NULL);
 
-    str = strdup(str);
+    microphone_device = strdup(str);
 
-    //fprintf(stderr, "init mic %s %d\n", str, strlen(str));
+    microphone_buffer_size = bufferSize;
+    
+    microphone_sample_rate = sampleRate;
 
-    ret = snd_pcm_open(&microphone_handle, str, SND_PCM_STREAM_CAPTURE, 0);
+    microphone_channels = channels;
+
+    return initialize_microphone();
+}
+
+int initialize_microphone() {
+    closeMic();
+
+    int ret = snd_pcm_open(&microphone_handle, microphone_device, SND_PCM_STREAM_CAPTURE, 0);
 
     if (ret < 0) {
         fprintf(stderr, "ALSA initialize microphone error: %s\n", 
@@ -81,7 +107,8 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nInitializeMicrophone(
 	return ret;
     }
 
-    ret = set_hwparams(microphone_handle, sampleRate, channels, bufferSize);
+    ret = set_hwparams(microphone_handle, microphone_sample_rate, 
+	microphone_channels, microphone_buffer_size);
 
     if (ret < 0) {
 	return ret;
@@ -93,7 +120,7 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nInitializeMicrophone(
 	return ret;
     }
 
-    microphone_channels = channels;
+    flushMicrophone();
     return 0;
 }
 
@@ -166,6 +193,10 @@ JNIEXPORT int JNICALL
 Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nFlushMicrophone(
 	JNIEnv * env, jobject jobj) {
 
+    return flushMicrophone();
+}
+
+int flushMicrophone() {
     if (microphone_handle == NULL) {
 	return 0;
     }
@@ -198,19 +229,25 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nInitializeSpeaker(
 	JNIEnv * env, jobject jobj, jstring device, jint sampleRate, 
 	jint channels, jint bufferSize) 
 {
+    char *str = (*env)->GetStringUTFChars(env, device, NULL);
+
+    str = strdup(str);
+
+    speaker_device = str;
+    speaker_buffer_size = bufferSize;
+    speaker_sample_rate = sampleRate;
+    speaker_channels = channels;
+
+    return initialize_speaker();
+}
+
+int initialize_speaker() {
     closeSpeaker();
 
     int ret;
 
-    const char *str = (*env)->GetStringUTFChars(env, device, NULL);
-
-    str = strdup(str);
-
-    //fprintf(stderr, "init speaker %s %d, rate %d, ch %d, size %d\n", str,
-    //	strlen(str), sampleRate, channels, bufferSize);
-
-    ret = snd_pcm_open(&speaker_handle, str, SND_PCM_STREAM_PLAYBACK, 0);
-	//SND_PCM_NONBLOCK);
+    ret = snd_pcm_open(&speaker_handle, speaker_device, 
+	SND_PCM_STREAM_PLAYBACK, 0); //SND_PCM_NONBLOCK);
 
     if (ret < 0) {
         fprintf(stderr, "ALSA initialize speaker error: %s\n", 
@@ -218,22 +255,28 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nInitializeSpeaker(
 	return -1;
     }
 
-    ret = set_hwparams(speaker_handle, sampleRate, channels, bufferSize);
+    ret = set_hwparams(speaker_handle, speaker_sample_rate,
+	speaker_channels, speaker_buffer_size);
 
     if (ret < 0) {
 	return ret;
     }
 
-    ret = set_speaker_swparams(speaker_handle, channels, bufferSize);
+    ret = set_speaker_swparams(speaker_handle, speaker_channels, 
+	speaker_buffer_size);
 
     if (ret < 0) {
 	return ret;
     }
 
-    speaker_channels = channels;
     speaker_buffer_frames = get_buffer_frames(speaker_handle);
 
     set_callback(speaker_handle);
+
+    snd_pcm_prepare(speaker_handle);
+
+    write_speaker(speaker_handle, silence, silence_frames);
+    write_speaker(speaker_handle, silence, silence_frames);
     return 0;
 }
 
@@ -242,7 +285,7 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nSpeakerAvailable(
 	JNIEnv * env, jobject jobj) 
 {
     if (speaker_handle == 0) {
-	fprintf(stderr, "Available:  speaker_handle is NULL\n");
+	//fprintf(stderr, "Available:  speaker_handle is NULL\n");
 	return -1;
     }
 
@@ -267,7 +310,7 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nSpeakerAvailable(
 	if (ret < 0) {
 	    fprintf(stderr, "speakerAvailable returned %s\n", 
 	        snd_strerror(avail_frames));
-	    return frames;
+	    return avail_frames;
 	}
 
 	fprintf(stderr, "speakerAvailable recovered\n");
@@ -294,46 +337,21 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nWriteSpeaker(
 	return -1;
     }
 
-    int logLevel = shortLen >> 16;
     shortLen &= 0xffff;
 
     jshort *buffer = (*env)->GetShortArrayElements(env, speakerBuffer, NULL);
 
     int frames = shortLen / speaker_channels;
 
-    int ret = snd_pcm_writei(speaker_handle, buffer, frames);
+    int ret = write_speaker(speaker_handle, buffer, frames);
 
-    //fprintf(stderr, "write speaker %d, %d\n", frames, ret);
-
-    if (ret < 0) {
-	fprintf(stderr, "write speaker error:  %s\n", snd_strerror(ret));
-
-	if (snd_pcm_recover(speaker_handle, ret, 1) < 0) {
-	    fprintf(stderr, "nWriteSpeaker failed to recover from writei:  %s\n", 
-		snd_strerror(ret));
-	    return ret;
-	}
-
-	/*
-	 * Retry
-	 */
-    	ret = snd_pcm_writei(speaker_handle, buffer, frames);
-
-	if (ret < 0) {
-	    fprintf(stderr, "writei retry failed:  %s\n", snd_strerror(ret));
-	    return ret;
-	}
-    }
-
-    if (logLevel > 3) {
-        fprintf(stderr, "write len %d, %x %x %x %x\n",
-	    ret * 2 * speaker_channels,
-	    buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
-    }
-	
     (*env)->ReleaseShortArrayElements(env, speakerBuffer, buffer, 0);
 
-    return ret * 2 * speaker_channels;
+    if (ret < 0) {
+	return 0;
+    }
+
+    return shortLen * 2;
 }
 
 JNIEXPORT int JNICALL 
@@ -403,41 +421,60 @@ void
 async_callback(snd_async_handler_t *ahandler)
 {
     snd_pcm_t *handle = snd_async_handler_get_pcm(ahandler);
-    struct async_private_data *data = snd_async_handler_get_callback_private(ahandler);
+    //struct async_private_data *private_data = snd_async_handler_get_callback_private(ahandler);
+
+    int frames;
+    jshort *data = NULL;
+
+    speaker_data_t *s;
 
     snd_pcm_uframes_t avail_frames = snd_pcm_avail_update(handle);
 
     int used_frames = speaker_buffer_frames - avail_frames;
 
-    if (used_frames > period_frames) {
+    if (used_frames >  2 * period_frames) {
         return;
     }
 
-    //fprintf(stderr, "callback:  speaker buffer frames %d, used frames %d\n",
-    //	speaker_buffer_frames, used_frames); 
+    //fprintf(stderr, "Used frames %d, buf frames %d, writing silence!\n",
+    //	used_frames, speaker_buffer_frames);
 
-    int ret = snd_pcm_writei(handle, silence, silence_frames);
+    if (used_frames == 0) {
+	fprintf(stderr, "Used frames is zero!\n");
+    }
+
+    write_speaker(handle, silence, silence_frames);
+}
+
+int write_speaker(snd_pcm_t *handle, jshort *data, int frames) {
+    int ret = snd_pcm_writei(handle, data, frames);
+
     if (ret < 0) {
-        fprintf(stderr, "write speaker silence error:  %s\n", 
+        fprintf(stderr, "write speaker error:  %s\n", 
 	    snd_strerror(ret));
 
         if (snd_pcm_recover(handle, ret, 0) < 0) {
-            fprintf(stderr, "async_callback failed to recover from writei:  %s\n",
-                snd_strerror(ret));
-            return;
+            fprintf(stderr, 
+		"write speaker failed to recover from writei:  "
+		"%s reinitializing the speaker\n", snd_strerror(ret));
+
+	    initialize_microphone();
+	    initialize_speaker();
+            return ret;
         }
 
         /*
          * Retry
          */
-        ret = snd_pcm_writei(handle, silence, silence_frames);
+        ret = write_speaker(handle, data, frames);
 
         if (ret < 0) {
             fprintf(stderr, "writei retry failed:  %s\n", snd_strerror(ret));
-            return;
         }
     }
 
     //fprintf(stderr, "callback:  wrote %d bytes of silence\n", 
     //    silence_frames * 2 * speaker_channels);
+
+    return ret;
 }
