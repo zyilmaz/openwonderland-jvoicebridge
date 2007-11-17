@@ -458,7 +458,7 @@ int write_speaker(snd_pcm_t *handle, jshort *data, int frames) {
 		"write speaker failed to recover from writei:  "
 		"%s reinitializing the speaker\n", snd_strerror(ret));
 
-	    initialize_microphone();
+	    //initialize_microphone();
 	    initialize_speaker();
             return ret;
         }
