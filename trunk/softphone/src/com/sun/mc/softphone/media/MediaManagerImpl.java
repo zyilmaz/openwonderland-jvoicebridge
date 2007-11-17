@@ -787,11 +787,11 @@ if (false) {
             if (started) {
                 started = false;
                 
+		shutdownAudio();
+
                 audioTransmitter.done();
                 audioReceiver.done();
 		
-		shutdownAudio();
-
 		notifyCallDoneListeners();
 	    }
                 
