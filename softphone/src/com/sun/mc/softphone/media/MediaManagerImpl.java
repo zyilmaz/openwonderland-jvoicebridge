@@ -787,11 +787,23 @@ if (false) {
             if (started) {
                 started = false;
                 
-		shutdownAudio();
+		/*
+		 * On Linux, we have to shutdown the audio first
+		 */
+		if (Utils.isLinux()) {
+		    shutdownAudio();
+		}
 
                 audioTransmitter.done();
                 audioReceiver.done();
 		
+		/*
+		 * On non-Linux, we have to shutdown the audio last
+		 */
+		if (Utils.isLinux() == false) {
+		    shutdownAudio();
+		}
+
 		notifyCallDoneListeners();
 	    }
                 
