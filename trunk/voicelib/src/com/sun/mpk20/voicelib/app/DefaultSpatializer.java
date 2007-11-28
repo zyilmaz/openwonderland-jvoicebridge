@@ -47,7 +47,7 @@ public class DefaultSpatializer implements Spatializer {
 
     private static final double DEFAULT_FULL_VOLUME_RADIUS = 0;
 
-    private static final double DEFAULT_ZERO_VOLUME_RADIUS = .3;
+    private static final double DEFAULT_ZERO_VOLUME_RADIUS = .26;
 
     private static final double PiOver2 = Math.PI / 2;
 
