@@ -1429,7 +1429,9 @@ public class SipCommunicator extends Thread implements
             //unregister
             try {
                 //sipManager.unregister();
-		sipManager.stop();
+		if (sipManager != null) {
+		    sipManager.stop();
+		}
             } catch (CommunicationsException ex) {
                 console.showException("Could not unregister!", ex);
             } catch(Throwable exc) {
