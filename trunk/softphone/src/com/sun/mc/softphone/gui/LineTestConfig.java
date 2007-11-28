@@ -438,6 +438,11 @@ public class LineTestConfig extends JFrame {
 	    return true;
         } 
 
+	if (os.startsWith("Linux")) {
+	    Runtime.getRuntime().exec("/usr/bin/gnome-volume-control");
+	    return true;
+	}
+
 	return false;
     }
     
