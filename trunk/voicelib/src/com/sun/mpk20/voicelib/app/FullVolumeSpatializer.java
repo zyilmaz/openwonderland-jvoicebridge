@@ -30,10 +30,10 @@ public class FullVolumeSpatializer implements Spatializer {
     public FullVolumeSpatializer() {
     }
 
-   public double[] spatialize(double sourceX, double sourceY, 
-                              double sourceZ, double sourceOrientation, 
-                              double destX, double destY, 
-                              double destZ, double destOrientation) {
+    public double[] spatialize(double sourceX, double sourceY, 
+                               double sourceZ, double sourceOrientation, 
+                               double destX, double destY, 
+                               double destZ, double destOrientation) {
 
 	double[] parameters = new double[4];
 

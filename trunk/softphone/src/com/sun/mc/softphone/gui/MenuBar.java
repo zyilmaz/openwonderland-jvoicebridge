@@ -66,6 +66,8 @@ import com.sun.mc.softphone.common.Utils;
 import com.sun.mc.softphone.Version;
 import java.awt.event.KeyEvent;
 
+import com.sun.voip.Logger;
+
 /**
  * <p>Title: SIP COMMUNICATOR</p>
  * <p>Description:JAIN-SIP Audio/Video phone application</p>
@@ -118,7 +120,8 @@ class MenuBar extends JMenuBar {
                 );
           */
              JOptionPane.showMessageDialog(null,
-                 new JLabel("Built on: " + Version.getVersion(),
+                 new JLabel("Built on: " + Version.getVersion()
+		 + ", Log file is " + Logger.getLogFileName(),
 		 new ImageIcon(Utils.getResource("sip-communicator.about.jpg")),
 		 SwingConstants.TRAILING), 
 		 "Sun Softphone (powered by SIP Communicator)",

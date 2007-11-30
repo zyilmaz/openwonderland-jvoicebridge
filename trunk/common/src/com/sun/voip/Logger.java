@@ -88,6 +88,8 @@ public class Logger {
     }
 
     public static void init(String logFileName, boolean suppressSystemOut) {
+	Logger.logFileName = logFileName;
+
         String s = System.getProperty(LOG_LEVEL, "3");
 
 	try {
@@ -117,6 +119,11 @@ public class Logger {
             println(getDate() + "could not open log file: " 
 		+ logFileName);
         }
+    }
+
+    public static String getLogFileName() {
+	System.out.println("Log File name is " + logFileName);
+	return logFileName;
     }
 
     /**
