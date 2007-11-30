@@ -176,7 +176,7 @@ public class LineTestConfig extends JFrame {
         JButton cancel = new JButton(cancelAction);
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent evt) {
-                done();
+                done(false);
             }
         });
         text = new JTextArea();
@@ -249,7 +249,19 @@ public class LineTestConfig extends JFrame {
         System.out.println("*** Restart softphone now");
     }
     
+    private boolean done;
+
     private void done() {
+	done(true);
+    }
+
+    private void done(boolean restart) {
+	if (done) {
+	   return;
+	}
+
+	done = true;
+
 	if (stdOutListener != null) {
 	    stdOutListener.done();
 	}
@@ -260,12 +272,16 @@ public class LineTestConfig extends JFrame {
 
         vuMeter.stop();
         setVisible(false);
-        try {
-            restart();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-//        text.setText(BEFORE_TEST);
+
+	if (restart) {
+            try {
+                restart();
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+	}
+
+        //text.setText(BEFORE_TEST);
     }
     
     private void cancel() {

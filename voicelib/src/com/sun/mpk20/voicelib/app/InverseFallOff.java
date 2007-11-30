@@ -30,6 +30,10 @@ public class InverseFallOff extends FallOffFunction {
 	 * Calculate how far distance is from 
 	 * the zero volume radius.  Values range from 0 to 1.
 	 */
+	if (attenuationDistance <= 0) {
+	    return 1;  // full volume
+	}
+
 	double d = distance / attenuationDistance;
 
 	/*
