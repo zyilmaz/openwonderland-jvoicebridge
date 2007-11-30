@@ -425,6 +425,12 @@ public class Utils {
 	return System.getProperty("os.name").equalsIgnoreCase("Linux");
     }
     
+    public static boolean isWindows() {
+	String osName = System.getProperty("os.name");
+
+	return osName.indexOf("Windows") >= 0;
+    }
+    
     /*
      * Remove a preference
      */
