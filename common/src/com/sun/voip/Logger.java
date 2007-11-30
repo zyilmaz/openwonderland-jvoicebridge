@@ -122,7 +122,7 @@ public class Logger {
     }
 
     public static String getLogFileName() {
-	System.out.println("Log File name is " + logFileName);
+	println("Log File name is " + logFileName);
 	return logFileName;
     }
 

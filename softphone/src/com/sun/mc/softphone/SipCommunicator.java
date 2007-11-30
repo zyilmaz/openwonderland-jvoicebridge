@@ -60,6 +60,10 @@
 package com.sun.mc.softphone;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.io.IOException;
 
@@ -775,6 +779,7 @@ public class SipCommunicator extends Thread implements
                 }
             }
                 
+	    copyLogFileToDeskTop();
             return;
         }
             
@@ -826,6 +831,86 @@ public class SipCommunicator extends Thread implements
 	Logger.println("Unrecognized command:  " + command);
     }
     
+    /*
+     * Copy the log file to the desktop so it's easy for the user to find.
+     */
+    private void copyLogFileToDeskTop() {
+	String logFile = Logger.getLogFileName();
+
+	String s = System.getProperty("user.home")
+	        + File.separator + "Desktop" 
+		+ File.separator + "Softphone."; 
+
+	String outFile = logFile;
+
+	int ix = logFile.lastIndexOf(File.separator);
+
+	if (ix >= 0) {
+	    outFile = logFile.substring(ix + 1);
+
+	    ix = outFile.indexOf("_");
+
+	    if (ix >= 0) {
+		outFile = outFile.substring(ix + 1);
+	    }
+
+	    s += outFile;
+	}
+
+	FileWriter writer;
+
+	try {
+	    writer = new FileWriter(s);
+	} catch (IOException e) {
+	    Logger.println("Unable to create file " + s + " "
+		+ e.getMessage());
+	    return;
+	}
+
+        FileReader reader;
+
+	try {
+	    reader = new FileReader(logFile);
+	} catch (FileNotFoundException e) {
+	    Logger.println("Unable to read file " + logFile + " "
+		+ e.getMessage());
+	    return;
+	}
+
+	int n;
+
+	char[] buf = new char[16 *1024];
+
+	while (true) {
+	    try {
+	        n = reader.read(buf, 0, buf.length);
+
+		if (n <= 0) {
+		    break;
+		}
+	    } catch (IOException e) {
+		Logger.println("Unable to read log file " + e.getMessage());
+		break;
+	    } 
+
+	    try {
+	        writer.write(buf, 0, n);
+	    } catch (IOException e) {
+		Logger.println("Unable to write log file " + e.getMessage());
+		break;
+	    } 
+	}
+
+	try {
+	    writer.flush();
+	    writer.close();
+
+	    reader.close();
+	} catch (IOException e) {
+	    Logger.println("Unable to close log file:  " + e.getMessage());
+	}
+    }
+
     public void launch() {
         try {
             console.logEntry();
