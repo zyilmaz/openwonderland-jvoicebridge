@@ -87,6 +87,7 @@ import com.sun.stun.NetworkAddressManager;
 import com.sun.stun.StunServer;
 
 import java.awt.event.ActionEvent;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -840,6 +841,13 @@ public class SipCommunicator extends Thread implements
 	String s = System.getProperty("user.home")
 	        + File.separator + "Desktop" 
 		+ File.separator + "Softphone."; 
+
+	Calendar now = Calendar.getInstance();
+
+	s += now.get(Calendar.MONTH) + "."
+	    + now.get(Calendar.DAY_OF_MONTH) + "."
+	    + now.get(Calendar.HOUR_OF_DAY) + "." 
+	    + now.get(Calendar.MINUTE) + ".";
 
 	String outFile = logFile;
 
