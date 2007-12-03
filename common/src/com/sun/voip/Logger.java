@@ -122,7 +122,6 @@ public class Logger {
     }
 
     public static String getLogFileName() {
-	println("Log File name is " + logFileName);
 	return logFileName;
     }
 
