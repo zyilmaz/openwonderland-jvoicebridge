@@ -838,39 +838,23 @@ public class SipCommunicator extends Thread implements
     private void copyLogFileToDeskTop() {
 	String logFile = Logger.getLogFileName();
 
-	String s = System.getProperty("user.home")
+	String outFile = System.getProperty("user.home")
 	        + File.separator + "Desktop" 
 		+ File.separator + "Softphone."; 
 
 	Calendar now = Calendar.getInstance();
 
-	s += now.get(Calendar.MONTH) + "."
+	outFile += now.get(Calendar.MONTH) + "-"
 	    + now.get(Calendar.DAY_OF_MONTH) + "."
-	    + now.get(Calendar.HOUR_OF_DAY) + "." 
-	    + now.get(Calendar.MINUTE) + ".";
-
-	String outFile = logFile;
-
-	int ix = logFile.lastIndexOf(File.separator);
-
-	if (ix >= 0) {
-	    outFile = logFile.substring(ix + 1);
-
-	    ix = outFile.indexOf("_");
-
-	    if (ix >= 0) {
-		outFile = outFile.substring(ix + 1);
-	    }
-
-	    s += outFile;
-	}
+	    + now.get(Calendar.HOUR_OF_DAY) 
+	    + now.get(Calendar.MINUTE) + ".log";
 
 	FileWriter writer;
 
 	try {
-	    writer = new FileWriter(s);
+	    writer = new FileWriter(outFile);
 	} catch (IOException e) {
-	    Logger.println("Unable to create file " + s + " "
+	    Logger.println("Unable to create file " + outFile + " "
 		+ e.getMessage());
 	    return;
 	}
