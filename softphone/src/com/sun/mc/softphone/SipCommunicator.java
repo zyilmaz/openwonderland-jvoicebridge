@@ -844,10 +844,7 @@ public class SipCommunicator extends Thread implements
 
 	Calendar now = Calendar.getInstance();
 
-	outFile += now.get(Calendar.MONTH) + "-"
-	    + now.get(Calendar.DAY_OF_MONTH) + "."
-	    + now.get(Calendar.HOUR_OF_DAY) 
-	    + now.get(Calendar.MINUTE) + ".log";
+	outFile += Logger.getDate();
 
 	FileWriter writer;
 
