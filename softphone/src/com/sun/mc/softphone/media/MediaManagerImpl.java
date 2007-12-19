@@ -1130,6 +1130,22 @@ if (false) {
 	}
     }
 
+    public void pauseRecording(boolean isMicrophone) {
+	if (isMicrophone) {
+	    audioTransmitter.pauseRecording();
+	} else {
+	    audioReceiver.pauseRecording();
+	}
+    }
+
+    public void resumeRecording(boolean isMicrophone) {
+	if (isMicrophone) {
+	    audioTransmitter.resumeRecording();
+	} else {
+	    audioReceiver.resumeRecording();
+	}
+    }
+
     public void stopRecording(boolean isMicrophone) {
 	if (isMicrophone) {
 	    audioTransmitter.stopRecording();
