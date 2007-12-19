@@ -1089,6 +1089,8 @@ if (false) {
 	    return;
 	}
 
+	pauseRecording = false;
+
 	recordRtp = false;
 
 	if (recordingType.equalsIgnoreCase("Rtp")) {
@@ -1106,6 +1108,16 @@ if (false) {
 		+ e.getMessage());
         }
     }
+
+    public boolean pauseRecording;
+
+    public void pauseRecording() {
+	pauseRecording = true;
+    }
+	
+    public void resumeRecording() {
+	pauseRecording = false;
+    }
 	
     public void stopRecording() {
 	if (recorder != null) {
@@ -1115,7 +1127,7 @@ if (false) {
     }
 
     private void recordPacket(byte[] data, int length) {
-	if (recorder == null) {
+	if (recorder == null || pauseRecording == true) {
 	    return;
 	}
 
@@ -1132,7 +1144,7 @@ if (false) {
     }
 
     private void recordAudio(byte[] data, int length) {
-	if (recorder == null) {
+	if (recorder == null || pauseRecording == true) {
 	    return;
 	}
 

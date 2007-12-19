@@ -726,14 +726,14 @@ public class SipCommunicator extends Thread implements
 	if (command.indexOf("recordReceivedAudio") >= 0) {
 	    String tokens[] = command.split("=");
 
-	    if (tokens.length != 1) {
+	    if (tokens.length != 2) {
 		Logger.println("Missing recording path:  " + command);
 		return;
 	    }
 
 	    if (mediaManager != null) {
 		try {
-		    mediaManager.startRecording("tokens[1]", "Au",
+		    mediaManager.startRecording(tokens[1], "Au",
 			false, null);
 		} catch (IOException e) {
 		    Logger.println("Unable to record to "
@@ -744,6 +744,18 @@ public class SipCommunicator extends Thread implements
 	    return;
 	}
   
+	if (command.indexOf("pauseRecordingReceivedAudio") >= 0) {
+	    if (mediaManager != null) {
+		mediaManager.pauseRecording(false);
+	    }
+
+	}
+	if (command.indexOf("resumeRecordingReceivedAudio") >= 0) {
+	    if (mediaManager != null) {
+		mediaManager.resumeRecording(false);
+	    }
+	}
+
 	if (command.indexOf("stopRecordingReceivedAudio") >= 0) {
 	    if (mediaManager != null) {
 		mediaManager.stopRecording(false);

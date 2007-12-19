@@ -101,6 +101,10 @@ public interface MediaManager {
     public void startRecording(String path, String recordingType, 
 	    boolean isLocal, CallDoneListener listener) throws IOException;
 
+    public void pauseRecording(boolean isLocal);
+
+    public void resumeRecording(boolean isLocal);
+
     public void stopRecording(boolean isLocal);
 
 }

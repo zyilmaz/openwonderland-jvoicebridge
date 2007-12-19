@@ -493,14 +493,14 @@ public class AudioReceiver extends Thread {
 		//Logger.println("back from receive");
 
 		if (received == 0) {
-		    if (Logger.logLevel >= Logger.LOG_INFO) {
-		        Logger.println("Received first packet from " + isa 
-		            + ", sequence number " 
-		            + rtpReceiverPacket.getRtpSequenceNumber() 
-			    + " length " + rtpReceiverPacket.getLength());
-		    }
-
 		    rtpReceiverPacket.setMark();
+		}
+
+		if (received == 0 || Logger.logLevel >= Logger.LOG_DETAIL) {
+		    Logger.println("Received packet from " + isa 
+		        + ", sequence number " 
+		        + rtpReceiverPacket.getRtpSequenceNumber() 
+			+ " length " + rtpReceiverPacket.getLength());
 		}
 
 		if (done) {
@@ -980,6 +980,8 @@ public class AudioReceiver extends Thread {
     public void startRecording(String path, String recordingType) 
 	    throws IOException {
 
+	pauseRecording = false;
+
 	if (connected == false) {
 	    Logger.println("Setting up to record " + path
 		+ " " + recordingType);
@@ -1009,7 +1011,17 @@ public class AudioReceiver extends Thread {
 		+ e.getMessage());
         }
     }
-	
+
+    private boolean pauseRecording;
+
+    public void pauseRecording() {
+	pauseRecording = true;
+    }
+
+    public void resumeRecording() {
+	pauseRecording = false;
+    }
+
     public void stopRecording() {
 	if (recorder != null) {
 	    Logger.println("Stop recording");
@@ -1019,7 +1031,7 @@ public class AudioReceiver extends Thread {
     }
 
     private void recordPacket(byte[] data, int length) {
-	if (recorder == null) {
+	if (recorder == null || pauseRecording == true) {
 	    return;
 	}
 
@@ -1036,7 +1048,7 @@ public class AudioReceiver extends Thread {
     }
 
     private void recordAudio(byte[] data, int length) {
-	if (recorder == null) {
+	if (recorder == null || pauseRecording == true) {
 	    return;
 	}
 
@@ -1329,7 +1341,7 @@ public class AudioReceiver extends Thread {
 	 * to us.
 	 */
         if (!fromAddress.equals(expectedAddress)) {
-            if ((rejected % 100) == 0) {
+            if ((rejected % 100) == 0 || Logger.logLevel >= Logger.LOG_DETAIL) {
                 Logger.println("Dropping.  Expected "
                     + isa.getAddress().getHostAddress() + ":" + isa.getPort()
                     + " got " + from.getAddress().getHostAddress()
