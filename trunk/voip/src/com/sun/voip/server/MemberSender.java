@@ -432,7 +432,8 @@ public class MemberSender {
 	    }
 	} catch (IOException e) {
 	    if (!done) {
-	        Logger.error("Call " + cp + " sendData " + e.getMessage());
+		Logger.error("Call " + cp + " sendData " + e.getMessage());
+	        e.printStackTrace();
 	    }
 	    return false;
 	}
@@ -675,8 +676,9 @@ public class MemberSender {
 	        senderPacket.getSocketAddress());
 	} catch (IOException e) {
 	    if (!done) {
-	        Logger.error("Call " + cp + "sendComfortNoisePayload: " 
+		Logger.println("Call " + cp + " sendComfortNoisePayload "
 		    + e.getMessage());
+	        e.printStackTrace();
 	    }
 	    return false;
 	}
