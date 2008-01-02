@@ -266,26 +266,32 @@ public class StunClient extends Thread {
     private void waitForReply() throws IOException {
 	byte[] response = new byte[1000];
 
+	int length;
+
 	if (datagramSocket != null) {
 	    DatagramPacket packet = new DatagramPacket(
 		response, response.length);
 
 	    try {
 	        datagramSocket.receive(packet);
+		length = packet.getLength();
 	    } catch (SocketTimeoutException e) {
 	        throw new IOException(e.getMessage());
 	    }
 	} else {
-	    input.read(response);
+	    length = input.read(response);
 	}
 
-	logger.fine("Got response!  " + response.length
+	logger.fine("Got response!  " + length
    	    + " local addr " + datagramSocket.getLocalAddress()
  	    + " local port " + datagramSocket.getLocalPort());
 
 	int type = (int) ((response[0] << 8 & 0xff00) | (response[1] & 0xff));
 
 	if (type != StunHeader.BINDING_RESPONSE) {
+	    StunHeader.dump("STUN response, length " + length 
+		+ " TCP " + (input != null), response, 0, length);
+
 	    throw new IOException("Bad STUN response " 
 		+ Integer.toHexString(type));
 	}
