@@ -177,7 +177,9 @@ public class MicrophoneAlsaImpl implements Microphone {
 	    try {
                 n = audioDriver.readMic(linearData, offset + o, bufferLength);
 	    } catch (IOException e) {
-		Logger.println("readMicrophone failed:  " + e.getMessage());
+		if (Logger.logLevel >= Logger.LOG_INFO) {
+		    Logger.println("readMicrophone failed:  " + e.getMessage());
+		}
 		return;
 	    }
 
