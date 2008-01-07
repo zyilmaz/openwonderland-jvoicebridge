@@ -120,6 +120,8 @@ public class AudioReceiver extends Thread {
 
     private Recorder recorder;
     private boolean recordRtp;
+    private long startRecordTime;
+    private long dataRecorded;
 
     private AudioTransmitter audioTransmitter;
 
@@ -294,11 +296,7 @@ public class AudioReceiver extends Thread {
         done = true;
 	connected = false;
 
-	synchronized(this) {
-	    if (recorder != null) {
-	        recorder.done();
-	    }
-	}
+	stopRecording();
     }
 
     private DtmfBuffer dtmfBuffer;
@@ -500,7 +498,9 @@ public class AudioReceiver extends Thread {
 		    Logger.println("Received packet from " + isa 
 		        + ", sequence number " 
 		        + rtpReceiverPacket.getRtpSequenceNumber() 
-			+ " length " + rtpReceiverPacket.getLength());
+			+ " length " + rtpReceiverPacket.getLength()
+			+ " timestamp diff " 
+			+ rtpReceiverPacket.getRtpTimestampDiff());
 		}
 
 		if (done) {
@@ -819,6 +819,9 @@ public class AudioReceiver extends Thread {
 
     private int silenceCount;
 
+    private int silencePackets;
+    private int dataPackets;
+
     class PacketProcessor extends Thread {
 	private Ticker ticker;
 	private int n;
@@ -884,9 +887,11 @@ public class AudioReceiver extends Thread {
 		}
 
                 if (speakerData == null) {
+		    recordSilence(1);
 		    continue;
                 }
 
+		recordAudio(speakerData);
                 sendDataToSpeaker(speakerData);
 
 		if (Logger.logLevel >= Logger.LOG_DETAILINFO) {
@@ -1006,6 +1011,7 @@ public class AudioReceiver extends Thread {
 
 	try {
             recorder = new Recorder(path, recordingType, m);
+	    startRecordTime = System.currentTimeMillis();
         } catch (IOException e) {
             throw new IOException("Can't record to " + path + " " 
 		+ e.getMessage());
@@ -1023,8 +1029,23 @@ public class AudioReceiver extends Thread {
     }
 
     public void stopRecording() {
-	if (recorder != null) {
-	    Logger.println("Stop recording");
+	if (recorder == null) {
+	    return;
+	}
+
+	Logger.println("Stop recording");
+
+	long totalRecordTime = System.currentTimeMillis() - startRecordTime;
+
+	Logger.println("total Record seconds = " 
+	    + (totalRecordTime / 1000.)
+	    + " seconds recorded = " 
+	    + (dataRecorded / speakerWriteSize * RtpPacket.PACKET_PERIOD / 1000.));
+
+	Logger.println("Silence packets " + silencePackets
+	    + " data packets " + dataPackets);
+
+	synchronized (this) {
 	    recorder.done();
 	    recorder = null;
 	}
@@ -1047,7 +1068,7 @@ public class AudioReceiver extends Thread {
         }
     }
 
-    private void recordAudio(byte[] data, int length) {
+    private void recordAudio(byte[] data) {
 	if (recorder == null || pauseRecording == true) {
 	    return;
 	}
@@ -1056,11 +1077,31 @@ public class AudioReceiver extends Thread {
 	    return;
 	}
 
+	dataPackets++;
+
         try {
-            recorder.write(data, 0, length);
+            recorder.write(data, 0, data.length);
+	    dataRecorded += data.length; 
         } catch (IOException e) {
             Logger.println("Unable to record data " + e.getMessage());
             recorder = null;
+        }
+    }
+
+    private void recordSilence(int nPackets) {
+	if (recorder == null || speaker == null) {
+	    return;
+	}
+
+	silencePackets += nPackets;
+
+	byte[] data = new byte[nPackets * speakerWriteSize];
+
+        try {
+            recorder.write(data, 0, data.length);
+	    dataRecorded += data.length;
+        } catch (IOException e) {
+            Logger.println("Unable to record silence " + e.getMessage());
         }
     }
 
@@ -1111,7 +1152,6 @@ public class AudioReceiver extends Thread {
 
     private void writeSpeaker(byte[] speakerData, int offset, int size) {
 	if (speaker == null) {
-            recordAudio(speakerData, size);
 	    return;
 	}
 
@@ -1291,8 +1331,6 @@ public class AudioReceiver extends Thread {
 		}
 	    }
 	}
-
-        recordAudio(speakerData, writeSize);
 
 	try {
 	    speaker.write(speakerData, offset, writeSize);
