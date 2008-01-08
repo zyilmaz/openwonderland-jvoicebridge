@@ -265,43 +265,47 @@ public class StunClient extends Thread {
 	}
     }
 
-    private void waitForReply() throws IOException {
+    private void waitForReply() throws IOException, SocketTimeoutException {
 	byte[] response = new byte[1000];
 
-	int length;
+	/*
+	 * Since ports are multiplexed with STUN and data,
+	 * it is possible for a us to send a BINDING_REQUEST
+	 * and not immediately get a BINDING_RESPONSE but instead
+	 * get data.  We will toss data for <retries> times,
+	 * then return an error so the STUN request can be resent.
+	 */
+	for (int i = 0; i < retries; i++) {
+	    int length;
 
-	if (datagramSocket != null) {
-	    DatagramPacket packet = new DatagramPacket(
-		response, response.length);
+	    if (datagramSocket != null) {
+	        DatagramPacket packet = new DatagramPacket(
+		    response, response.length);
 
-	    try {
 	        datagramSocket.receive(packet);
-		length = packet.getLength();
-	    } catch (SocketTimeoutException e) {
-	        throw new IOException(e.getMessage());
+	        length = packet.getLength();
+	    } else {
+	        length = input.read(response);
 	    }
-	} else {
-	    length = input.read(response);
+
+	    logger.fine("Got response!  " + length
+   	        + " local addr " + datagramSocket.getLocalAddress()
+ 	        + " local port " + datagramSocket.getLocalPort());
+
+	    int type = (int) 
+		((response[0] << 8 & 0xff00) | (response[1] & 0xff));
+
+	    if (type == StunHeader.BINDING_RESPONSE) {
+	        mappedAddress = StunHeader.getAddress(response, 
+	            StunHeader.MAPPED_ADDRESS);
+		return;
+	    }
+
+	    logger.fine("BAD STUN response, length " + length 
+		    + " TCP " + (input != null));
 	}
 
-	logger.fine("Got response!  " + length
-   	    + " local addr " + datagramSocket.getLocalAddress()
- 	    + " local port " + datagramSocket.getLocalPort());
-
-	int type = (int) ((response[0] << 8 & 0xff00) | (response[1] & 0xff));
-
-	if (type != StunHeader.BINDING_RESPONSE) {
-	    StunHeader.dump("STUN response, length " + length 
-		+ " TCP " + (input != null), response, 0, length);
-
-	    throw new IOException("Bad STUN response " 
-		+ Integer.toHexString(type));
-	}
-
-	//StunHeader.dump("response", response, 0, response.length);
-
-	mappedAddress = StunHeader.getAddress(response, 
-	    StunHeader.MAPPED_ADDRESS);
+	throw new IOException("Didn't receive BINDING_RESPONE");
     }
 
 }
