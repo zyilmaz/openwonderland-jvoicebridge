@@ -245,6 +245,9 @@ public class ConferenceMember implements TreatmentDoneListener,
 		    if (lastRtpPort != 0 && (nextRtpPort + 1) > lastRtpPort) {
 			Logger.println("No more RTP ports available, last is "
 			    + lastRtpPort);
+
+			closeBadChannels(badChannels);
+
 			throw new IOException(
 			    "No more RTP ports available, last is " + lastRtpPort);
 		    }
@@ -283,22 +286,30 @@ public class ConferenceMember implements TreatmentDoneListener,
 		}
 	    }
 	} catch (Exception e) {
+	    closeBadChannels(badChannels);
+
 	    throw new IOException("Call " + cp
 		+ " MemberReceiver exception! " + e.getMessage());
 	}
 
+	if (Logger.logLevel >= Logger.LOG_INFO) {
+            Logger.println("Call " + cp + " port "
+                + datagramChannel.socket().getLocalPort());
+	}
+    }
+
+    private void closeBadChannels(ArrayList badChannels) {
 	while (badChannels.size() > 0) {
 	    /*
 	     * Now close all the channels we couldn't use
 	     */
 	    DatagramChannel dc = (DatagramChannel) badChannels.remove(0);
 
-	    dc.close();
-	}
-
-	if (Logger.logLevel >= Logger.LOG_INFO) {
-            Logger.println("Call " + cp + " port "
-                + datagramChannel.socket().getLocalPort());
+	    try {
+	        dc.close();
+	    } catch (IOException e) {
+		Logger.println("Unable to close channel! " + e.getMessage());
+	    }
 	}
     }
 
