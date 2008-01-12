@@ -387,22 +387,23 @@ public class Bridge {
 	    while (true) {
 		Socket socket = serverSocket.accept(); // wait for a connection
 
-		InetAddress inetAddress = socket.getInetAddress();
+		InetAddress ia = socket.getInetAddress();
 
 		String host;
 
 		try {
-		    host = inetAddress.getHostName();
+		    host = ia.getHostName();
 		} catch (Exception e) {
-		    host = inetAddress.toString();
+		    host = ia.toString();
 		}
 
 		if (localhostSecurity == true) {
-		    if (inetAddress.isSiteLocalAddress() == false &&
+		    if (ia.isSiteLocalAddress() == false &&
 			    host.equalsIgnoreCase("localhost") == false &&
-			    host.equals("127.0.0.1") == false) {
+			    host.equals("127.0.0.1") == false &&
+			    ia.equals(privateHost) == false) {
 
-			s = "Connection from " + inetAddress
+			s = "Connection from " + ia 
 			    + " rejected:  must connect from "
 			    + "site local address\n";
 
