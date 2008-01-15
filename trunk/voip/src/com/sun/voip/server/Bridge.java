@@ -401,7 +401,7 @@ public class Bridge {
 		    if (ia.isSiteLocalAddress() == false &&
 			    host.equalsIgnoreCase("localhost") == false &&
 			    host.equals("127.0.0.1") == false &&
-			    ia.equals(privateHost) == false) {
+			    ia.getHostAddress().equals(privateHost) == false) {
 
 			s = "Connection from " + ia 
 			    + " rejected:  must connect from "
