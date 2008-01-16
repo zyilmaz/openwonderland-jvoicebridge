@@ -1042,6 +1042,10 @@ public class ConferenceMember implements TreatmentDoneListener,
 	    ArrayList<ConferenceMember> memberList = 
 	        memberDoneListeners.get(conferenceId);
 
+	    if (memberList == null) {
+		return;
+	    }
+
 	    for (ConferenceMember member : memberList) {
 		if (this != member) {
 		    membersToNotify.add(member);
