@@ -233,7 +233,7 @@ public class Reconnector extends Thread {
             + " ConferenceId='" + cp.getConferenceId() + "'";
 
         if (bc != null) {
-            s += " CallInfo='" + bc + "'";
+            s += " CallInfo='" + bc.getPublicAddress() + "'";
         }
 
         CallStatus callStatus = null;
