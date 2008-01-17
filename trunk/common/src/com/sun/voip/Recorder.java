@@ -57,7 +57,21 @@ public class Recorder extends Thread {
     public Recorder(String recordPath, String recordingType,
 	    MediaInfo mediaInfo) throws IOException {
 
-	if (recordPath.substring(0,1).equals(fileSeparator) == true) {
+        String osName = System.getProperty("os.name");
+
+	boolean absolute = false;
+
+        if (osName.indexOf("Windows") >= 0) {
+	    if (recordPath.charAt(1) == ':') {
+		absolute = true;
+	    }
+	} else {
+	    if (recordPath.substring(0,1).equals(fileSeparator) == true) {
+		absolute = true;
+	    }
+	}
+
+	if (absolute) {
 	    this.recordPath = recordPath;
 	} else {
 	    /*
