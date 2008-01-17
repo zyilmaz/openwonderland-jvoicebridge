@@ -62,7 +62,9 @@ public class Recorder extends Thread {
 	boolean absolute = false;
 
         if (osName.indexOf("Windows") >= 0) {
-	    if (recordPath.charAt(1) == ':') {
+	    if (recordPath.substring(0,1).equals(fileSeparator) == true ||
+	            recordPath.charAt(1) == ':') {
+
 		absolute = true;
 	    }
 	} else {
