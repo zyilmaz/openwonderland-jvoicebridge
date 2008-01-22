@@ -128,16 +128,18 @@ public class TPCallControl extends HttpServlet {
 	String joinConfirmationTimeout =
 	    req.getParameter("joinConfirmationTimeout");
 
-	int timeout = 90;
+	if (joinConfirmationTimeout != null) {
+	    int timeout = 90;
 
-	try {
-	    timeout = Integer.parseInt(joinConfirmationTimeout);
-	} catch (NumberFormatException e) {
-	    println("Invalid join confirmation timeout "
-		+ joinConfirmationTimeout + " defaulting to " + timeout);
+	    try {
+	        timeout = Integer.parseInt(joinConfirmationTimeout);
+	    } catch (NumberFormatException e) {
+	        println("Invalid join confirmation timeout "
+	    	    + joinConfirmationTimeout + " defaulting to " + timeout);
+	    }
+
+            cp.setJoinConfirmationTimeout(timeout);
 	}
-
-        cp.setJoinConfirmationTimeout(timeout);
 
 	cp.setCallEndTreatment(req.getParameter("firstPartyCallEndTreatment"));
 	cp.setFirstConferenceMemberTreatment(
@@ -160,7 +162,7 @@ public class TPCallControl extends HttpServlet {
 	String handleSessionProgress = 
 	    req.getParameter("handleSessionProgress");
 
-	if (handleSessionProgress.equalsIgnoreCase("true")) {
+	if (handleSessionProgress != null && handleSessionProgress.equalsIgnoreCase("true")) {
 	    cp.setHandleSessionProgress(true);
 	}
 
@@ -229,7 +231,9 @@ public class TPCallControl extends HttpServlet {
 	    getServletContext().getInitParameter("BRIDGE_SERVER_NAME");
 
 	if (serverName == null) {
-	    serverName = "ecd.sfBay.sun.com";
+	    //serverName = "ecd.sfBay.sun.com";
+	    //serverName = "exec-mc-bridge.east.sun.com";
+	    serverName = "escher.east.sun.com";
 	}
 	int serverPort = 6666;
 
