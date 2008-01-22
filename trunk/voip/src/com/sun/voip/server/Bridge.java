@@ -372,7 +372,7 @@ public class Bridge {
 	    String s = 
 		System.getProperty("com.sun.voip.server.BRIDGE_STATUS_LISTENERS");
 
-            if (s == null) {
+            if (s == null || s.length() == 0) {
                 Logger.println(
                     "There are no listeners to notify "
 		    + "that this bridge came online");
