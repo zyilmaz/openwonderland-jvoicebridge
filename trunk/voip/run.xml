@@ -28,6 +28,7 @@
             <jvmarg value="-Dcom.sun.voip.server.FIRST_RTP_PORT=${voicebridge.first.rtp.port}"/>
             <jvmarg value="-Dcom.sun.voip.server.LAST_RTP_PORT=${voicebridge.last.rtp.port}"/>
             <jvmarg value="-Djavax.sip.IP_ADDRESS=${voicebridge.local.hostAddress}"/>
+            <jvmarg value="-Dcom.sun.voip.server.BRIDGE_STATUS_LISTENERS=${voicebridge.status.listeners}:6668"/>
             <jvmarg value="-ms200m"/>
             <jvmarg value="-mx200m"/>
 	    <jvmarg value="-XX:NewSize=3m"/>
