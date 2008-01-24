@@ -700,8 +700,6 @@ if (false) {
 		    microphoneData = new byte[microphoneData.length];
 	            microphone.read(microphoneData, 0, microphoneData.length);
 
-		    adjustData(microphoneData);
-
 		    if (micRecorder != null) {
 		        try {
 		            micRecorder.write(microphoneData, 0, 
@@ -990,75 +988,6 @@ if (false) {
 
 	synchronized(this) {
 	    notifyAll();
-	}
-    }
-
-    private long nSamples;
-    private long sampleSumLeft;
-    private long sampleSumRight;
-
-    private short biasLeft;
-    private short biasRight;
-
-    private void adjustData(byte[] microphoneData) {
-	updateBias(microphoneData);
-
-	if (biasLeft == 0 && biasRight == 0) {
-	    return;
-	}
-
-	String adjustMic = Utils.getPreference(
-	    "com.sun.mc.softphone.media.ADJUST_MICROPHONE_BIAS");
-
-	if (adjustMic == null || !adjustMic.equalsIgnoreCase("true")) {
-	    return;
-	}    
-
-	if ((nSamples % (5 * sampleRate)) == 0) {
-	    Logger.println("biasLeft " + biasLeft + " biasRight " + biasRight);
-	}
-
-	for (int i = 0; i < microphoneData.length; i += 2 * channels) {
-	    short s = (short) (((microphoneData[i] << 8) & 0xff00) |
-		((microphoneData[i + 1] & 0xff)));
-
-	    s -= biasLeft;
-
-	    microphoneData[i] = (byte) ((s >> 8) & 0xff);
-	    microphoneData[i + 1] = (byte) (s & 0xff);
-
-	    if (channels == 2) {
-		s = (short) (((microphoneData[2 + i] << 8) & 0xff00) |
-		    ((microphoneData[3 + i] & 0xff)));
-
-                s -= biasRight;
-
-                microphoneData[2 + i] = (byte) ((s >> 8) & 0xff);
-                microphoneData[3 + i] = (byte) (s & 0xff);
-	    }
-	}
-    }
-
-    private void updateBias(byte[] microphoneData) {
-	for (int i = 0; i < microphoneData.length; i += channels * 2) {
-	    short s = (short) (((microphoneData[i] << 8) & 0xff00) |
-                ((microphoneData[i + 1] & 0xff)));
-
-	    sampleSumLeft += s;
-
-	    if (channels == 2) {
-	        s = (short) (((microphoneData[i + 2] << 8) & 0xff00) |
-                    ((microphoneData[i + 3] & 0xff)));
-
-	        sampleSumRight += s;
-	    }
-
-	    nSamples++;
-	}
-
-	if (nSamples >= sampleRate) {
-	    biasLeft = (short) (sampleSumLeft / nSamples);
-	    biasRight = (short) (sampleSumRight / nSamples);
 	}
     }
 

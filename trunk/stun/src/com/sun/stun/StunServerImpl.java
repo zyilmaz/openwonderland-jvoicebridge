@@ -106,7 +106,7 @@ public class StunServerImpl implements StunServer {
         }
 
         public void run() {
-	    logger.fine("STUN Server:  Waiting for Stun requests on UDP port " 
+	    logger.info("STUN Server:  Waiting for Stun requests on UDP port " 
 	        + stunServerPort + "...");
 
 	    synchronized (this) {
@@ -154,7 +154,7 @@ public class StunServerImpl implements StunServer {
         }
 
         public void run() {
-	    logger.info("STUN Server:  Waiting for Stun requests on TCP port " 
+	    logger.fine("STUN Server:  Waiting for Stun requests on TCP port " 
 	        + stunServerPort + "...");
 
 	    synchronized (this) {
@@ -187,7 +187,7 @@ public class StunServerImpl implements StunServer {
     public void processStunRequest(DatagramChannel channel,
 	    InetSocketAddress isa, byte[] request) {
 
-	logger.finer("Got UDP Stun request for channel " + request.length 
+	logger.info("Got UDP Stun request for channel " + request.length 
 	    + " bytes from " + isa);
 
 	byte[] response = getStunResponse(isa, request, request.length);

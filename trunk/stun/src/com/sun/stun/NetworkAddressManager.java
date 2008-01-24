@@ -408,4 +408,48 @@ public class NetworkAddressManager {
             && (addr.getAddress()[1] & 0xff) == 254;
     }
 
+    public static void main(String[] args) {
+	if (args.length != 4) {
+	    System.out.println("Usage:  java com.sun.stun.NetworkAddressManager <stun server> "
+		+ "<stun port> <private address> <private port>");
+	    System.exit(1);
+	}
+
+	NetworkAddressManager.setLogLevel(Level.FINEST);
+
+	int stunPort = Integer.parseInt(args[1]);
+
+	InetSocketAddress isa = new InetSocketAddress(args[0], stunPort);
+
+	System.out.println("stun server " + isa);
+
+	InetAddress ia = null;
+
+	try {
+	    ia = InetAddress.getByName(args[2]);
+	} catch (UnknownHostException e) {
+	    System.out.println(e.getMessage());
+	    System.exit(1);
+	}
+
+	int privatePort = Integer.parseInt(args[3]);
+
+	DatagramSocket socket = null;
+
+	try {
+	    socket = new DatagramSocket(privatePort, ia);
+	} catch (SocketException e) {
+	    System.out.println(e.getMessage());
+	    System.exit(1);
+	}
+
+	try {
+	    System.out.println("public address " 
+	        + NetworkAddressManager.getPublicAddressFor(isa, socket));
+	} catch (IOException e) {
+	    System.out.println(e.getMessage());
+	    System.exit(1);
+	}
+    }
+
 }

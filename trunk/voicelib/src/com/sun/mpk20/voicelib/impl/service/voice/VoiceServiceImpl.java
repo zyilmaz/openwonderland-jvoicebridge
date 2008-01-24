@@ -141,16 +141,40 @@ public class VoiceServiceImpl implements VoiceManager, Service,
      * @param properties startup properties
      * @param systemRegistry the registry of system components
      */
+
+    /*
+     * Service interface pre-.95 darkstar server.
+     */
     public VoiceServiceImpl(Properties properties,
                             ComponentRegistry systemRegistry) {
-
-	this.properties = properties;
+        this.properties = properties;
 
         txnMap = new ConcurrentHashMap<Transaction,TxnState>();
         recurringMap = new ConcurrentHashMap<String,RecurringTaskHandle>();
 
         // the scheduler is the only system component that we use
         taskScheduler = systemRegistry.getComponent(TaskScheduler.class);
+
+        bridgeManager = new BridgeManager(this);
+    }
+
+    /*
+     * Service interface .95 darkstar server.
+     */
+    public VoiceServiceImpl(Properties properties,
+                            ComponentRegistry systemRegistry,
+			    TransactionProxy transactionProxy) {
+
+	this.properties = properties;
+	this.transactionProxy = transactionProxy;
+
+        txnMap = new ConcurrentHashMap<Transaction,TxnState>();
+        recurringMap = new ConcurrentHashMap<String,RecurringTaskHandle>();
+
+        // the scheduler is the only system component that we use
+        taskScheduler = systemRegistry.getComponent(TaskScheduler.class);
+	dataService = transactionProxy.getService(DataService.class);
+        taskService = transactionProxy.getService(TaskService.class);
 
 	bridgeManager = new BridgeManager(this);
     }
@@ -414,9 +438,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     public void addCallStatusListener(ManagedCallStatusListener mcsl) {
 	logger.finest("addCallStatusListener " + mcsl);
 
-        CallStatusListeners listeners =
-            dataService.getServiceBinding(DS_CALL_STATUS_LISTENERS,
-		    CallStatusListeners.class);
+        CallStatusListeners listeners = getCallStatusListeners();
 
 	/*
 	 * Create a reference to mcsl and keep that.
@@ -434,11 +456,16 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         return NAME;
     }
 
+    public void ready() {
+	logger.info("Voice Service is ready.");
+    }
+
     /**
      * {@inheritDoc}
      */
-    public void configure(ComponentRegistry serviceRegistry,
+    public void configure(ComponentRegistry systemRegistry,
                           TransactionProxy transactionProxy) {
+
         if (isConfigured) {
             throw new IllegalStateException("Voice Service already configured");
 	}
@@ -453,34 +480,12 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
         // keep track of the proxy, the data service, and the task service
         this.transactionProxy = transactionProxy;
-        dataService = serviceRegistry.getComponent(DataService.class);
-        taskService = serviceRegistry.getComponent(TaskService.class);
-
-	defaultOwner = transactionProxy.getCurrentOwner();
-
-	logger.info("Default owner is " + defaultOwner);
-
-	bridgeManager.configure(properties);
-
-	CallStatusListeners listeners = null;
-
-	try {
-	    listeners = dataService.getServiceBinding(DS_CALL_STATUS_LISTENERS,
-		CallStatusListeners.class);
-	} catch (NameNotBoundException e) {
-	    listeners = new CallStatusListeners();
-
-	    try {
-		dataService.setServiceBinding(DS_CALL_STATUS_LISTENERS, 
-		    listeners);
-	    }  catch (RuntimeException re) {
-                logger.warning("failed to bind pending map " + re.getMessage());
-                throw re;
-            }
-	}
+        dataService = systemRegistry.getComponent(DataService.class);
+        taskService = systemRegistry.getComponent(TaskService.class);
 
 	logger.fine("Done configuring voice.");
     }
+
 
     /*
      * Get voice bridge notification and pass it along.
@@ -759,6 +764,14 @@ public class VoiceServiceImpl implements VoiceManager, Service,
      * joins to the transaction) if the state doesn't exist.
      */
     private TxnState getTxnState() {
+	if (defaultOwner == null) {
+	    defaultOwner = transactionProxy.getCurrentOwner();
+
+	    logger.info("Default owner is " + defaultOwner);
+
+	    bridgeManager.configure(properties);
+	}
+
         // resolve the current transaction and the local state
         Transaction txn = transactionProxy.getCurrentTransaction();
         TxnState txnState = txnMap.get(txn);
@@ -781,6 +794,28 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         }
 
         return txnState;
+    }
+
+    private CallStatusListeners getCallStatusListeners() {
+	CallStatusListeners listeners = null;
+
+	try {
+	    listeners = dataService.getServiceBinding(DS_CALL_STATUS_LISTENERS,
+		CallStatusListeners.class);
+	} catch (NameNotBoundException e) {
+	    listeners = new CallStatusListeners();
+
+	    try {
+		dataService.setServiceBinding(DS_CALL_STATUS_LISTENERS, 
+		    listeners);
+	    }  catch (RuntimeException re) {
+                logger.warning("failed to bind pending map " + re.getMessage());
+                throw re;
+            }
+	}
+
+        return dataService.getServiceBinding(DS_CALL_STATUS_LISTENERS,
+		    CallStatusListeners.class);
     }
 
     /**
@@ -823,9 +858,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	     * This method could get called multiple times if
 	     * ExceptionRetryStatus is thrown.
 	     */
-	    CallStatusListeners listeners = 
-		dataService.getServiceBinding(DS_CALL_STATUS_LISTENERS,
-		    CallStatusListeners.class);
+	    CallStatusListeners listeners = getCallStatusListeners();
 
 	    ManagedReference[] listenerList;
 

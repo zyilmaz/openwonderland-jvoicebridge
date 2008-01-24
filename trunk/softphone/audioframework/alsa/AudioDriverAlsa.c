@@ -29,6 +29,8 @@
 
 #include <jni.h>
 
+#include <pthread.h>
+
 #include "com_sun_mc_softphone_media_alsa_AudioDriverAlsa.h"
 
 snd_pcm_t *microphone_handle;
@@ -67,6 +69,8 @@ speaker_data_t *last_speaker_data;
 short *silence;
 snd_pcm_uframes_t silence_frames;
 snd_pcm_uframes_t period_frames;
+
+pthread_mutex_t *speaker_mutex;
 
 /******************************************************************************/
 JNIEXPORT void JNICALL 
@@ -242,6 +246,12 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nInitializeSpeaker(
 }
 
 int initialize_speaker() {
+    if (speaker_mutex == NULL) {
+	speaker_mutex = malloc(sizeof (pthread_mutex_t));
+
+	pthread_mutex_init(speaker_mutex, NULL);
+    }
+
     closeSpeaker();
 
     int ret;
@@ -378,10 +388,21 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nFlushSpeaker(
 void 
 closeSpeaker() 
 {
-    if (speaker_handle != NULL) {
-        snd_pcm_close(speaker_handle);
-	speaker_handle = NULL;
+    if (speaker_mutex == NULL) {
+	return;
     }
+
+    pthread_mutex_lock(speaker_mutex);
+
+    if (speaker_handle == NULL) {
+        pthread_mutex_unlock(speaker_mutex);
+	return;
+    }
+
+    snd_pcm_close(speaker_handle);
+    speaker_handle = NULL;
+
+    pthread_mutex_unlock(speaker_mutex);
 }
 
 short *silence;

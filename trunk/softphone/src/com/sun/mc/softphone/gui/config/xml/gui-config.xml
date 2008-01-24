@@ -88,16 +88,6 @@
 			need to change this.
                 ]]></description>
             </property>
-            <property name="com.sun.mc.softphone.media.ADJUST_MICROPHONE_BIAS">
-                <labelname>Auto Adjust Mic Bias</labelname>
-                <description><![CDATA[
-			We have encountered a microphone with a DC bias.
-			This causes static to be heard.  If this parameter
-			is set to true, an attempt will be made
-			to figure out the bias and adjust for it.
-			Default is false.
-                ]]></description>
-            </property>
             <property name="com.sun.mc.softphone.media.SMOOTH_MICROPHONE">
                 <labelname>Smooth Microphone</labelname>
                 <description><![CDATA[
@@ -105,13 +95,6 @@
 			microphone reads so that only one read is done
 			every 20 ms.  This is intended for debugging.
                         Default is false.
-                ]]></description>
-            </property>
-            <property name="com.sun.mc.softphone.media.SPEAKER_BIAS">
-                <labelname>Speaker Bias</labelname>
-                <description><![CDATA[
-			Adjust samples written to the speaker by adding this value.   
-			For Debugging!
                 ]]></description>
             </property>
             <property name="com.sun.mc.softphone.media.RECEIVE_COMFORT_PAYLOAD">

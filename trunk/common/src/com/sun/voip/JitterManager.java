@@ -232,6 +232,10 @@ public class JitterManager {
 	}
     }
 
+    public int getNumberMissingPackets() {
+	return failedToRecover;
+    }
+
     public int getPacketListSize() {
 	return packetList.size();
     }

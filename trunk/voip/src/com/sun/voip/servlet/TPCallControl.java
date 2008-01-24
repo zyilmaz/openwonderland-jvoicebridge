@@ -231,9 +231,7 @@ public class TPCallControl extends HttpServlet {
 	    getServletContext().getInitParameter("BRIDGE_SERVER_NAME");
 
 	if (serverName == null) {
-	    //serverName = "ecd.sfBay.sun.com";
-	    //serverName = "exec-mc-bridge.east.sun.com";
-	    serverName = "escher.east.sun.com";
+	    serverName = "ecd.sfBay.sun.com";
 	}
 	int serverPort = 6666;
 

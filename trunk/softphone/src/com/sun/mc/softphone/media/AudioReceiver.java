@@ -268,6 +268,14 @@ public class AudioReceiver extends Thread {
 	return received;
     }
 
+    public int getNumberMissingPackets() {
+	if (jitterManager == null) {
+	    return 0;
+	}
+
+	return jitterManager.getNumberMissingPackets();
+    }
+	
     public int getJitterBufferSize() {
 	if (jitterManager == null) {
 	    return 0;
@@ -1282,56 +1290,6 @@ public class AudioReceiver extends Thread {
             return;
 	}
                 
-	String s = Utils.getPreference(
-	    "com.sun.mc.softphone.media.SPEAKER_BIAS");
-
-	int speakerBias = 0;
-
-	if (s != null && s.length() > 0) {
-	    try {
-		speakerBias = Integer.parseInt(s);
-	    } catch (NumberFormatException e) {
-		Logger.println("Invalid speaker bias:  " + s);
-		Utils.setPreference(
-	    	    "com.sun.mc.softphone.media.SPEAKER_BIAS", "");
-	    }
-
-	    if (speakerBias != 0) {
-		for (int i = offset; i < writeSize; i += 2 * channels) {
-		    int sample = (short) (((speakerData[i] << 8) & 0xff00) |
-			(speakerData[i + 1] & 0xff));
-
-		    sample += speakerBias;
-
-		    if (sample > 32767) {
-			Logger.println("clip max at " + i);
-		    } else if (sample < -32768) {
-			Logger.println("clip min at " + i);
-		    }
-
-		    speakerData[i] = (byte) ((sample >> 8) & 0xff);
-		    speakerData[i + 1] = (byte) (sample & 0xff);
-
-		    if (channels == 2) {
-		        sample = (short) 
-			    (((speakerData[i + 2] << 8) & 0xff00) |
-			    (speakerData[i + 3] & 0xff));
-
-		        sample += speakerBias;
-
-		        if (sample > 32767) {
-			    Logger.println("clip max at " + i);
-		        } else if (sample < -32768) {
-			    Logger.println("clip min at " + i);
-		        }
-
-		        speakerData[i + 2] = (byte) ((sample >> 8) & 0xff);
-		        speakerData[i + 3] = (byte) (sample & 0xff);
-		    }
-		}
-	    }
-	}
-
 	try {
 	    speaker.write(speakerData, offset, writeSize);
 	} catch (IOException e) {

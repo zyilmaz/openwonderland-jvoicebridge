@@ -27,7 +27,14 @@ import java.util.logging.Logger;
 
 public class FullVolumeSpatializer implements Spatializer {
 
+    private double fullVolumeRadius = 0;
+
     public FullVolumeSpatializer() {
+	this(0);
+    }
+
+    public FullVolumeSpatializer(double fullVolumeRadius) {
+	this.fullVolumeRadius = fullVolumeRadius;
     }
 
     public double[] spatialize(double sourceX, double sourceY, 
@@ -41,6 +48,16 @@ public class FullVolumeSpatializer implements Spatializer {
 	parameters[1] = 0;  // left/right
 	parameters[2] = 0;  // up/down
 	parameters[3] = 1;  // volume
+
+	if (fullVolumeRadius != 0) {
+	    double distance = DefaultSpatializer.getDistance(sourceX, sourceY,
+		sourceZ, destX, destY, destZ);
+
+	    if (distance > fullVolumeRadius) {
+		parameters[3] = 0;
+	    }
+	}
+
 	return parameters; 
     }
 

@@ -33,6 +33,7 @@ import javax.swing.event.*;
 class PerfMonDialog extends JFrame {
 
     private JRadioButton rbReceivedPackets;
+    private JRadioButton rbMissingPackets;
     private JRadioButton rbTransmittedPackets;
     private JRadioButton rbMicOverflow;
     private JRadioButton rbAvgSendTime;
@@ -66,7 +67,11 @@ class PerfMonDialog extends JFrame {
 
         rbMicOverflow = new JRadioButton(micOverflowAction);
 	rbMicOverflow.setText("Microphone Overflow");
-	contentPane.add(rbMicOverflow);
+	//contentPane.add(rbMicOverflow);
+
+        rbMissingPackets = new JRadioButton(missingPacketsAction);
+	rbMissingPackets.setText("Missing Packets");
+	contentPane.add(rbMissingPackets);
 
         rbAvgSendTime = new JRadioButton(avgSendTimeAction);
 	rbAvgSendTime.setText("Average Send Time");
@@ -156,6 +161,28 @@ class PerfMonDialog extends JFrame {
 		} else {
 		    if (micOverflowMon != null) {
 			micOverflowMon.setVisible(false);
+		    }
+		}
+            }
+    };
+
+    private MissingPacketsMon missingPacketsMon;
+
+    private Action missingPacketsAction =
+        new AbstractAction("Missing Packets") {
+            public void actionPerformed(ActionEvent evt) {
+		if (rbMissingPackets.isSelected()) {
+		    if (missingPacketsMon == null || missingPacketsMon.isClosed()) {
+			Point location = getGraphLocation();
+
+		 	missingPacketsMon = new MissingPacketsMon(rbMissingPackets,
+			    location, graphWidth, graphHeight);
+		    }
+
+		    missingPacketsMon.setVisible(true);
+		} else {
+		    if (missingPacketsMon != null) {
+			missingPacketsMon.setVisible(false);
 		    }
 		}
             }
