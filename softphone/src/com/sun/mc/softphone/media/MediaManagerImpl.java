@@ -842,6 +842,14 @@ if (false) {
 	return audioReceiver.getPacketsReceived();
     }
 
+    public int getNumberMissingPackets() {
+	if (audioReceiver == null) {
+	    return 0;
+	}
+
+	return audioReceiver.getNumberMissingPackets();
+    }
+
     public int getPacketsSent() {
 	if (audioTransmitter == null) {
 	    return 0;

@@ -281,7 +281,27 @@ public class DefaultSpatializer implements Spatializer {
 	return privateMixParameters;
     }
 
-    private double getDistance(Position p1, Position p2) {
+    public static double getDistance(double sourceX, double sourceY,
+                                     double sourceZ, double destX, 
+				     double destY, double destZ) {
+
+	double xd = sourceY - sourceX;
+        double yd = destY - destX;
+
+        double d = Math.sqrt(xd * xd + yd * yd);
+
+        double zd = destZ - sourceZ;
+
+        double distance = d;
+
+        if (zd != 0) {
+            distance = Math.sqrt(d * d + zd * zd);
+        }
+
+        return distance;
+    }
+
+    public static double getDistance(Position p1, Position p2) {
 	double xd = p2.x - p1.x;
 	double yd = p2.y - p1.y;
 
@@ -366,7 +386,7 @@ public class DefaultSpatializer implements Spatializer {
         return degrees;
     }
 
-    public double round(double v) {
+    public static double round(double v) {
         return Math.round(v * 100) / (double) 100;
     }
 
