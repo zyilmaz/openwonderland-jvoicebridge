@@ -59,6 +59,7 @@ public class OutgoingCallHandler extends CallHandler
     private Integer waitCallEstablishedLock = new Integer(0);
     
     private boolean lastGateway = false;
+    private boolean onlyOneGateway = false;
     
     public OutgoingCallHandler(CallEventListener callEventListener,
             CallParticipant cp) {
@@ -112,6 +113,7 @@ public class OutgoingCallHandler extends CallHandler
 	addCall(this);		// add to list of active calls
         
         lastGateway = false;
+	onlyOneGateway = false;
         
         /*
          * Start the call (INVITE) and wait for it to end (BYE).
@@ -127,8 +129,13 @@ public class OutgoingCallHandler extends CallHandler
                     + ":  Using gateway specified for the call:  " + gateway);
             
             lastGateway = true;
+	    onlyOneGateway = true;
             placeCall();
         } else if (voIPGateways.size() > 0) {
+	    if (voIPGateways.size() == 1) {
+		onlyOneGateway = true;
+	    }
+
             /*
              * Try each gateway until one works.
              */
@@ -321,7 +328,7 @@ public class OutgoingCallHandler extends CallHandler
         if (suppressEvent(cp, callEvent) == false) {
             RequestHandler.outgoingCallNotification(callEvent);
 	    csl.callEventNotification(callEvent);
-        }
+        } 
     }
     
     /*
@@ -392,7 +399,7 @@ public class OutgoingCallHandler extends CallHandler
         /*
          * Suppress CALL_PARTICIPANT_INVITED message from alternate gateway
          */
-	if (callEvent.equals(CallEvent.STATE_CHANGED) && 
+	if (onlyOneGateway == false && callEvent.equals(CallEvent.STATE_CHANGED) && 
 	        callEvent.getCallState().equals(CallState.INVITED)) {
 
             return true;
