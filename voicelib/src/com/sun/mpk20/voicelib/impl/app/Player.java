@@ -154,6 +154,10 @@ public class Player {
     }
 
     public void setTalkAttenuator(double talkAttenuator) {
+	if (talkAttenuator < 0) {
+	    talkAttenuator = 0;
+	}
+	
 	this.talkAttenuator = talkAttenuator;
     }
 
