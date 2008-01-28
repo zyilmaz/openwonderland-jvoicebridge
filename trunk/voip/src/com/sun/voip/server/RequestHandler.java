@@ -43,7 +43,6 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Vector;
 
 /**
  * Read client requests from a TCP socket. 
@@ -715,7 +714,8 @@ class RequestHandler extends Thread implements CallEventListener {
     /**
      * monitor incoming calls
      */
-    private static ArrayList incomingCallListeners = new ArrayList();
+    private static ArrayList<RequestHandler> incomingCallListeners = 
+	new ArrayList();
 
     public boolean monitorIncomingCalls(boolean monitor) {
 	synchronized(incomingCallListeners) {
@@ -755,12 +755,12 @@ class RequestHandler extends Thread implements CallEventListener {
         String s = "No incoming call handler";
 
         synchronized (incomingCallListeners) {
-            for (int i = 0; i < incomingCallListeners.size(); i++) {
-                RequestHandler requestHandler = (RequestHandler)
-                    incomingCallListeners.get(i);
+	    boolean firstTime = true;
 
+	    for (RequestHandler requestHandler : incomingCallListeners) {
                 if (requestHandler.getSocket() != null) {
-	 	    if (i == 0) {
+	 	    if (firstTime) {
+			firstTime = false;
                         s = requestHandler.getSocket().toString();
 		    } else {
 			s += "\n\t\t\t\t" + requestHandler.getSocket().toString();
@@ -783,7 +783,7 @@ class RequestHandler extends Thread implements CallEventListener {
     /**
      * monitor outgoing calls
      */
-    private static Vector outgoingCallListeners = new Vector();
+    private static ArrayList<RequestHandler> outgoingCallListeners = new ArrayList();
     
     public void monitorOutgoingCalls(boolean monitor) {
         synchronized(outgoingCallListeners) {
@@ -796,11 +796,8 @@ class RequestHandler extends Thread implements CallEventListener {
     }   
 
     public static void incomingCallNotification(CallEvent callEvent) {
-	synchronized(RequestHandler.incomingCallListeners) {
-	    for (int i = 0; i < incomingCallListeners.size(); i++) {
-		RequestHandler requestHandler = (RequestHandler)
-		    incomingCallListeners.get(i);
-
+	synchronized (incomingCallListeners) {
+	    for (RequestHandler requestHandler : incomingCallListeners) {
 	        requestHandler.callEventNotification(callEvent);
 	    }
 	}
@@ -809,19 +806,14 @@ class RequestHandler extends Thread implements CallEventListener {
     }
 
     public static void outgoingCallNotification(CallEvent callEvent) {
-        synchronized(RequestHandler.outgoingCallListeners) {
-            for (int i = 0; i < RequestHandler.outgoingCallListeners.size();
-                    i++) {
-
-                RequestHandler requestHandler = (RequestHandler)
-                    RequestHandler.outgoingCallListeners.elementAt(i);
-
+        synchronized(outgoingCallListeners) {
+	    for (RequestHandler requestHandler : outgoingCallListeners) {
                 requestHandler.callEventNotification(callEvent);
             }
         }
     }
 
-    private static Vector conferenceMonitors = new Vector();
+    private static ArrayList<ConferenceMonitor> conferenceMonitors = new ArrayList();
 
     class ConferenceMonitor {
 
@@ -859,10 +851,7 @@ class RequestHandler extends Thread implements CallEventListener {
             }
 	} else {
             synchronized(conferenceMonitors) {
-                for (int i = 0; i < conferenceMonitors.size(); i++) {
-                    ConferenceMonitor m = (ConferenceMonitor) 
-                        conferenceMonitors.get(i);
-    
+		for (ConferenceMonitor m : conferenceMonitors) {
 		    if (m.getRequestHandler() != this) {
 			continue;
 		    }
@@ -917,10 +906,7 @@ class RequestHandler extends Thread implements CallEventListener {
 		conferenceId = conferenceId.substring(0, end);
 	    }
 
-            for (int i = 0; i < conferenceMonitors.size(); i++) {
-                ConferenceMonitor m = (ConferenceMonitor) 
-                    conferenceMonitors.get(i);
-
+	    for (ConferenceMonitor m : conferenceMonitors) {
                 if (conferenceId.equals(m.getConferenceId())) {
 		    m.getRequestHandler().writeToSocket(s);
 		}
@@ -990,7 +976,7 @@ class RequestHandler extends Thread implements CallEventListener {
      * There is a possibility for the write to the socket to block
      * so a separate thread is used to write to the socket.
      */ 
-    private ArrayList dataToWrite = new ArrayList();
+    private ArrayList<String> dataToWrite = new ArrayList();
     private SocketWriter socketWriter;
 
     private static final int MAX_DATA_TO_WRITE_SIZE = 200;
@@ -1114,10 +1100,7 @@ class RequestHandler extends Thread implements CallEventListener {
 	}
 
 	synchronized (incomingCallListeners) {
-	    for (int i = 0; i < incomingCallListeners.size(); i++) {
-                RequestHandler requestHandler = (RequestHandler)
-                    incomingCallListeners.get(i);
-
+	    for (RequestHandler requestHandler : incomingCallListeners) {
 		if (requestHandler == this) {
 	    	    monitorIncomingCalls(false);
 		}
@@ -1127,10 +1110,7 @@ class RequestHandler extends Thread implements CallEventListener {
 	}
 
         synchronized(conferenceMonitors) {
-            for (int i = 0; i < conferenceMonitors.size(); i++) {
-                ConferenceMonitor m = (ConferenceMonitor) 
-                    conferenceMonitors.get(i);
-    
+	    for (ConferenceMonitor m : conferenceMonitors) {
                 if (this == m.getRequestHandler()) {
 		    Logger.println("Removing conference monitor for "
 			+ m.getConferenceId());
@@ -1176,8 +1156,8 @@ class RequestHandler extends Thread implements CallEventListener {
 
 	BridgeStatusNotifier.suspendPing(seconds);
 
-	synchronized (RequestHandler.handlers) {
-	    for (RequestHandler h : RequestHandler.handlers) {
+	synchronized (handlers) {
+	    for (RequestHandler h : handlers) {
 		if (h != this) {
 		    handlers.add(h);
 		}
@@ -1219,8 +1199,8 @@ class RequestHandler extends Thread implements CallEventListener {
 
         Logger.println("Resuming...");
 
-	synchronized (RequestHandler.handlers) {
-	    for (RequestHandler h : RequestHandler.handlers) {
+	synchronized (handlers) {
+	    for (RequestHandler h : handlers) {
 		if (h != this) {
 		    h.resumeBridgeNow();
 		}
