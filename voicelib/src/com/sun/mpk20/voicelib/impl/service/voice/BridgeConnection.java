@@ -814,12 +814,6 @@ if (false) {
 		    logger.info("No response from bridge! " 
 			+ getBridgeConnection());
 
-		    try {
-			closeConnection();
-		    } catch (IOException e) {
-			logger.info("Unable to close connection:  " 
-			    + e.getMessage());
-		    }
 		    disconnect();
 		    sendBridgeOfflineNotification();
                 }}, watchdogTimeout * 1000);
@@ -973,32 +967,24 @@ if (false) {
     }
     
     public void disconnect() {
-	logger.info("disconnect");
+	synchronized (this) {
+            if (socket == null) {
+	        return;
+	    }
 
-	super.disconnect();
+	    logger.info("disconnect");
 
-	try {
-	    closeConnection();
-	} catch (IOException e) {
+	    super.disconnect();
+
+	    try {
+		socket.close();
+	    } catch (IOException e) {
+	    }
+
+	    socket = null;
 	}
     }
 
-    /**
-     * Close the connection to the bridge
-     * @throws IOException if there is an error closing the connection
-     */
-    private void closeConnection() throws IOException {
-	logger.info("closeConnection");
-
-        if (socket != null) {
-            socket.close();
-        }
-        
-        socket = null;
-        //reader = null;
-        //writer = null;
-    }
-    
     /**
      * A response from the bridge
      */
@@ -1112,11 +1098,13 @@ if (false) {
     private boolean offlineNotificationSent;
 
     private void sendBridgeOfflineNotification() {
-	if (offlineNotificationSent == false && offlineListener != null) {
-            logger.info("Sending bridge down notification:  " + toString());
+	synchronized (this) {
+	    if (offlineNotificationSent == false && offlineListener != null) {
+                logger.info("Sending bridge down notification:  " + toString());
 
-            offlineListener.bridgeOffline(this, getCallParticipantArray());
-	    offlineNotificationSent = true;
+                offlineListener.bridgeOffline(this, getCallParticipantArray());
+	        offlineNotificationSent = true;
+	    }
 	}
     }
 
