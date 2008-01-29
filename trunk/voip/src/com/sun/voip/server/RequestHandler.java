@@ -851,17 +851,23 @@ class RequestHandler extends Thread implements CallEventListener {
             }
 	} else {
             synchronized(conferenceMonitors) {
+	        ArrayList<ConferenceMonitor> monitorsToRemove = new ArrayList();
+
 		for (ConferenceMonitor m : conferenceMonitors) {
 		    if (m.getRequestHandler() != this) {
 			continue;
 		    }
 
                     if (conferenceId.equals(m.getConferenceId())) {
-			Logger.println("Removing conference monitor for "
-			    + conferenceId);
+			monitorsToRemove.add(m);
+		    }
+		}
 
-                        conferenceMonitors.remove(m);
-                    }
+		for (ConferenceMonitor m : monitorsToRemove) {
+		    Logger.println("Removing conference monitor for "
+			+ conferenceId);
+
+                    conferenceMonitors.remove(m);
                 }
             }   
         }
@@ -1110,12 +1116,18 @@ class RequestHandler extends Thread implements CallEventListener {
 	}
 
         synchronized(conferenceMonitors) {
+	    ArrayList<ConferenceMonitor> monitorsToRemove = new ArrayList();
+
 	    for (ConferenceMonitor m : conferenceMonitors) {
                 if (this == m.getRequestHandler()) {
-		    Logger.println("Removing conference monitor for "
-			+ m.getConferenceId());
-		    conferenceMonitors.remove(m);
+		    monitorsToRemove.add(m);
 		}
+	    }
+
+	    for (ConferenceMonitor m : monitorsToRemove) {
+		Logger.println("Removing conference monitor for "
+		    + m.getConferenceId());
+		conferenceMonitors.remove(m);
 	    }
 	}
 
