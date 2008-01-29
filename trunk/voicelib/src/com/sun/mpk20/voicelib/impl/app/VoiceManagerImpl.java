@@ -267,6 +267,7 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	player.setTalkAttenuator(talkAttenuator);
 
+	logger.finest("set talk attenuator to " + talkAttenuator);
 	setPrivateMixes(player);
     }
 
@@ -751,6 +752,9 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	double attenuator = p1.getPrivateAttenuator();
 
+	logger.finest("p1 " + p1.callId + ", p2 private spatializer " + spatializer
+		+ " private attenuator " + attenuator);
+
 	/*
 	 * If there is a private spatializer, use it.
 	 */
@@ -761,6 +765,10 @@ public class VoiceManagerImpl implements VoiceManager {
 	     * If there is a public spatializer, use that.
 	     */
 	    spatializer = p2.getPublicSpatializer();
+
+	    logger.finest("p1 " + p1.callId + ", public spatializer " + spatializer
+		+ " listen attenuator " + p1.getListenAttenuator()
+		+ " talk attenuator " + p2.getTalkAttenuator());
 
 	    if (spatializer == null) {
 	        /*
@@ -773,6 +781,11 @@ public class VoiceManagerImpl implements VoiceManager {
 		     * Just use the default spatializer.
 		     */
 	            spatializer = defaultSpatializer;
+	
+		    logger.warning(" p1 " + p1.callId 
+		        + ", Using default spatializer"
+		        + " listen attenuator " + p1.getListenAttenuator()
+		        + " talk attenuator " + p2.getTalkAttenuator());
 		}
 	    }
 	}
@@ -805,7 +818,12 @@ public class VoiceManagerImpl implements VoiceManager {
 	    /*
 	     * Apply attenuators
 	     */
+	    double v = privateMixParameters[3];
+
             privateMixParameters[3] *= attenuator;
+
+	    logger.finest("p1 " + p1.callId + " v " + v + " attenuator " 
+		+ attenuator + " effective volume " + privateMixParameters[3]);
 	}
 
 	if (p1.isLivePerson() == true) {
