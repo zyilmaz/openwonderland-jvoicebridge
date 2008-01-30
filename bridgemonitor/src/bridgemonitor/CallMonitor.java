@@ -38,7 +38,7 @@ import com.sun.voip.DataUpdater;
 
 import java.awt.Point;
 
-public class CallMonitor extends Thread {
+public class CallMonitor {
 
     public static final int RECEIVE_MONITOR_PORT = 7777;
 
@@ -113,87 +113,84 @@ public class CallMonitor extends Thread {
 
 	time = System.currentTimeMillis();
 
-	receivedPacketsMonitor = new ReceivedPacketsMonitor(
-	    new Point((int)location.getX(), (int)location.getY() + height));
-
 	averageReceiveTimeMonitor = new AverageReceiveTimeMonitor(
 	    new Point((int) location.getX() + 330, 
 	    (int) location.getY() + height));
 
-	jitterMonitor = new JitterMonitor(new Point((int) location.getX() + 660,
-	    (int) location.getY() + height));
+	receivedPacketsMonitor = new ReceivedPacketsMonitor(
+	    new Point((int)location.getX(), (int)location.getY() + height));
 
-	start();
+	jitterMonitor = new JitterMonitor(
+	    new Point((int) location.getX() + 660,
+	    (int) location.getY() + height));
     }
 
-    public void run() {
-	while (true) {
-	    String s = null;
+    public void readBridgePerformanceData() {
+	String s = null;
 
-	    try {
-                s = bufferedReader.readLine();
+	try {
+            s = bufferedReader.readLine();
 
-		if (s == null) {
-		    done();
-		}
-
-		if (s.indexOf("Invalid callId") >= 0) {
-		    System.out.println(s);
-		    done();
-		}
-
-		if (s.indexOf("CallEnded") >= 0) {
-		    System.out.println(s);
-		    done();
-		}
-
-		String[] tokens = s.split(":");
-
-		if (tokens.length != 2) {
-		    System.out.println("Missing data:  " + s);
-		    done();
-		}
-
-		String pattern = "PacketsReceived=";
-
-		int ix = tokens[0].indexOf(pattern);
-
-		if (ix < 0) {
-		    System.out.println("Missing " + pattern + " " + s);
-		    done();
-		}
-
-		try {
-		    packetsReceived = Integer.parseInt(
-			tokens[0].substring(ix + pattern.length()));
-		} catch (NumberFormatException e) {
-		    System.out.println("Invalid number for received packets:  "
-			+ s);
-		    done();
-		}
-		
-		pattern = "JitterBufferSize=";
-
-		ix = tokens[1].indexOf(pattern);
-
-		if (ix < 0) {
-		    System.out.println("Missing " + pattern + " " + s);
-		    done();
-		}
-
-		try {
-		    jitter = Integer.parseInt(
-			tokens[1].substring(ix + pattern.length()));
-		} catch (NumberFormatException e) {
-		    System.out.println("Invalid number for jitter:  " + s);
-		    done();
-		}
-	    } catch (IOException e) {
-	 	System.err.println("can't read socket! " 
-		    + socket + " " + e.getMessage());
+	    if (s == null) {
 		done();
 	    }
-        }
+
+	    if (s.indexOf("Invalid callId") >= 0) {
+		System.out.println(s);
+		done();
+	    }
+
+	    if (s.indexOf("CallEnded") >= 0) {
+		System.out.println(s);
+		done();
+	    }
+
+	    String[] tokens = s.split(":");
+
+	    if (tokens.length != 2) {
+		System.out.println("Missing data:  " + s);
+		done();
+	    }
+
+	    String pattern = "PacketsReceived=";
+
+	    int ix = tokens[0].indexOf(pattern);
+
+	    if (ix < 0) {
+		System.out.println("Missing " + pattern + " " + s);
+		done();
+	    }
+
+	    try {
+		packetsReceived = Integer.parseInt(
+		    tokens[0].substring(ix + pattern.length()));
+	    } catch (NumberFormatException e) {
+		System.out.println("Invalid number for received packets:  "
+		    + s);
+		done();
+	    }
+		
+	    pattern = "JitterBufferSize=";
+
+	    ix = tokens[1].indexOf(pattern);
+
+	    if (ix < 0) {
+		System.out.println("Missing " + pattern + " " + s);
+		done();
+	    }
+
+	    try {
+		jitter = Integer.parseInt(
+		    tokens[1].substring(ix + pattern.length()));
+	    } catch (NumberFormatException e) {
+		System.out.println("Invalid number for jitter:  " + s);
+		done();
+	    }
+	} catch (IOException e) {
+	    System.err.println("can't read socket! " 
+		+ socket + " " + e.getMessage());
+	    done();
+	}
     }
 
     public void quit() {
@@ -225,7 +222,9 @@ public class CallMonitor extends Thread {
     }
 
     public void setTime(long time) {
-	this.time = time;
+	synchronized (this) {
+	    this.time = time;
+	}
     }
 
     public long getTime() {
@@ -243,11 +242,15 @@ public class CallMonitor extends Thread {
 	}
 	
 	public int getData() {
+	    readBridgePerformanceData();
+
 	    int p = getPacketsReceived();
 
 	    int n = p - packetsReceived;
 	
 	    packetsReceived = p;
+
+	    averageReceiveTimeMonitor.setPacketsReceived(n);
 
 	    return n;
 	}
@@ -271,26 +274,24 @@ public class CallMonitor extends Thread {
 		location, 330, 110);
 	}
 	
+	public void setPacketsReceived(int packetsReceived) {
+	    this.packetsReceived = packetsReceived;
+	}
+
 	public int getData() {
-	    int p = getPacketsReceived();
-
-	    int n = p - packetsReceived;
-	
-	    packetsReceived = p;
-
 	    long time = System.currentTimeMillis();
 
 	    long elapsed = time - getTime();
 
-	    if (n == 0) {
+	    if (packetsReceived == 0) {
 		setTime(time);
 		return 0;
 	    }
 
-	    int avg = (int) (elapsed / n);
+	    int avg = (int) (elapsed / packetsReceived);
 
-	    //System.out.println("elapsed " + elapsed + " n " + n
-	    //	+ " avg " + avg);
+	    //System.out.println("elapsed " + elapsed + " packetsReceived " 
+	    //    + packetsReceived + " avg " + avg);
 
 	    setTime(time);
 	    return avg;
