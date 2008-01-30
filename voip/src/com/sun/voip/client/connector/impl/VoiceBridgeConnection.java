@@ -106,11 +106,11 @@ public class VoiceBridgeConnection extends Thread {
      *
      * @return true if the bridge is connected
      */
-    public synchronized boolean isConnected() {
+    public boolean isConnected() {
 	return isConnected(socket);
     }
 
-    public synchronized boolean isConnected(Socket socket) {
+    public boolean isConnected(Socket socket) {
 	if (socket == null) {
 	    return false;
 	}
@@ -125,7 +125,7 @@ public class VoiceBridgeConnection extends Thread {
     /**
      * Disconnect from the voice bridge
      */
-    public synchronized void disconnect() {
+    public void disconnect() {
 	logger.finest("Voice Bridge Connector disconnecting from " + 
                       bridgeHost + ":" + bridgePort);
         

@@ -967,22 +967,20 @@ if (false) {
     }
     
     public void disconnect() {
-	synchronized (this) {
-            if (socket == null) {
-	        return;
-	    }
-
-	    logger.info("disconnect");
-
-	    super.disconnect();
-
-	    try {
-		socket.close();
-	    } catch (IOException e) {
-	    }
-
-	    socket = null;
+        if (socket == null) {
+	    return;
 	}
+
+	logger.info("disconnect");
+
+	super.disconnect();
+
+	try {
+	    socket.close();
+	} catch (IOException e) {
+	}
+
+	socket = null;
     }
 
     /**
