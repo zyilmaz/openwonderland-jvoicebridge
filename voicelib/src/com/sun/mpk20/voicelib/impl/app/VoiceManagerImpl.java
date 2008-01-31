@@ -89,8 +89,10 @@ public class VoiceManagerImpl implements VoiceManager {
 	livePlayerSpatializer.setFallOff(LIVE_PLAYER_FALLOFF);
     }
 
-    public void monitorConference(String conferenceId) throws IOException {
-	backingManager.monitorConference(conferenceId);
+    public void monitorConference(String conferenceId, String conferenceCode) 
+	    throws IOException {
+
+	backingManager.monitorConference(conferenceId, conferenceCode);
     }
 
     public String getVoiceBridge() {

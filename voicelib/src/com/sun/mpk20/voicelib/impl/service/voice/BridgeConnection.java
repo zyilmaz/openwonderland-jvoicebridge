@@ -351,11 +351,7 @@ public class BridgeConnection extends VoiceBridgeConnection {
 
 	BridgeResponse br;
 
-	try {
-	    br = sendWithResponse("cancel=" + callId + "\n");
-	} catch (IOException e) {
-	    throw e;
-	}
+	br = sendWithResponse("cancel=" + callId + "\n");
 
         logger.fine("endCall status " + br.getStatus());
         
@@ -373,11 +369,7 @@ public class BridgeConnection extends VoiceBridgeConnection {
     public void muteCall(String callId, boolean isMuted) throws IOException {
         BridgeResponse br;
 
-        try {
-            br = sendWithResponse("mute=" + isMuted + ":" + callId + "\n");
-        } catch (IOException e) {
-            throw e;
-        }
+        br = sendWithResponse("mute=" + isMuted + ":" + callId + "\n");
 
         logger.fine("muteCall status " + br.getStatus());
 
@@ -389,6 +381,25 @@ public class BridgeConnection extends VoiceBridgeConnection {
 
         default:
             throw new IOException("muteCall failed:  " + br.getMessage());
+        }
+    }
+
+    public void transferCall(String callId, String conferenceId) throws IOException {
+        BridgeResponse br;
+
+        br = sendWithResponse("transferCall=" + callId + ":" + conferenceId
+	    + "\n");
+
+        logger.fine("transferCall status " + br.getStatus());
+
+        switch (br.getStatus()) {
+        case SUCCESS:
+            logger.finest("transferCall contents " + br.getContents());
+
+            return;
+
+        default:
+            throw new IOException("transferCall failed:  " + br.getMessage());
         }
     }
 
