@@ -135,6 +135,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
     private BridgeManager bridgeManager;
 
+    private IncomingCallHandler incomingCallHandler;
+
     /**
      * Creates an instance of <code>VoiceServiceImpl</code>. 
      *
@@ -156,6 +158,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         taskScheduler = systemRegistry.getComponent(TaskScheduler.class);
 
         bridgeManager = new BridgeManager(this);
+
+	incomingCallHandler = new IncomingCallHandler(this, bridgeManager);
     }
 
     /*
@@ -177,10 +181,16 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         taskService = transactionProxy.getService(TaskService.class);
 
 	bridgeManager = new BridgeManager(this);
+
+	incomingCallHandler = new IncomingCallHandler(this, bridgeManager);
     }
 
-    public void monitorConference(String conferenceId) throws IOException {
+    public void monitorConference(String conferenceId, String conferenceCode) 
+	    throws IOException {
+
 	bridgeManager.monitorConference(conferenceId);
+
+	incomingCallHandler.addConference(conferenceId, conferenceCode);
     }
 
     public String getVoiceBridge() {
@@ -494,6 +504,12 @@ public class VoiceServiceImpl implements VoiceManager, Service,
      * The work here must be done in a transaction.
      */
     public void callStatusChanged(CallStatus status) {
+	callStatusChanged(status, true);
+    }
+
+    public void callStatusChanged(CallStatus status, 
+	    boolean notifyIncomingCallHandler) {
+
 	logger.finest("Call status changed:  " + status);
 
 	/*
@@ -505,6 +521,15 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	}
 
         CallStatusNotifier notifier = new CallStatusNotifier(status);
+
+	if (notifyIncomingCallHandler) {
+	    if (incomingCallHandler.callStatusChanged(status) == true) {
+	        /*
+	         * The incoming call handler took this status.
+	         */
+	        return;
+	    }
+	}
 
         taskScheduler.scheduleTask(new TransactionRunner(notifier), 
 	    defaultOwner);

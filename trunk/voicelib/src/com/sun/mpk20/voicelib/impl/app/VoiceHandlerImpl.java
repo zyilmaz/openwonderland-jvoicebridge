@@ -79,6 +79,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
         DS_PREFIX + "CallBeginEndListeners";
     
     private final static String DEFAULT_CONFERENCE = "Test:PCM/16000/2";
+    private final static String DEFAULT_CONFERENCE_CODE = "1234";
 
     private final static String AUDIO_DIR =
             "com.sun.mpk20.gdcdemo.server.AUDIO_DIR";
@@ -160,10 +161,12 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	     * places a call from outside the client.
 	     */
 	    String conference = System.getProperty(
-	        "com.sun.sgs.impl.app.voice.conference",
-	        DEFAULT_CONFERENCE);
+	        "com.sun.sgs.impl.app.voice", DEFAULT_CONFERENCE);
 
-	    voiceManager.monitorConference(conference);
+	    String conferenceCode = System.getProperty(
+	        "com.sun.sgs.impl.app.voice", DEFAULT_CONFERENCE_CODE);
+
+	    voiceManager.monitorConference(conference, conferenceCode);
 	} catch (IOException e) {
 	    logger.severe("Unable to communicate with voice bridge:  " 
 		+ e.getMessage());
@@ -202,8 +205,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	CallParticipant cp = new CallParticipant();
 
         String conference = System.getProperty(
-	   "com.sun.sgs.impl.app.voice.conference",
-	   DEFAULT_CONFERENCE);
+	   "com.sun.sgs.impl.app.voice", DEFAULT_CONFERENCE);
 
 	cp.setConferenceId(conference);
 
@@ -385,8 +387,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	CallParticipant cp = new CallParticipant();
 
         String conference = System.getProperty(
-	   "com.sun.sgs.impl.app.voice.conference",
-	   DEFAULT_CONFERENCE);
+	   "com.sun.sgs.impl.app.voice", DEFAULT_CONFERENCE);
 
 	cp.setConferenceId(conference);
 
@@ -906,7 +907,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
         listeners.put(mr.getId(), new ListenerInfo(mr));
 
-        logger.finest("VS:  listeners size " + listeners.size());
+        logger.finest("listeners size " + listeners.size());
     }
 
     public void removeCallBeginEndListener(ManagedCallBeginEndListener listener) {
@@ -1054,7 +1055,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	    while (iterator.hasNext()) {
 		ListenerInfo info = iterator.next();
-
 		listenerList.add(info);
 	    }
 	}

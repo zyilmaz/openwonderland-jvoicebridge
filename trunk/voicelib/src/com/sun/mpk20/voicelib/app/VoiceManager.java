@@ -34,7 +34,8 @@ import com.sun.voip.CallParticipant;
  */
 public interface VoiceManager {
 
-    public void monitorConference(String conferenceId) throws IOException;
+    public void monitorConference(String conferenceId, String conferenceCode) 
+	throws IOException;
 
     public String getVoiceBridge();
 

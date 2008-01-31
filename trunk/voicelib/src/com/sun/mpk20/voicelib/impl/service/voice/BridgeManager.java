@@ -196,6 +196,7 @@ public class BridgeManager extends Thread
 
 	    bc.addBridgeOfflineListener(this);
 	    bc.addCallStatusListener(this);
+	    bc.monitorIncomingCalls(true);
 
 	    synchronized (bridgeConnections) {
 		for (BridgeConnection bridgeConnection : bridgeConnections) {
@@ -658,7 +659,11 @@ public class BridgeManager extends Thread
 	}
     }
 
+    private String conferenceId;
+
     public void  monitorConference(String conferenceId) throws IOException {
+	this.conferenceId = conferenceId;
+
         synchronized (bridgeConnections) {
             for (BridgeConnection bc : bridgeConnections) {
                 bc.monitorConference(conferenceId);
