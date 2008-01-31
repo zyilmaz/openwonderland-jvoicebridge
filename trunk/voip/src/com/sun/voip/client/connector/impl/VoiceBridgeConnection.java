@@ -165,6 +165,13 @@ public class VoiceBridgeConnection extends Thread {
     }
     
     /**
+     * Monitor incoming calls
+     */
+    public void monitorIncomingCalls(boolean monitor) throws IOException {
+        sendMessage("mic=" + monitor + "\n");
+    }
+
+    /**
      * Create a conference
      * @param conferenceId the conference id to create
      * @param name the display name of the conference to create

@@ -1106,10 +1106,15 @@ class RequestHandler extends Thread implements CallEventListener {
 	}
 
 	synchronized (incomingCallListeners) {
+	    boolean removeIncomingCallHandler = false;
 	    for (RequestHandler requestHandler : incomingCallListeners) {
 		if (requestHandler == this) {
-	    	    monitorIncomingCalls(false);
+		    removeIncomingCallHandler = true;
 		}
+	    }
+
+	    if (removeIncomingCallHandler) {
+	        monitorIncomingCalls(false);
 	    }
 
 	    monitorOutgoingCalls(false);

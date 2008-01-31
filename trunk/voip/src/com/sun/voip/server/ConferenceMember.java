@@ -739,6 +739,13 @@ public class ConferenceMember implements TreatmentDoneListener,
     private void adjustPrivateMixDescriptor(ConferenceMember m1, 
 	    ConferenceMember m2, MixDescriptor md) {
 
+	if (m1.getWhisperGroup() == null) {
+	    /*
+	     * m1 hasn't finished initializing
+	     */
+	    return;
+	}
+
 	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
 	    Logger.println("Call " + m1 + " adjustPrivateMixDescriptor:  "
 	        + " md " + md + " pm for " + m2);
