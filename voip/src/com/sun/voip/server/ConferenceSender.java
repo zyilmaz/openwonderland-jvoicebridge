@@ -123,7 +123,12 @@ public class ConferenceSender extends Thread {
 	    long startTime = System.nanoTime();
 
             for (SenderCallbackListener listener : senderCallbackList) {
-                listener.senderCallback();
+		try {
+                    listener.senderCallback();
+		} catch (Exception e) {
+		    Logger.println("Sender callback failed!  " 
+			+ e.getMessage());
+		}
             }
 
 	    sendDataToConferences();

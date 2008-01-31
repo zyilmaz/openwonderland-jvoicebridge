@@ -145,6 +145,14 @@ public class CallSetupAgent implements TreatmentDoneListener, Runnable {
             s += " ConferencePayload='" +  mediaInfo.getPayload() + "'";
 	    s += " BridgeIPAddress='" 
 		+ Bridge.getPrivateHost() + "'";
+
+	    s += " BridgeInfo='" 
+                + Bridge.getPrivateHost() + ":"
+                + Bridge.getPrivateControlPort() + ":"
+                + Bridge.getPrivateSipPort() + ":" 
+		+ Bridge.getPublicHost() + ":"
+                + Bridge.getPublicControlPort()+ ":"
+                + Bridge.getPublicSipPort() + "'";
 	} 
 
 	if (info != null) {

@@ -193,6 +193,8 @@ public class SipIncomingCallAgent extends CallSetupAgent implements SipListener 
 	    ToHeader toHeader = (ToHeader) request.getHeader(ToHeader.NAME);
 	    String s = "ToAddress='" + toHeader.getAddress().toString() + "'";
 
+	    s += " IncomingCall='true'";
+
 	    setState(CallState.ESTABLISHED, s);
 	}
     }
