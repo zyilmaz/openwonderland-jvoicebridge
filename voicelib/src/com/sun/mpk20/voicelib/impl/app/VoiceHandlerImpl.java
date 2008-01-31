@@ -956,6 +956,12 @@ public class VoiceHandlerImpl implements VoiceHandler,
 		logger.info("No treatment info for " + callId);
 	    }
 
+	    String s = callStatus.getOption("IncomingCall");
+
+	    if (s != null && s.equals("true)) {
+		handleIncomingCall(callStatus):
+	    }
+
 	    notifyCallBeginEndListeners(callStatus);
             break;
 
@@ -1008,6 +1014,26 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    }
 	    break;
         }
+    }
+
+    private void handleIncomingCall(CallStatus callStatus) {
+	/*
+	 * This is a new incoming call
+	 */
+	String callId = status.getCallId();
+
+	//All the outworlder to hear in-world sounds
+        setListenAttenuator(callId, 1.5);
+
+	/*
+         * We want the outworlder to hear all live players at
+         * higher volume for a bigger radius than the default.
+	 */
+        DefaultSpatializer extendedRadiusSpatializer = new DefaultSpatializer();
+
+	extendedRadiusSpatializer.setZeroVolumeRadius(0.6);
+
+	setPrivateSpatializer(callId, null, extendedRadiusSpatializer);
     }
 
     private void notifyCallStatusListeners(CallStatus status) {
