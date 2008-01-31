@@ -784,7 +784,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		     */
 	            spatializer = defaultSpatializer;
 	
-		    logger.warning(" p1 " + p1.callId 
+		    logger.finer(" p1 " + p1.callId 
 		        + ", Using default spatializer"
 		        + " listen attenuator " + p1.getListenAttenuator()
 		        + " talk attenuator " + p2.getTalkAttenuator());
