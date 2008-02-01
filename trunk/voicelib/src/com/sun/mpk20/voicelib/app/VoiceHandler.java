@@ -31,6 +31,9 @@ public interface VoiceHandler {
 
     public String setupCall(String callId, String sipUrl, String bridge);
 
+    public void createPlayer(String callId, double x, double y, double z,
+	double orientation);
+
     public void setPublicSpatializer(String callId, Spatializer spatializer);
 
     public void removePublicSpatializer(String callId);

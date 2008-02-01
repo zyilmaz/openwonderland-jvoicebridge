@@ -419,7 +419,7 @@ public class BridgeManager extends Thread
             }
 	}
 
-	callConnectionMap.remove(callId);
+	removeCallConnection(callId);
 
 	privateMixManager.endCall(callId);
     }
