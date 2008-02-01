@@ -148,6 +148,14 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
     }
 
+    public void createPlayer(String callId, double x, double y, double z,
+	    double orientation) {
+
+	players.putIfAbsent(callId, new Player(callId, .5, .5, 0, 0));
+
+	setPrivateMixes(findPlayer(callId));
+    }
+
     public Player getPlayer(String callId) {
 	return findPlayer(callId);
     }
@@ -375,7 +383,7 @@ public class VoiceManagerImpl implements VoiceManager {
     public void endCall(String callId, boolean tellBackingManager) 
 	    throws IOException {
 
-	logger.fine("call ending:  " + callId);
+	logger.warning("call ending:  " + callId);
 
 	removeFromInRange(callId);
 

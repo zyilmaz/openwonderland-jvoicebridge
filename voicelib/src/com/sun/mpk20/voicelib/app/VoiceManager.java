@@ -65,6 +65,9 @@ public interface VoiceManager {
 
     public void callEstablished(String callId) throws IOException;
 
+    public void createPlayer(String callId, double x, double y, double z,
+	double orientation);
+
     public void newInputTreatment(String callId, String treatment) 
 	throws IOException;
 

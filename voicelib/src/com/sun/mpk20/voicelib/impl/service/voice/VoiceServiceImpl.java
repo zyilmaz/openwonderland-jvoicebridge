@@ -246,6 +246,10 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	logger.fine("call established:  " + callId);
     }
 
+    public void createPlayer(String callId, double x, double y, double z,
+	double orientation) {
+    }
+
     public void newInputTreatment(String callId, String treatment) 
 	    throws IOException {
 

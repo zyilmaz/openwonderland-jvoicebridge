@@ -251,6 +251,14 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	return null;
     }
     
+    public void createPlayer(String callId, double x, double y, double z,
+	    double orientation) {
+
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	voiceManager.createPlayer(callId, x, y, z, orientation);
+    }
+
     public void setPublicSpatializer(String callId, Spatializer spatializer) {
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
@@ -626,7 +634,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void endCall(String callId) {
-	logger.finer("ending call " + callId);
+	logger.warning("ending call " + callId);
 
         removeTreatment(callId);
 
@@ -1017,23 +1025,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     private void handleIncomingCall(CallStatus callStatus) {
-	/*
-	 * This is a new incoming call
-	 */
-	String callId = callStatus.getCallId();
-
-	//All the outworlder to hear in-world sounds
-        setListenAttenuator(callId, 1.5);
-
-	/*
-         * We want the outworlder to hear all live players at
-         * higher volume for a bigger radius than the default.
-	 */
-        DefaultSpatializer extendedRadiusSpatializer = new DefaultSpatializer();
-
-	extendedRadiusSpatializer.setZeroVolumeRadius(0.6);
-
-	setPrivateSpatializer(callId, null, extendedRadiusSpatializer);
     }
 
     private void notifyCallStatusListeners(CallStatus status) {

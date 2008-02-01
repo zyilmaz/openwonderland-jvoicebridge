@@ -34,6 +34,8 @@ package com.sun.mpk20.voicelib.impl.service.voice;
 import com.sun.voip.client.connector.CallStatus;
 import com.sun.voip.client.connector.CallStatusListener;
 
+import com.sun.voip.CallParticipant;
+
 import java.io.IOException;
 
 import java.util.HashMap;
@@ -486,6 +488,30 @@ public class IncomingCallHandler extends Thread {
 
                 bc.muteCall(callId, false);
 		bc.transferCall(callId, conferenceId);
+
+		CallParticipant cp = new CallParticipant();
+
+		String info = establishedStatus.getCallInfo();
+
+		if (info == null) {
+		    info = "Anonymous";
+		}
+
+		String[] tokens = info.split("@");
+
+		if (info.startsWith("sip:")) {
+		    cp.setName("Anonymous");
+		    cp.setPhoneNumber(tokens[2]);
+		} else {
+		    cp.setName(tokens[0]);
+		    cp.setPhoneNumber(tokens[1]);
+		}
+
+		cp.setCallId(callId);
+		cp.setConferenceId(conferenceId);
+
+		bridgeManager.putCallConnection(callId, new CallInfo(cp, bc));
+
 		voiceService.callStatusChanged(establishedStatus, false);
 
 		playTreatment(JOIN_CLICK);
