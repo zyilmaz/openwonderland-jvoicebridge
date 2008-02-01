@@ -72,6 +72,23 @@ snd_pcm_uframes_t period_frames;
 
 pthread_mutex_t *speaker_mutex;
 
+FILE *fp;
+
+void p(char *msg) 
+{
+#if 0
+    if (fp == NULL) {
+        fp = fopen("/tmp/alsa.out", "w");
+    }
+
+    fprintf(fp, "%X: %s\n", pthread_self(), msg);
+    fflush(fp);
+
+    fprintf(stderr, "%X: %s\n", pthread_self(), msg);
+    fflush(stderr);
+#endif
+}
+
 /******************************************************************************/
 JNIEXPORT void JNICALL 
 Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nStop(
@@ -97,10 +114,14 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nInitializeMicrophone(
 
     microphone_channels = channels;
 
+    p("nInitialiMicrophone");
+
     return initialize_microphone();
 }
 
 int initialize_microphone() {
+    p("initialize_microphone");
+
     closeMic();
 
     int ret = snd_pcm_open(&microphone_handle, microphone_device, SND_PCM_STREAM_CAPTURE, 0);
@@ -222,6 +243,7 @@ void
 closeMic() 
 {
     if (microphone_handle != NULL) {
+	p("closeMic");
         snd_pcm_close(microphone_handle);
 	microphone_handle = NULL;
     }
@@ -242,15 +264,19 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nInitializeSpeaker(
     speaker_sample_rate = sampleRate;
     speaker_channels = channels;
 
+    p("nInitializeSpeaker");
     return initialize_speaker();
 }
 
 int initialize_speaker() {
     if (speaker_mutex == NULL) {
+	p("initialize speaker mutex");
 	speaker_mutex = malloc(sizeof (pthread_mutex_t));
 
 	pthread_mutex_init(speaker_mutex, NULL);
     }
+
+    p("initialize_speaker");
 
     closeSpeaker();
 
@@ -392,6 +418,7 @@ closeSpeaker()
 	return;
     }
 
+    p("closeSpeaker");
     pthread_mutex_lock(speaker_mutex);
 
     if (speaker_handle == NULL) {
@@ -480,6 +507,7 @@ int write_speaker(snd_pcm_t *handle, jshort *data, int frames) {
 		"%s reinitializing the speaker\n", snd_strerror(ret));
 
 	    //initialize_microphone();
+	    p("write_speaker error recovering");
 	    initialize_speaker();
             return ret;
         }
