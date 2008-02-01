@@ -755,7 +755,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	double attenuator = p1.getPrivateAttenuator();
 
 	logger.finest("p1 " + p1.callId + ", p2 private spatializer " + spatializer
-		+ " private attenuator " + attenuator);
+	    + " private attenuator " + attenuator);
 
 	/*
 	 * If there is a private spatializer, use it.

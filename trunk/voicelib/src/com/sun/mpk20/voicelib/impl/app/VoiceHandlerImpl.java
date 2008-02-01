@@ -958,8 +958,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	    String s = callStatus.getOption("IncomingCall");
 
-	    if (s != null && s.equals("true)) {
-		handleIncomingCall(callStatus):
+	    if (s != null && s.equals("true")) {
+		handleIncomingCall(callStatus);
 	    }
 
 	    notifyCallBeginEndListeners(callStatus);
@@ -1020,7 +1020,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	/*
 	 * This is a new incoming call
 	 */
-	String callId = status.getCallId();
+	String callId = callStatus.getCallId();
 
 	//All the outworlder to hear in-world sounds
         setListenAttenuator(callId, 1.5);
