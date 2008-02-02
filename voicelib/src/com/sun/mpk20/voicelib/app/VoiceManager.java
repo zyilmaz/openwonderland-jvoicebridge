@@ -34,14 +34,15 @@ import com.sun.voip.CallParticipant;
  */
 public interface VoiceManager {
 
-    public void monitorConference(String conferenceId, String conferenceCode) 
-	throws IOException;
+    public void monitorConference(String conferenceId) throws IOException;
 
     public String getVoiceBridge();
 
     public void setupCall(CallParticipant cp, double x, double y, double z,
 	double orientation, Spatializer spatializer, String bridge) 
 	throws IOException;
+
+    public void transferCall(String callId, String confereneId) throws IOException;
 
     public void setPublicSpatializer(String callId, Spatializer spatializer);
 

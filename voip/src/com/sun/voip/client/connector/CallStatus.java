@@ -23,6 +23,8 @@
 
 package com.sun.voip.client.connector;
 
+import java.io.Serializable;
+
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -40,7 +42,7 @@ import java.util.Map;
  *   ConferenceId: JonCon
  *   CallInfo:     22500
  */
-public class CallStatus {
+public class CallStatus implements Serializable {
     /** call code values */
     public static final int UNINITIALIZED   = 000;
     public static final int INVITED         = 100;
