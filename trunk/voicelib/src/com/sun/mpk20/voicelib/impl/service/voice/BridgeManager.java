@@ -265,8 +265,52 @@ public class BridgeManager extends Thread
 	reconnector.bridgeOffline(bc, calls);
     }
 
+    public void transferCall(String callId, String conferenceId) 
+	    throws IOException {
+
+	CallInfo callInfo = callConnectionMap.get(callId);
+
+	if (callInfo == null) {
+	    logger.warning("No CallInfo for " + callId);
+	    return;
+	}
+
+	callInfo.bridgeConnection.transferCall(callId, conferenceId);
+    }
+
     public CallInfo getCallConnection(String callId) {
 	return callConnectionMap.get(callId);
+    }
+
+    public void putCallConnection(CallStatus status) {
+	CallParticipant cp = new CallParticipant();
+
+	String callId = status.getCallId();
+
+	String info = status.getCallInfo();
+
+	if (info == null) {
+	    info = "Anonymous";
+	}
+
+	String[] tokens = info.split("@");
+
+	if (info.startsWith("sip:")) {
+	    cp.setName("Anonymous");
+	    cp.setPhoneNumber(tokens[2]);
+	} else {
+	    cp.setName(tokens[0]);
+	    cp.setPhoneNumber(tokens[1]);
+	}
+
+	cp.setCallId(callId);
+	cp.setConferenceId(status.getOption("ConferenceId"));
+
+	String bridgeInfo = status.getOption("BridgeInfo");
+
+	BridgeConnection bc = findBridge(bridgeInfo);
+	
+	putCallConnection(callId, new CallInfo(cp, bc));
     }
 
     public void putCallConnection(String callId, CallInfo callInfo) {

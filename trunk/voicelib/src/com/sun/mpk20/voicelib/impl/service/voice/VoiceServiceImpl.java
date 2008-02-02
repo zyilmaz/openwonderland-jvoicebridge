@@ -135,8 +135,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
     private BridgeManager bridgeManager;
 
-    private IncomingCallHandler incomingCallHandler;
-
     /**
      * Creates an instance of <code>VoiceServiceImpl</code>. 
      *
@@ -158,8 +156,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         taskScheduler = systemRegistry.getComponent(TaskScheduler.class);
 
         bridgeManager = new BridgeManager(this);
-
-	incomingCallHandler = new IncomingCallHandler(this, bridgeManager);
     }
 
     /*
@@ -181,16 +177,10 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         taskService = transactionProxy.getService(TaskService.class);
 
 	bridgeManager = new BridgeManager(this);
-
-	incomingCallHandler = new IncomingCallHandler(this, bridgeManager);
     }
 
-    public void monitorConference(String conferenceId, String conferenceCode) 
-	    throws IOException {
-
+    public void monitorConference(String conferenceId) throws IOException {
 	bridgeManager.monitorConference(conferenceId);
-
-	incomingCallHandler.addConference(conferenceId, conferenceCode);
     }
 
     public String getVoiceBridge() {
@@ -208,6 +198,16 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	work.bridgeInfo = bridgeInfo;
 
         localWorkToDo.get().add(work);
+    }
+
+    public void createPlayer(String callId, double x, double y, double z,
+	double orientation) {
+    }
+
+    public void transferCall(String callId, String conferenceId) 
+	    throws IOException {
+
+	bridgeManager.transferCall(callId, conferenceId);
     }
 
     public void setPublicSpatializer(String callId, Spatializer publicSpatializer) {
@@ -244,10 +244,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
     public void callEstablished(String callId) throws IOException {
 	logger.fine("call established:  " + callId);
-    }
-
-    public void createPlayer(String callId, double x, double y, double z,
-	double orientation) {
     }
 
     public void newInputTreatment(String callId, String treatment) 
@@ -508,11 +504,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
      * The work here must be done in a transaction.
      */
     public void callStatusChanged(CallStatus status) {
-	callStatusChanged(status, true);
-    }
-
-    public void callStatusChanged(CallStatus status, 
-	    boolean notifyIncomingCallHandler) {
 
 	logger.finest("Call status changed:  " + status);
 
@@ -524,16 +515,17 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	    return;
 	}
 
-        CallStatusNotifier notifier = new CallStatusNotifier(status);
+        if (status.getCallId() != null && 
+		status.getCode() == CallStatus.ESTABLISHED) {
 
-	if (notifyIncomingCallHandler) {
-	    if (incomingCallHandler.callStatusChanged(status) == true) {
-	        /*
-	         * The incoming call handler took this status.
-	         */
-	        return;
-	    }
+            String incomingCall = status.getOption("IncomingCall");
+
+            if (incomingCall != null && incomingCall.equals("true")) {
+		bridgeManager.putCallConnection(status);
+            }
 	}
+
+        CallStatusNotifier notifier = new CallStatusNotifier(status);
 
         taskScheduler.scheduleTask(new TransactionRunner(notifier), 
 	    defaultOwner);

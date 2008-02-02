@@ -98,6 +98,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
     private static double scale = 100.;
 
+    private String conferenceId;
+
     static {
 	String s = System.getProperty(SCALE);
 
@@ -160,13 +162,10 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	     * Also so we start monitoring the conference status in case someone
 	     * places a call from outside the client.
 	     */
-	    String conference = System.getProperty(
+	    conferenceId = System.getProperty(
 	        "com.sun.sgs.impl.app.voice", DEFAULT_CONFERENCE);
 
-	    String conferenceCode = System.getProperty(
-	        "com.sun.sgs.impl.app.voice", DEFAULT_CONFERENCE_CODE);
-
-	    voiceManager.monitorConference(conference, conferenceCode);
+	    voiceManager.monitorConference(conferenceId);
 	} catch (IOException e) {
 	    logger.severe("Unable to communicate with voice bridge:  " 
 		+ e.getMessage());
@@ -259,6 +258,15 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	voiceManager.createPlayer(callId, x, y, z, orientation);
     }
 
+    public void transferCall(String callId) throws IOException {
+
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	String[] tokens = conferenceId.split(":");
+
+	voiceManager.transferCall(callId, tokens[0]);
+    }
+	
     public void setPublicSpatializer(String callId, Spatializer spatializer) {
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 

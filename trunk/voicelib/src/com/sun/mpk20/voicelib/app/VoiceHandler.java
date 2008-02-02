@@ -25,6 +25,8 @@ package com.sun.mpk20.voicelib.app;
 
 import com.sun.mpk20.voicelib.app.ManagedCallStatusListener;
 
+import java.io.IOException;
+
 public interface VoiceHandler {
 
     public String getVoiceBridge();
@@ -33,6 +35,8 @@ public interface VoiceHandler {
 
     public void createPlayer(String callId, double x, double y, double z,
 	double orientation);
+
+    public void transferCall(String callId) throws IOException;
 
     public void setPublicSpatializer(String callId, Spatializer spatializer);
 
