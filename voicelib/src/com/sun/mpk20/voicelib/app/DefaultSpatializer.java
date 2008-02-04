@@ -146,6 +146,34 @@ public class DefaultSpatializer implements Spatializer {
 	return fallOffFunction.getMaximumVolume();
     }
 
+    /*
+     * If the volume is 1, then set zeroVolumeRadius and fullVolumeRadius
+     * to the default values.
+     *
+     * If the volume is greater than 1, increase the fullVolumeRadius thereby
+     * making things closer.  Set zeroVolumeRadius to the default.
+     *
+     * If the volume is < 1, decrease the zero volume radius theremy making
+     * things farther away.  Set fullVolumeRadius to the default.
+     */
+    public void adjustVolumeRadii(double volume) {
+	if (volume == 1) {
+	    setFullVolumeRadius(DEFAULT_FULL_VOLUME_RADIUS);
+	    setZeroVolumeRadius(DEFAULT_ZERO_VOLUME_RADIUS);
+	    System.out.println("adjusting volume to defaults");
+	} else if (volume > 1) {
+	    setFullVolumeRadius(DEFAULT_FULL_VOLUME_RADIUS + volume - 1);
+	    setZeroVolumeRadius(DEFAULT_ZERO_VOLUME_RADIUS);
+	    System.out.println("volume " + volume + " adjusting full vol radius to "
+		+ (DEFAULT_FULL_VOLUME_RADIUS + volume - 1));
+	} else {
+	    setFullVolumeRadius(DEFAULT_FULL_VOLUME_RADIUS);
+	    setZeroVolumeRadius(DEFAULT_ZERO_VOLUME_RADIUS - volume);
+	    System.out.println("volume " + volume + " adjusting zero vol radius to "
+		+ (DEFAULT_ZERO_VOLUME_RADIUS - volume));
+	}
+    }
+
     class Position {
 	public double x;
 	public double y;

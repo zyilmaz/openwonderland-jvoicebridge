@@ -204,6 +204,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		    setPrivateSpatializer(player.callId, sourceCallId, 
 			spatializer);
 		}
+		return;
 	    }
 	}
 
