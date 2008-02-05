@@ -43,4 +43,12 @@ public class ZeroVolumeSpatializer implements Spatializer {
 	parameters[3] = 0;  // volume
 	return parameters; 
     }
+
+    public void setAttenuator(double attenuator) {
+    }
+
+    public double getAttenuator() {
+	return 0;
+    }
+
 }

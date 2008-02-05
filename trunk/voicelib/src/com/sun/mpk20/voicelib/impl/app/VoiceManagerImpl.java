@@ -827,6 +827,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	if (p2.isLivePerson() == false) {
 	    privateMixParameters[3] *= p1.attenuationVolume;
 	    privateMixParameters[3] *= p2.attenuationVolume;
+	    privateMixParameters[3] *= attenuator;
 	    logger.finest("p1.AttenuationVolume " + p1.attenuationVolume 
 		+  " volume " + round(privateMixParameters[3]));
 	} else {
@@ -838,7 +839,8 @@ public class VoiceManagerImpl implements VoiceManager {
             privateMixParameters[3] *= attenuator;
 
 	    logger.finest("p1 " + p1.callId + " v " + v + " attenuator " 
-		+ attenuator + " effective volume " + privateMixParameters[3]);
+		+ attenuator + " effective volume " 
+		+ round(privateMixParameters[3]));
 	}
 
 	if (p1.isLivePerson() == true) {
