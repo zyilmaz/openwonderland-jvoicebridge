@@ -31,4 +31,11 @@ public class NoAttenuationSpatializer extends DefaultSpatializer {
 	setFallOffFunction(new NoFallOff());
     }
 
+    public void setAttenuator(double attenuator) {
+    }
+
+    public double getAttenuator() {
+	return 1.0;
+    }
+
 }

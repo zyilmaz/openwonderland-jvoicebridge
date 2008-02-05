@@ -53,6 +53,8 @@ public class DefaultSpatializer implements Spatializer {
 
     private static double[] sinTable = new double[360];
 
+    private double attenuator = 1.0;
+
     static {
 	for (int i = 0; i < 360; i++) {
 	    sinTable[i] = Math.sin(Math.toRadians(i));
@@ -172,6 +174,14 @@ public class DefaultSpatializer implements Spatializer {
 	    System.out.println("volume " + volume + " adjusting zero vol radius to "
 		+ (DEFAULT_ZERO_VOLUME_RADIUS - volume));
 	}
+    }
+
+    public void setAttenuator(double attenuator) {
+	this.attenuator = attenuator;
+    }
+
+    public double getAttenuator() {
+	return attenuator;
     }
 
     class Position {
@@ -294,7 +304,7 @@ public class DefaultSpatializer implements Spatializer {
 	privateMixParameters[1] = -Math.sin(p1ReceiveAngle);
 	//privateMixParameters[1] = -sinTable[(int) p1ReceiveDegrees];
 
-        privateMixParameters[3] = volume;    // volume
+        privateMixParameters[3] = volume * attenuator;    // volume
 
 	privateMixParameters[0] = round(privateMixParameters[0]);
 	privateMixParameters[1] = round(privateMixParameters[1]);

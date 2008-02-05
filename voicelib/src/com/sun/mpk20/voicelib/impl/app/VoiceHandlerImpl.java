@@ -1268,6 +1268,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
         double minZ;
         double maxZ;
 
+	double attenuator;
+
         public AmbientSpatializer(double lowerLeftX, double lowerLeftY,
 	 	double lowerLeftZ, double upperRightX,
 		double upperRightY, double upperRightZ) {
@@ -1329,6 +1331,15 @@ public class VoiceHandlerImpl implements VoiceHandler,
             return x >= minX && x <= maxX &&
                y >= minY && y <= maxY;
 	}
+
+	public void setAttenuator(double attenuator) {
+	    this.attenuator = attenuator;
+	}
+
+	public double getAttenuator() {
+	    return attenuator;
+	}
+
     }
 
     private static double round(double d) {

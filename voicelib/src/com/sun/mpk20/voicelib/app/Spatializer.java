@@ -42,4 +42,8 @@ public interface Spatializer {
 	double sourceZ, double sourceOrientation, double destX, 
 	double destY, double destZ, double destOrientation);
 
+    public void setAttenuator(double attenuator);
+
+    public double getAttenuator();
+	
 } 
