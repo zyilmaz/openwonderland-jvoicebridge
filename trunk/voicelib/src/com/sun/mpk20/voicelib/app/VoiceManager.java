@@ -52,10 +52,6 @@ public interface VoiceManager {
     public void setIncomingSpatializer(String targetCallId, 
         Spatializer spatializer);
 
-    public void setPrivateAttenuator(String callId, double privateAttenuator);
-
-    public double getPrivateAttenuator(String callId);
-
     public void setTalkAttenuator(String callId, double talkAttenuator);
 
     public double getTalkAttenuator(String callId);
