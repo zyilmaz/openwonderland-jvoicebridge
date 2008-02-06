@@ -221,13 +221,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
             Spatializer spatializer) {
     }
 
-    public void setPrivateAttenuator(String callId, double privateAttenuator) {
-    }
-
-    public double getPrivateAttenuator(String callId) {
-	return 0;
-    }
-
     public void setTalkAttenuator(String callId, double talkAttenuator) {
     }
 

@@ -308,18 +308,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	voiceManager.setIncomingSpatializer(targetCallId, null);
     }
 
-    public void setPrivateAttenuator(String callId, double privateAttenuator) {
-	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
-	
-	voiceManager.setPrivateAttenuator(callId, privateAttenuator);
-    }
-
-    public double getPrivateAttenuator(String callId) {
-	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
-	
-	return voiceManager.getPrivateAttenuator(callId);
-    }
-
     public void setTalkAttenuator(String callId, double talkAttenuator) {
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 	

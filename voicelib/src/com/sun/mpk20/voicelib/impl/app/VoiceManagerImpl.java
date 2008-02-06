@@ -248,30 +248,6 @@ public class VoiceManagerImpl implements VoiceManager {
 	setPrivateMixes();
     }
 
-    public void setPrivateAttenuator(String callId, double privateAttenuator) {
-	Player player = findPlayer(callId);
-
-        if (player == null) {
-            logger.fine("no Player for " + callId);
-            return;
-	}
-
-	player.setPrivateAttenuator(privateAttenuator);
-
-	setPrivateMixes(player);
-    }
-
-    public double getPrivateAttenuator(String callId) {
-	Player player = findPlayer(callId);
-
-        if (player == null) {
-            logger.fine("no Player for " + callId);
-            return 0;
-	}
-
-	return player.getPrivateAttenuator();
-    }
-
     public void setTalkAttenuator(String callId, double talkAttenuator) {
 	Player player = findPlayer(callId);
 
@@ -765,15 +741,17 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	Spatializer spatializer = p1.getPrivateSpatializer(p2.callId);
 
-	double attenuator = p1.getPrivateAttenuator();
+	double attenuator;
 
-	logger.finest("p1 " + p1.callId + ", p2 private spatializer " + spatializer
-	    + " private attenuator " + attenuator);
+	if (spatializer != null) {
+	    /*
+	     * Use private spatializer
+	     */
+	    attenuator = spatializer.getAttenuator();
 
-	/*
-	 * If there is a private spatializer, use it.
-	 */
-	if (spatializer == null) {
+	    logger.finest("p1 " + p1.callId + ", p2 private spatializer " + spatializer
+	        + " private attenuator " + attenuator);
+	} else {
 	    attenuator = p1.getListenAttenuator() * p2.getTalkAttenuator();
 
 	    /*
@@ -797,7 +775,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		     */
 	            spatializer = defaultSpatializer;
 	
-		    logger.finer(" p1 " + p1.callId 
+		    logger.finest(" p1 " + p1.callId 
 		        + ", Using default spatializer"
 		        + " listen attenuator " + p1.getListenAttenuator()
 		        + " talk attenuator " + p2.getTalkAttenuator());
@@ -827,21 +805,15 @@ public class VoiceManagerImpl implements VoiceManager {
 	if (p2.isLivePerson() == false) {
 	    privateMixParameters[3] *= p1.attenuationVolume;
 	    privateMixParameters[3] *= p2.attenuationVolume;
-	    privateMixParameters[3] *= attenuator;
-	    logger.finest("p1.AttenuationVolume " + p1.attenuationVolume 
-		+  " volume " + round(privateMixParameters[3]));
-	} else {
-	    /*
-	     * Apply attenuators
-	     */
-	    double v = privateMixParameters[3];
-
-            privateMixParameters[3] *= attenuator;
-
-	    logger.finest("p1 " + p1.callId + " v " + v + " attenuator " 
-		+ attenuator + " effective volume " 
-		+ round(privateMixParameters[3]));
 	}
+
+	double v = privateMixParameters[3];
+
+        privateMixParameters[3] *= attenuator;
+
+	logger.finest("p1 " + p1.callId + " v " + v + " attenuator " 
+	    + attenuator + " effective volume " 
+	    + round(privateMixParameters[3]));
 
 	if (p1.isLivePerson() == true) {
           logger.finer("p1=" + p1 + " p2=" + p2 + " mix " 

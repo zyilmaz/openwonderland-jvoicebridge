@@ -53,10 +53,6 @@ public interface VoiceHandler {
 
     public void removeIncomingSpatializer(String targetCallId);
 
-    public void setPrivateAttenuator(String callId, double privateAttenuator);
-
-    public double getPrivateAttenuator(String callId);
-
     public void setTalkAttenuator(String callId, double talkAttenuator);
 
     public double getTalkAttenuator(String callId);

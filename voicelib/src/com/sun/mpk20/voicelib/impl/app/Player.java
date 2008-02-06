@@ -24,6 +24,8 @@
 package com.sun.mpk20.voicelib.impl.app;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.sun.mpk20.voicelib.app.Spatializer;
@@ -46,7 +48,6 @@ public class Player {
 
     private Spatializer incomingSpatializer;
 
-    private double privateAttenuator = 1.0;
     private double talkAttenuator = 1.0;
     private double listenAttenuator = 1.0;
 
@@ -145,14 +146,6 @@ public class Player {
 	return privateSpatializers.get(callId);
     }
 
-    public void setPrivateAttenuator(double privateAttenuator) {
-	this.privateAttenuator = privateAttenuator;
-    }
-
-    public double getPrivateAttenuator() {
-	return privateAttenuator;
-    }
-
     public void setTalkAttenuator(double talkAttenuator) {
 	if (talkAttenuator < 0) {
 	    talkAttenuator = 0;
@@ -165,8 +158,29 @@ public class Player {
 	return talkAttenuator;
     }
 
+    private double lastListenAttenuator = 1.0;
+
     public void setListenAttenuator(double listenAttenuator) {
 	this.listenAttenuator = listenAttenuator;
+
+if (false) {
+        /*
+         * If we have any private spatializers, adjust their attenuation.
+         */
+	Collection<Spatializer> spatializers = privateSpatializers.values();
+
+	Iterator<Spatializer> iterator = spatializers.iterator();
+	
+	while (iterator.hasNext()) {
+	    Spatializer spatializer = iterator.next();
+	
+	    spatializer.setAttenuator(
+		spatializer.getAttenuator() / lastListenAttenuator *
+		listenAttenuator);
+	}
+
+	lastListenAttenuator = listenAttenuator;
+}
     }
 
     public double getListenAttenuator() {
