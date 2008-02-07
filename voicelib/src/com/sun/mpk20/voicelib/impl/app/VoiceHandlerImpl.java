@@ -476,7 +476,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    treatmentGroup.put(callId, new Boolean(false));
 	}
 
-	//restartInputTreatments(treatmentGroupId);
+	restartInputTreatments(treatmentGroupId);
 	return callId;
     }
 
@@ -490,7 +490,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	TreatmentInfo t = treatmentInfo.get(callId);
 
 	if (t == null) {
-	    logger.info("callId " + callId + " treatment info is null");
+	    logger.fine("callId " + callId + " treatment info is null");
 	    return;
 	}
 
@@ -568,7 +568,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	TreatmentInfo t = treatmentInfo.get(callId);
 
 	if (t == null) {
-	    logger.info("No treatment info for " + callId);
+	    logger.fine("No treatment info for " + callId);
 	    return;
 	}
 
@@ -630,7 +630,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void endCall(String callId) {
-	logger.warning("ending call " + callId);
+	logger.fine("ending call " + callId);
 
         removeTreatment(callId);
 
@@ -957,7 +957,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	        t.isCallEstablished = true;
 		restartTreatment(callId);
 	    } else {
-		logger.info("No treatment info for " + callId);
+		logger.fine("No treatment info for " + callId);
 	    }
 
 	    String s = callStatus.getOption("IncomingCall");
@@ -1007,7 +1007,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	     * all the pm's for live players.
 	     */
 	    if (callId.length() == 0) {
-		logger.info("Restoring private mixes...");
+		logger.fine("Restoring private mixes...");
 
 		try {
 	    	    voiceManager.restorePrivateMixes();

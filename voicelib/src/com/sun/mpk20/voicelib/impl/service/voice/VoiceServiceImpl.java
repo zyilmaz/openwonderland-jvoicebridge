@@ -621,6 +621,10 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 		} catch (IOException e) {
 		    logger.info(e.getMessage());
 
+		    /*
+		     * TODO:  There's needs to be a way to tell the difference
+		     * between a fatal and a recoverable error.
+		     */
 		    bridgeManager.addToRecoveryList(work.cp.getCallId(), 
 			work.cp);
 		} catch (ParseException e) {
