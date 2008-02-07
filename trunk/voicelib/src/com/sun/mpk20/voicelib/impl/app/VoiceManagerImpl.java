@@ -364,7 +364,7 @@ public class VoiceManagerImpl implements VoiceManager {
     public void endCall(String callId, boolean tellBackingManager) 
 	    throws IOException {
 
-	logger.warning("call ending:  " + callId);
+	logger.fine("call ending:  " + callId);
 
 	removeFromInRange(callId);
 
