@@ -79,7 +79,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
         DS_PREFIX + "CallBeginEndListeners";
     
     private final static String DEFAULT_CONFERENCE = "Test:PCM/16000/2";
-    private final static String DEFAULT_CONFERENCE_CODE = "1234";
 
     private final static String AUDIO_DIR =
             "com.sun.mpk20.gdcdemo.server.AUDIO_DIR";

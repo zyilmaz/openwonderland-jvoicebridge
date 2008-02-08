@@ -149,9 +149,20 @@ public class VoiceManagerImpl implements VoiceManager {
     public void createPlayer(String callId, double x, double y, double z,
 	    double orientation) {
 
-	players.putIfAbsent(callId, new Player(callId, .5, .5, 0, 0));
+	if (findPlayer(callId) != null) {
+	    logger.info("player already exists for " + callId);
+	    return;
+	}
 
-	setPrivateMixes(findPlayer(callId));
+	logger.info("Creating player for " + callId + " at "
+	    + " " + x + ":" + y + ":" + z + ":" + orientation);
+
+	Player p = new Player(callId, x, y, z, orientation);
+	p.setLivePerson();
+
+	players.put(callId, p);
+
+	setPrivateMixes(p);
     }
 
     public void transferCall(String callId, String conferenceId) 
