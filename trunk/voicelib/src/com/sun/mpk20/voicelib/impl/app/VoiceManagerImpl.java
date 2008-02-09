@@ -736,18 +736,61 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
     }
 
-    private static int count = -1;
-
     /*
      * Set the private mix p1 has for p2
      */
     private void setPrivateMix(Player p1, Player p2) {
+	double[] privateMixParameters = getPrivateMixParameters(p1, p2);
+
+	if (privateMixParameters == null) {
+	    return;
+	}
+
+	if (privateMixParameters[3] == 0) {
+	    if (p1.isInRange(p2) == false) {
+		/*
+		 * This is an optimization.  p2 was not in range
+		 * and we already knew that.
+		 */
+		skipped++;
+		return;
+	    }
+
+	    logger.fine("pmx for " + p1 + ": "
+	        + p2 + " no longer in range."); 
+
+	    p1.removePlayerInRange(p2);   // p2 is not in range any more
+	} else {
+	    if (p1.isInRange(p2) == false) {
+	    	logger.fine("pmx for " + p1 + ": "
+	            + p2 + " setting in range."); 
+
+		p1.addPlayerInRange(p2);  // p2 is in range now
+	    }
+	}
+
+	numberOfPrivateMixesSet++;
+
+	if (backingManager == null) {
+	    return;
+	}
+
+	try {
+            backingManager.setPrivateMix(p1.callId, p2.callId, 
+	        privateMixParameters);
+	} catch (IOException e) {
+	    logger.info("Unable to set private mix " + p1
+		+ " has for " + p2 + " " + e.getMessage());
+	}
+    }
+    private double[] getPrivateMixParameters(Player p1, Player p2) {
 	if (p1.callId == null || p1.callId.length() == 0 ||
 	        p2.callId == null || p2.callId.length() == 0) {
 
-	    logger.warning("setPrivateMix bad callId:  callId1='" 
+	    logger.warning("bad callId:  callId1='" 
 		+ p1.callId + "' callId2='" + p2.callId + "'");
-	    return;
+
+	    return null;
 	}
 
 	Spatializer spatializer = p1.getPrivateSpatializer(p2.callId);
@@ -794,12 +837,8 @@ public class VoiceManagerImpl implements VoiceManager {
 	    }
 	}
 
-	long start = System.nanoTime();
-
 	double[] privateMixParameters = spatializer.spatialize(
 	    p2.x, p2.y, p2.z, p2.orientation, p1.x, p1.y, p1.z, p1.orientation);
-
-	timeToSpatialize += (System.nanoTime() - start);
 
 	if (privateMixParameters[3] > .1) {
           logger.finest("p1=" + p1 + " p2=" + p2 + " mix " 
@@ -827,7 +866,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    + round(privateMixParameters[3]));
 
 	if (p1.isLivePerson() == true) {
-          logger.finer("p1=" + p1 + " p2=" + p2 + " mix " 
+          logger.finest("p1=" + p1 + " p2=" + p2 + " mix " 
 	    + round(privateMixParameters[0]) + ", " 
 	    + round(privateMixParameters[1]) + ", "
 	    + round(privateMixParameters[2]) + ", "
@@ -846,64 +885,17 @@ public class VoiceManagerImpl implements VoiceManager {
 	logger.finest("volume after wall attenuation: " 
 	    + round(privateMixParameters[3]));
 
-	count++;
-
-	if (backingManager == null) {
-	    return;
-	}
-
 	if (privateMixParameters[3] <= ZERO_VOLUME) {
 	    privateMixParameters[3] = 0;
 	}
 
-	logger.finer("pmx for " + p1.callId + ": "
+	logger.finest("pmx for " + p1.callId + ": "
 	    + p2.callId + " vol " 
 	    + privateMixParameters[3]);
- 
-	if (privateMixParameters[3] == 0) {
-	    if (p1.isInRange(p2) == false) {
-		if ((count % 1000) == 0 || logger.isLoggable(Level.FINEST)) {
-	    	    logger.info("pmx for " + p1 + ": " + p2 
-			+ " already out of range."); 
-		}
 
-		/*
-		 * This is an optimization.  p2 was not in range
-		 * and we already knew that.
-		 */
-		skipped++;
-		return;
-	    }
-
-	    logger.fine("pmx for " + p1 + ": "
-	        + p2 + " no longer in range."); 
-
-	    p1.removePlayerInRange(p2);   // p2 is not in range any more
-	} else {
-	    if ((count % 1000) == 0 || logger.isLoggable(Level.FINEST)) {
-	    	logger.info("pmx for " + p1 + ": "
-	            + p2 + " is in range."); 
-	    }
-
-	    if (p1.isInRange(p2) == false) {
-	    	logger.fine("pmx for " + p1 + ": "
-	            + p2 + " setting in range."); 
-
-		p1.addPlayerInRange(p2);  // p2 is in range now
-	    }
-	}
-
-	numberOfPrivateMixesSet++;
-
-	try {
-            backingManager.setPrivateMix(p1.callId, p2.callId, 
-	        privateMixParameters);
-	} catch (IOException e) {
-	    logger.info("Unable to set private mix " + p1
-		+ " has for " + p2 + " " + e.getMessage());
-	}
+	return privateMixParameters;
     }
-
+ 
     private double getWallAttenuation(Player p1, Player p2) {
 	double wallAttenuation = 1.0;
 
@@ -985,6 +977,62 @@ public class VoiceManagerImpl implements VoiceManager {
 
     public Level getLogLevel() {
 	return logger.getLevel();
+    }
+
+    public int getNumberOfPlayersInRange(double x, double y, double z) {
+	/*
+	 * Create a player at the specified location so we can easily
+	 * determine the other players we can hear.
+	 */
+	Player p1 = new Player("NoCallID", x, y, z, 0);
+	p1.setLivePerson();
+
+	int n = 0;
+
+	logger.finest("location " + x + ":" + y + ":" + z);
+
+	synchronized (players) {
+	    Collection<Player> values = players.values();
+
+	    Iterator<Player> iterator = values.iterator();
+
+	    while (iterator.hasNext()) {
+		Player p2 = iterator.next();
+
+		if (p1.isLivePerson() == false) {
+		    continue;  // skip recordings
+		}
+
+		double[] privateMixParameters = getPrivateMixParameters(p1, p2);
+
+		if (privateMixParameters == null) {
+		    logger.info("No private mix parameters for " + p2);
+		    continue;
+		}
+
+		logger.finest("volume for " + p2 + " " + privateMixParameters[3]);
+
+	        if (privateMixParameters[3] > 0) {
+		    n++;
+		}
+	    }
+	}
+
+	return n;
+    }
+
+    public int getNumberOfPlayersInRange(String callId) {
+	Player p = findPlayer(callId);
+
+	if (p == null) {
+	    logger.info("No player for " + callId);
+	    return 0;
+	}
+
+	/*
+	 * Don't count ourself.
+	 */
+	return getNumberOfPlayersInRange(p.x, p.y, p.z) - 1;
     }
 
     public double round(double v) {
