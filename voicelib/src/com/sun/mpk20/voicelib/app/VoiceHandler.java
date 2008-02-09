@@ -134,4 +134,8 @@ public interface VoiceHandler {
 
     public VoiceManagerParameters getVoiceManagerParameters();
 
+    public int getNumberOfPlayersInRange(double x, double y, double z);
+
+    public int getNumberOfPlayersInRange(String callId);
+
 }

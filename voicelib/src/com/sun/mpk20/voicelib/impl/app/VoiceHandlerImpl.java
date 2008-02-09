@@ -983,6 +983,14 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    logger.info(callStatus.toString());
 
 	    notifyCallBeginEndListeners(callStatus);
+
+	    try {
+                voiceManager.endCall(callId, false);
+            } catch (IOException e) {
+                logger.warning("Unable to tell voice manager that call " 
+		    + callId + " ended");
+            }
+
 	    break;
 
 	case CallStatus.BRIDGE_OFFLINE:
@@ -1245,6 +1253,19 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 	voiceManager.setLogLevel(level);
+    }
+
+    public int getNumberOfPlayersInRange(double x, double y, double z) {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	return voiceManager.getNumberOfPlayersInRange(x / scale, y / scale, 
+	    z / scale);
+    }
+
+    public int getNumberOfPlayersInRange(String callId) {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	return voiceManager.getNumberOfPlayersInRange(callId);
     }
 
     static class AmbientSpatializer implements Spatializer {

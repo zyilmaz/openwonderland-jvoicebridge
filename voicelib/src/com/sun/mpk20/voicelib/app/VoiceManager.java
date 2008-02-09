@@ -135,4 +135,8 @@ public interface VoiceManager {
 
     public void setLogLevel(Level level);
 
+    public int getNumberOfPlayersInRange(double x, double y, double z);
+
+    public int getNumberOfPlayersInRange(String callId);
+
 }

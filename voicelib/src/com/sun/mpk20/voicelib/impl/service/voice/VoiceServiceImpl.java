@@ -434,6 +434,14 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	return new VoiceManagerParameters();
     }
 
+    public int getNumberOfPlayersInRange(double x, double y, double z) {
+	return 0;
+    }
+
+    public int getNumberOfPlayersInRange(String callId) {
+	return 0;
+    }
+
     public void setLogLevel(Level level) {
 	logger.setLevel(level);
     }
