@@ -146,6 +146,10 @@ public class Player {
 	return privateSpatializers.get(callId);
     }
 
+    public void removePrivateSpatializer(String callId) {
+	privateSpatializers.remove(callId);
+    }
+
     public void setTalkAttenuator(double talkAttenuator) {
 	if (talkAttenuator < 0) {
 	    talkAttenuator = 0;
@@ -158,12 +162,7 @@ public class Player {
 	return talkAttenuator;
     }
 
-    private double lastListenAttenuator = 1.0;
-
     public void setListenAttenuator(double listenAttenuator) {
-	this.listenAttenuator = listenAttenuator;
-
-if (false) {
         /*
          * If we have any private spatializers, adjust their attenuation.
          */
@@ -174,13 +173,14 @@ if (false) {
 	while (iterator.hasNext()) {
 	    Spatializer spatializer = iterator.next();
 	
-	    spatializer.setAttenuator(
-		spatializer.getAttenuator() / lastListenAttenuator *
-		listenAttenuator);
+	    //System.out.println("adjusting spatializer att " 
+	    //	+ spatializer.getAttenuator() + " current att " 
+	    //	+ this.listenAttenuator + " new att " + listenAttenuator);
+
+	    spatializer.setAttenuator(listenAttenuator);
 	}
 
-	lastListenAttenuator = listenAttenuator;
-}
+	this.listenAttenuator = listenAttenuator;
     }
 
     public double getListenAttenuator() {
@@ -205,7 +205,7 @@ if (false) {
     public void removePlayerInRange(Player p) {
 	synchronized (playersInRange) {
 	    if (playersInRange.contains(p) == false) {
-		System.out.println("playersInRange doesn't contain " + p);
+		//System.out.println("playersInRange doesn't contain " + p);
 	    }
 	    playersInRange.remove(p);
 	}

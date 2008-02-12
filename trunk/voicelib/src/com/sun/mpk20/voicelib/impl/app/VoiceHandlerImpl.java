@@ -228,6 +228,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	cp.setCallId(callId);
 
         cp.setVoiceDetection(true);
+	cp.setDtmfDetection(true);
+	cp.setVoiceDetectionWhileMuted(true);
 
 	try {
 	    VoiceManager voiceManager = 
@@ -857,6 +859,10 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	addCallStatusListener(mr, callId);
     }
 
+    /*
+     * FIXME:  There is a problem here.  A given listener
+     * can only register to listen for one phone call!
+     */
     public void addCallStatusListener(ManagedReference mr, String callId) {
 
 	logger.finer("Adding listener " + mr + " for callId " + callId);
@@ -1266,6 +1272,34 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
 	return voiceManager.getNumberOfPlayersInRange(callId);
+    }
+
+    public void setupRecorder(String id, double x, double y, double z, 
+	    String recordingDirectoryPath) throws IOException {
+
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	//voicemanager.setupRecorder(id, x, y, z, recordingDirectoryPath);
+    }
+
+    public void startRecording(String id, String recordingFile) 
+	    throws IOException {
+
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	//voiceManager.startRecording(id, recordingFile);
+    }
+
+    public void stopRecording(String id) throws IOException {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	//voiceManager.startRecording(id);
+    }
+
+    public void playRecording(String id, String recordingFile) throws IOException {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	//voiceManager.playRecording(id);
     }
 
     static class AmbientSpatializer implements Spatializer {

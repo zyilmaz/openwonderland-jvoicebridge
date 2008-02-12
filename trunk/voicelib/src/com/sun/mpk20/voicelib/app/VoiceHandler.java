@@ -138,4 +138,15 @@ public interface VoiceHandler {
 
     public int getNumberOfPlayersInRange(String callId);
 
+    public void setupRecorder(String id, double x, double y, double z, 
+	String recordingDirectoryPath) throws IOException;
+
+    public void startRecording(String id, String recordingFile)
+        throws IOException;
+
+    public void stopRecording(String id) throws IOException;
+
+    public void playRecording(String id, String recordingFile)
+	throws IOException; 
+
 }
