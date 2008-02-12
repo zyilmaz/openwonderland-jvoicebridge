@@ -226,12 +226,27 @@ public class VoiceManagerImpl implements VoiceManager {
             return;
         }
 
+	if (spatializer != null) {
+	    double attenuator =  spatializer.getAttenuator();
+
+	    logger.finest(targetCallId + " Setting private spatializer for "
+	        + sourceCallId + " att " + attenuator + " target att "
+	        + targetPlayer.getListenAttenuator());
+
+	    attenuator *= targetPlayer.getListenAttenuator();
+
+	    spatializer.setAttenuator(attenuator);
+	}
+
         Player sourcePlayer = findPlayer(sourceCallId);
 
         if (sourcePlayer == null) {
             logger.info("no sourcePlayer for " + sourceCallId);
             return;
         }
+
+	logger.finer(targetPlayer.callId + " set private spatializer for " 
+	    + sourceCallId);
 
         targetPlayer.setPrivateSpatializer(sourceCallId, spatializer);
 
@@ -377,7 +392,7 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	logger.fine("call ending:  " + callId);
 
-	removeFromInRange(callId);
+	removePlayer(callId);
 
 	players.remove(callId);
 
@@ -386,7 +401,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
     }
 
-    private void removeFromInRange(String callId) {
+    private void removePlayer(String callId) {
 	Player player = findPlayer(callId);
 
         if (player == null) {
@@ -401,6 +416,8 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	    while (iterator.hasNext()) {
 		Player p = iterator.next();
+
+		p.removePrivateSpatializer(callId);
 
 		if (p.isLivePerson() == false || p.isInRange(player) == false) {
 		    continue;
@@ -795,17 +812,9 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	Spatializer spatializer = p1.getPrivateSpatializer(p2.callId);
 
-	double attenuator;
+	double attenuator = 1.0;
 
-	if (spatializer != null) {
-	    /*
-	     * Use private spatializer
-	     */
-	    attenuator = spatializer.getAttenuator();
-
-	    logger.finest("p1 " + p1.callId + ", p2 private spatializer " + spatializer
-	        + " private attenuator " + attenuator);
-	} else {
+	if (spatializer == null) {
 	    attenuator = p1.getListenAttenuator() * p2.getTalkAttenuator();
 
 	    /*
