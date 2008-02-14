@@ -795,6 +795,45 @@ if (false) {
         }
     }
 
+    public String startRecordingToCall(String callId, String recordingFile) 
+	    throws IOException {
+	
+	String cmd = "recordToMember=t:" + callId + ":" + recordingFile 
+	    + ":" + "au" + "\n";
+
+        BridgeResponse br = sendWithResponse(cmd);
+
+        logger.finest("getStatus " + br.getStatus());
+
+        switch (br.getStatus()) {
+        case SUCCESS:
+            logger.finest("recordTomember success: " + cmd);
+            return br.getMessage();
+
+        default:
+            throw new IOException("recordTomember failed:  " + cmd
+		+ " " + br.getMessage());
+        }
+    }
+
+    public String stopRecordingToCall(String callId) throws IOException {
+	String cmd = "recordToMember=f:" + callId + "\n";
+
+        BridgeResponse br = sendWithResponse(cmd);
+
+        logger.finest("getStatus " + br.getStatus());
+
+        switch (br.getStatus()) {
+        case SUCCESS:
+            logger.finest("stop recording success: " + cmd);
+            return br.getMessage();
+
+        default:
+            throw new IOException("stop recording failed:  " + cmd
+		+ " " + br.getMessage());
+        }
+    }
+
     /**
      * Send a message to the bridge and wait for response.  This method waits 
      * for a status confirmation from the bridge, and returns whatever that

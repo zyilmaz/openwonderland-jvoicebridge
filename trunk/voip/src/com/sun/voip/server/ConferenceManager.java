@@ -1143,8 +1143,15 @@ public class ConferenceManager {
 		    } 
     
     	            if (memberReceiver.getFromRecordingFile() != null) {
-    		        info += " Recording file " 
+    		        info += " Recording from member in " 
     			    + memberReceiver.getFromRecordingFile();
+    		    }
+
+		    String toRecordingFile = 
+			memberSender.getCallParticipant().getToRecordingFile();
+
+    	            if (toRecordingFile != null) {
+    		        info += " Recording to member in " + toRecordingFile;
     		    }
 
     		    if (cp.speexEncode()) {

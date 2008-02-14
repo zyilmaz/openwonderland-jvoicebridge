@@ -388,6 +388,10 @@ class RequestHandler extends Thread implements CallEventListener {
 	            throw new ParseException(
 			"You must specify a phone number or a soft phone URI", 0);
 		} else {
+		    if (cp.getInputTreatment().equals("null")) {
+			cp.setInputTreatment("");
+		    }
+
 		    cp.setPhoneNumber(cp.getInputTreatment());
 		    cp.setProtocol("NS");
 		}

@@ -869,7 +869,7 @@ public class ConferenceMember implements TreatmentDoneListener,
      * Set a private mix that this call has for member.
      */
     public void setPrivateMix(ConferenceMember member, double[] spatialValues) {
-	if (cp.getInputTreatment() != null) {
+	if (cp.getInputTreatment() != null && cp.isRecorder() == false) {
 	    return;  // an input treatment doesn't need private mixes.  ignore.
 	}
 
@@ -1320,7 +1320,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 	    return;
 	}
 
-	if (cp.getInputTreatment() != null) {
+	if (cp.getInputTreatment() != null && cp.isRecorder() == false) {
 	    return;  // input treatments don't have descriptors
 	}
 
@@ -1405,7 +1405,8 @@ public class ConferenceMember implements TreatmentDoneListener,
 
 		synchronized(mixManager) {
 		    if (whisperGroup.hasCommonMix() == true && 
-			    cp.getInputTreatment() == null) {
+			    (cp.getInputTreatment() == null ||
+			    cp.isRecorder() == true)) {
 
 	    	        mixManager.addMix(whisperGroup, attenuation);
 		    } else {
@@ -1702,7 +1703,8 @@ public class ConferenceMember implements TreatmentDoneListener,
 
 		    synchronized (mixManager) {
 			if (whisperGroup.hasCommonMix() == true &&
-				cp.getInputTreatment() == null) {
+			        (cp.getInputTreatment() == null ||
+			        cp.isRecorder() == true)) {
 
 	    	            mixManager.addMix(whisperGroup, 1.0D);
 			}
@@ -1752,7 +1754,8 @@ public class ConferenceMember implements TreatmentDoneListener,
 
 		    synchronized (mixManager) {
 			if (whisperGroup.hasCommonMix() == true &&
-			        cp.getInputTreatment() == null) {
+			        (cp.getInputTreatment() == null ||
+			        cp.isRecorder() == true)) {
 
 	    	            mixManager.addMix(whisperGroup, 1.0D);
 			}
@@ -1906,9 +1909,10 @@ public class ConferenceMember implements TreatmentDoneListener,
     }
 
     public boolean sendData() {
-	if (cp.getInputTreatment() != null) {
+	if (cp.getInputTreatment() != null && cp.getToRecordingFile() == null) {
 	    /*
-	     * We never send data to a call playing an input treatment
+	     * We don't send data to a call playing an input treatment
+	     * unless that call is recording.
 	     */
 	    return true;
 	}

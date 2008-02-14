@@ -57,34 +57,13 @@ public class Recorder extends Thread {
     public Recorder(String recordPath, String recordingType,
 	    MediaInfo mediaInfo) throws IOException {
 
-        String osName = System.getProperty("os.name");
+	this(null, recordPath, recordingType, mediaInfo);
+    }
 
-	boolean absolute = false;
+    public Recorder(String recordDirectory, String recordPath, String recordingType,
+	    MediaInfo mediaInfo) throws IOException {
 
-        if (osName.indexOf("Windows") >= 0) {
-	    if (recordPath.substring(0,1).equals(fileSeparator) == true ||
-	            recordPath.charAt(1) == ':') {
-
-		absolute = true;
-	    }
-	} else {
-	    if (recordPath.substring(0,1).equals(fileSeparator) == true) {
-		absolute = true;
-	    }
-	}
-
-	if (absolute) {
-	    this.recordPath = recordPath;
-	} else {
-	    /*
-	     * Not absolute
-	     */
-            String recordDirectory = System.getProperty(
-                "com.sun.voip.server.Bridge.recordDirectory",
-	        defaultRecordDirectory);
-
-            this.recordPath = recordDirectory + fileSeparator + recordPath;
-        }
+	this.recordPath = getAbsolutePath(recordDirectory, recordPath);
 
 	if (recordingType.equalsIgnoreCase("Rtp")) {
 	    recordRtp = true;
@@ -96,6 +75,44 @@ public class Recorder extends Thread {
 
         start();
     }
+
+    public static String getAbsolutePath(String recordDirectory, String recordPath) 
+	    throws IOException {
+
+        String osName = System.getProperty("os.name");
+
+        if (osName.indexOf("Windows") >= 0) {
+	    if (recordPath.substring(0,1).equals(fileSeparator) == true ||
+	            recordPath.charAt(1) == ':') {
+
+		return recordPath;
+	    }
+	} else {
+	    if (recordPath.substring(0,1).equals(fileSeparator) == true) {
+		return recordPath;
+	    }
+	}
+
+	/*
+	 * Not absolute
+	 */
+	if (recordDirectory == null) {
+            recordDirectory = System.getProperty(
+                "com.sun.voip.server.Bridge.recordDirectory",
+	        defaultRecordDirectory);
+	}
+
+	String path = recordDirectory + fileSeparator + recordPath;
+
+	try {
+	    checkPermission(path, false);
+	} catch (ParseException e) {
+	    throw new IOException(e.getMessage());
+	}
+
+        return recordDirectory + fileSeparator + recordPath;
+    }
+
 
     private void openFile(MediaInfo mediaInfo) throws IOException {
         File recordFile = new File(recordPath);
@@ -185,15 +202,15 @@ public class Recorder extends Thread {
 	    /*
 	     * Try to create a file in the directory
 	     */
+	    String directory = defaultRecordDirectory;
+
 	    int i = recordPath.lastIndexOf(fileSeparator);
 
-	    if (i < 0) {
-	        throw new ParseException("Illegal file name:  " + recordPath 
-		    + ".", 0);
+	    if (i > 0) {
+		directory = recordPath.substring(0, i);
 	    }
 
-	    file = File.createTempFile(
-		"Record", "tmp", new File(recordPath.substring(0, i)));
+	    file = File.createTempFile("Record", "tmp", new File(directory));
 
 	    file.delete();
 	} catch (IOException e) {

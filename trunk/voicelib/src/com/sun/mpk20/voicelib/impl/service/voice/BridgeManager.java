@@ -473,6 +473,16 @@ public class BridgeManager extends Thread
  	bc.muteCall(callId, isMuted);
     }
 
+    public void startRecording(String callId, String recordingFile) throws IOException {
+        BridgeConnection bc = getBridgeConnection(callId);
+ 	bc.startRecordingToCall(callId, recordingFile);
+    }
+
+    public void stopRecording(String callId) throws IOException {
+        BridgeConnection bc = getBridgeConnection(callId);
+ 	bc.stopRecordingToCall(callId);
+    }
+
     public void newInputTreatment(String callId, String treatment) 
 	    throws IOException {
 

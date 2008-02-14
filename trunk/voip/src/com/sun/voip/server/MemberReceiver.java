@@ -419,18 +419,25 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	    playJoinTreatment();
 	}
 
-	if (cp.getInputTreatment() != null) {
+	if (cp.getInputTreatment() != null && 
+		cp.getInputTreatment().length() > 0) {
+
+	    String absolutePath = cp.getInputTreatment();
+
 	    try {
-	        inputTreatment = new TreatmentManager(cp.getInputTreatment(),
+	        absolutePath = Recorder.getAbsolutePath(cp.getRecordDirectory(),
+		    cp.getInputTreatment());
+
+	        inputTreatment = new TreatmentManager(absolutePath,
 		    0, conferenceMediaInfo.getSampleRate(),
 		    conferenceMediaInfo.getChannels());
 
 		inputTreatment.addTreatmentDoneListener(this);
 	    } catch (IOException e) {
 	        Logger.println("Invalid input treatment " 
-		    + cp.getInputTreatment() + ":  " + e.getMessage());
+		    + absolutePath + ":  " + e.getMessage());
 	        callHandler.cancelRequest("Invalid input treatment " 
-		    + cp.getInputTreatment() + ":  " + e.getMessage());
+		    + absolutePath + ":  " + e.getMessage());
 	        return;
 	    }
 
@@ -514,13 +521,18 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	}
 
 	synchronized (whisperGroup) {
-	    if (cp.getInputTreatment() != null) {
+	    if (cp.getInputTreatment() != null && 
+		    cp.getInputTreatment().length() > 0) {
+
 		try {
 		    MediaInfo conferenceMediaInfo = 
 			conferenceManager.getMediaInfo();
 
+	    	    String absolutePath = Recorder.getAbsolutePath(
+			cp.getRecordDirectory(), cp.getInputTreatment());
+
 	            inputTreatment = new TreatmentManager(
-			cp.getInputTreatment(), 0, 
+			absolutePath, 0, 
 			conferenceMediaInfo.getSampleRate(),
                         conferenceMediaInfo.getChannels());
 
@@ -756,6 +768,10 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	if (packetsReceived == 1) {
 	    Logger.println("Call " + cp + " got first packet, length " 
 		+ length);
+	}
+
+	if (cp.getInputTreatment() != null) {
+	    return;
 	}
 
 	if (dropPackets != 0) {
@@ -1978,7 +1994,9 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
 		Logger.println("Recording media " + m);
 
-                recorder = new Recorder(recordingFile, recordingType, m);
+                recorder = new Recorder(cp.getRecordDirectory(),
+		    recordingFile, recordingType, m);
+
                 cp.setFromRecordingFile(recordingFile);
                 cp.setFromRecordingType(recordingType);
             }

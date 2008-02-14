@@ -45,7 +45,11 @@ public class Work {
 
     public static final int MUTECALL = 8;
 
-    public static final int ENDCALL = 9;
+    public static final int STARTRECORDING = 9;
+
+    public static final int STOPRECORDING = 10;
+
+    public static final int ENDCALL = 11;
 
     public int command;
     public CallParticipant cp;
@@ -55,6 +59,7 @@ public class Work {
     public String treatment;
     public String bridgeInfo;
     public boolean isMuted;
+    public String recordingFile;
 
     public Work(int command) {
 	this.command = command;

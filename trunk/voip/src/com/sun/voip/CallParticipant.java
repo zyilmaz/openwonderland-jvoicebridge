@@ -58,6 +58,7 @@ public class CallParticipant {
     private boolean isConferenceSilenced	   = false;
     private boolean isMuted		   	   = false;
     private boolean isMuteWhisperGroup	   	   = false;
+    private boolean isRecorder			   = false;
     private String  mediaPreference		   = null;
     private boolean migrateCall                    = false;
     private boolean mixMinus			   = true;
@@ -65,6 +66,7 @@ public class CallParticipant {
     private String  name                           = null;
     private String  phoneNumber                    = null;
     private String  phoneNumberLocation            = null;
+    private String  recordDirectory		   = null;
     private String  fromRecordingFile		   = null;
     private String  fromRecordingType		   = null;
     private String  toRecordingFile		   = null;
@@ -295,6 +297,13 @@ public class CallParticipant {
     }
 
     /**
+     * Is this a recorder
+     */
+    public boolean isRecorder() {
+	return isRecorder;
+    }
+
+    /**
      * Get media preference
      */
     public String getMediaPreference() {
@@ -344,6 +353,14 @@ public class CallParticipant {
      */
     public String getPhoneNumberLocation() { 
 	return phoneNumberLocation; 
+    }
+
+    /**
+     * returns the record directory
+     * @return the record directory
+     */
+    public String getRecordDirectory() {
+	return recordDirectory;
     }
 
     /**
@@ -659,6 +676,13 @@ public class CallParticipant {
     }
 
     /**
+     * Set isRecorder
+     */
+    public void setRecorder(boolean isRecorder) {
+	this.isRecorder = isRecorder;
+    }
+
+    /**
      * Set the name of the call participant
      */
     public void setName(String name) {
@@ -684,6 +708,13 @@ public class CallParticipant {
      */
     public void setPhoneNumberLocation(String phoneNumberLocation) {
 	this.phoneNumberLocation = phoneNumberLocation;
+    }
+
+    /**
+     * Set the record directory
+     */
+    public void setRecordDirectory(String recordDirectory) {
+	this.recordDirectory = recordDirectory;
     }
 
     /**
@@ -1013,6 +1044,10 @@ public class CallParticipant {
             request += "SilenceMainConference=true\r\n";
         }
 
+        if (isRecorder == true) {
+            request += "recorder=true\r\n";
+        }
+
 	if (joinConfirmationTimeout != 0) {
 	    request += "joinConfirmationTimeout=" 
 		+ joinConfirmationTimeout + "\r\n";
@@ -1035,6 +1070,10 @@ public class CallParticipant {
 
 	if (phoneNumberLocation != null) {
             request += "phoneNumberLocation=" + phoneNumberLocation + "\r\n";
+	}
+
+	if (recordDirectory != null) {
+	    request += "recordDirectory=" + recordDirectory + "\r\n";
 	}
 
 	if (fromRecordingFile != null) {

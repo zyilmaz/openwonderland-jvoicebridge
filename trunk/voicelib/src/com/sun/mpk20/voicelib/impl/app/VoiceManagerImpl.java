@@ -226,6 +226,13 @@ public class VoiceManagerImpl implements VoiceManager {
             return;
         }
 
+        Player sourcePlayer = findPlayer(sourceCallId);
+
+        if (sourcePlayer == null) {
+            logger.info("no sourcePlayer for " + sourceCallId);
+            return;
+        }
+
 	if (spatializer != null) {
 	    double attenuator =  spatializer.getAttenuator();
 
@@ -233,17 +240,11 @@ public class VoiceManagerImpl implements VoiceManager {
 	        + sourceCallId + " att " + attenuator + " target att "
 	        + targetPlayer.getListenAttenuator());
 
-	    attenuator *= targetPlayer.getListenAttenuator();
+	    attenuator *= targetPlayer.getListenAttenuator() *
+		sourcePlayer.getTalkAttenuator();
 
 	    spatializer.setAttenuator(attenuator);
 	}
-
-        Player sourcePlayer = findPlayer(sourceCallId);
-
-        if (sourcePlayer == null) {
-            logger.info("no sourcePlayer for " + sourceCallId);
-            return;
-        }
 
 	logger.finer(targetPlayer.callId + " set private spatializer for " 
 	    + sourceCallId);
@@ -419,7 +420,9 @@ public class VoiceManagerImpl implements VoiceManager {
 
 		p.removePrivateSpatializer(callId);
 
-		if (p.isLivePerson() == false || p.isInRange(player) == false) {
+		if ((p.isLivePerson() == false && p.isRecording() == false) || 
+			p.isInRange(player) == false) {
+
 		    continue;
 		}
 
@@ -549,6 +552,33 @@ public class VoiceManagerImpl implements VoiceManager {
         setPrivateMixes();
     }
 	
+    public void setMasterVolume(String callId, double masterVolume) {
+	Player player = findPlayer(callId);
+
+        if (player == null) {
+            logger.fine("no Player for " + callId);
+            return;
+	}
+
+	logger.fine("Setting master volume for " + callId
+	    + " to " + masterVolume);
+
+	player.setMasterVolume(masterVolume);
+
+	setPrivateMixes();
+    }
+
+    public double getMasterVolume(String callId) {
+	Player player = findPlayer(callId);
+
+        if (player == null) {
+            logger.fine("no Player for " + callId);
+            return 0;
+	}
+
+	return player.getMasterVolume();
+    }
+
     public void setPrivateMix(String targetCallId, String fromCallId,
             double[] privateMixParameters) throws IOException {
 
@@ -658,10 +688,10 @@ public class VoiceManagerImpl implements VoiceManager {
 		        continue;
 		    }
    
-        	    if (p1.isLivePerson() == false) {
+        	    if (p1.isLivePerson() == false && p1.isRecording() == false) {
 		        /*
              	         * We only set private mixes for live players
-             	         * and not for audio sources.
+             	         * and recorders.
              	         */
 		        skipped++;
 	  	        continue;
@@ -694,7 +724,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		 * the changed player's sound coming from.
 		 */
 		if (changedPlayer.positionChanged == true &&
-		        p1.isLivePerson() == true) {
+		        (p1.isLivePerson() == true || p1.isRecording())) {
 
 		    /*
 		     * Set the private mix p1 has for the changed player
@@ -704,13 +734,15 @@ public class VoiceManagerImpl implements VoiceManager {
 		    skipped++;
 		}
 
-		if (changedPlayer.isLivePerson() == false) {
+		if (changedPlayer.isLivePerson() == false && 
+			changedPlayer.isRecording() == false) {
+
 		    /*
 		     * Only live players have private mixes
 		     */
 		    skipped++;
 		} else {
-		    logger.finer("Setting pm for " + changedPlayer
+		    logger.finest("Setting pm for " + changedPlayer
 			+ " target " + p1);
 
 		    /*
@@ -800,6 +832,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		+ " has for " + p2 + " " + e.getMessage());
 	}
     }
+
     private double[] getPrivateMixParameters(Player p1, Player p2) {
 	if (p1.callId == null || p1.callId.length() == 0 ||
 	        p2.callId == null || p2.callId.length() == 0) {
@@ -861,26 +894,18 @@ public class VoiceManagerImpl implements VoiceManager {
 	 * If we are setting a private mix for a placeable, the
 	 * p1's attenuationVolume is used to attenuate the final volume.
 	 */
-	if (p2.isLivePerson() == false) {
+	if (p2.isLivePerson() == false && p2.isRecording() == false) {
 	    privateMixParameters[3] *= p1.attenuationVolume;
 	    privateMixParameters[3] *= p2.attenuationVolume;
 	}
 
 	double v = privateMixParameters[3];
 
-        privateMixParameters[3] *= attenuator;
+        privateMixParameters[3] *= (attenuator * p1.getMasterVolume());
 
 	logger.finest("p1 " + p1.callId + " v " + v + " attenuator " 
-	    + attenuator + " effective volume " 
-	    + round(privateMixParameters[3]));
-
-	if (p1.isLivePerson() == true) {
-          logger.finest("p1=" + p1 + " p2=" + p2 + " mix " 
-	    + round(privateMixParameters[0]) + ", " 
-	    + round(privateMixParameters[1]) + ", "
-	    + round(privateMixParameters[2]) + ", "
-	    + round(privateMixParameters[3]));
-	}
+	    + attenuator + " master volume " + p1.getMasterVolume()
+	    + " effective volume " + round(privateMixParameters[3]));
 
 	double wallAttenuation = getWallAttenuation(p1, p2);
 
@@ -1042,6 +1067,63 @@ public class VoiceManagerImpl implements VoiceManager {
 	 * Don't count ourself.
 	 */
 	return getNumberOfPlayersInRange(p.x, p.y, p.z) - 1;
+    }
+
+    public void startRecording(String callId, String recordingFile) 
+	    throws IOException {
+
+	Player p = findPlayer(callId);
+
+	if (p == null) {
+	    logger.info("No player for " + callId);
+	    return;
+	}
+
+	if (backingManager == null) {
+	    return;
+	}
+
+	p.setRecording(true);
+
+	setPrivateMixes();
+
+	backingManager.startRecording(callId, recordingFile);
+    }
+
+    public void stopRecording(String callId) 
+	    throws IOException {
+
+	Player p = findPlayer(callId);
+
+	if (p == null) {
+	    logger.info("No player for " + callId);
+	    return;
+	}
+
+	if (backingManager == null) {
+	    return;
+	}
+
+	p.setRecording(false);
+
+	backingManager.stopRecording(callId);
+    }
+
+    public void playRecording(String callId, String recordingFile) 
+	    throws IOException {
+
+	Player p = findPlayer(callId);
+
+	if (p == null) {
+	    logger.info("No player for " + callId);
+	    return;
+	}
+
+	if (backingManager == null) {
+	    return;
+	}
+
+	backingManager.playRecording(callId, recordingFile);
     }
 
     public double round(double v) {

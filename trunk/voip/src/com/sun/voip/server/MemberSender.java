@@ -208,10 +208,9 @@ public class MemberSender {
 	outChannels = conferenceMediaInfo.getChannels();
 
 	/*
-	 * No data is ever sent to an input treatment so there's no need
-	 * for a resampler.
+	 * No data is ever sent to an input treatment unless it's a recorder
 	 */
-	if (cp.getInputTreatment() == null) {
+	if (cp.getInputTreatment() == null || cp.isRecorder() == true) {
 	    if (inSampleRate != outSampleRate || inChannels != outChannels) {
                 Logger.println("Call " + cp
                     + " resample data to send from " + inSampleRate + "/"
@@ -422,20 +421,29 @@ public class MemberSender {
 		+ " to " + senderPacket.getSocketAddress());
 	}
 
-	try {
-	    datagramChannel.send(
-		ByteBuffer.wrap(senderPacket.getData(), 0, 
-		    senderPacket.getLength()), senderPacket.getSocketAddress());
+	/*
+	 * If this is an input treatment, the only reason we're 
+	 * here is to record the data.
+	 * There is no need to send data to the call.
+	 * In fact the send and receive addresses are the same
+	 * so that if we sent data, it would also be received!
+	 */
+	if (cp.getInputTreatment() == null) {
+	    try {
+	        datagramChannel.send(
+		    ByteBuffer.wrap(senderPacket.getData(), 0, 
+		        senderPacket.getLength()), senderPacket.getSocketAddress());
 
-            if (Logger.logLevel >= Logger.LOG_MOREDETAIL) {
-	        Logger.writeFile("Call " + cp + " back from sending data");
+                if (Logger.logLevel >= Logger.LOG_MOREDETAIL) {
+	            Logger.writeFile("Call " + cp + " back from sending data");
+	        }
+	    } catch (IOException e) {
+	        if (!done) {
+		    Logger.error("Call " + cp + " sendData " + e.getMessage());
+	            e.printStackTrace();
+	        }
+	        return false;
 	    }
-	} catch (IOException e) {
-	    if (!done) {
-		Logger.error("Call " + cp + " sendData " + e.getMessage());
-	        e.printStackTrace();
-	    }
-	    return false;
 	}
 
 	senderPacket.setBuffer(rtpData);
@@ -933,7 +941,9 @@ public class MemberSender {
 	 	recordRtp = true;
 	    }
 		
-            recorder = new Recorder(recordingFile, recordingType, myMediaInfo);
+            recorder = new Recorder(cp.getRecordDirectory(),
+		recordingFile, recordingType, myMediaInfo);
+
             cp.setToRecordingFile(recordingFile);
             cp.setToRecordingType(recordingType);
 	}
