@@ -93,6 +93,10 @@ public interface VoiceHandler {
 
     public void setMaximumVolume(double maximumVolume);
 
+    public void setMasterVolume(String callId, double masterVolume);
+
+    public double getMasterVolume(String callId);
+
     public void setSpatialMinVolume(double spatialMinVolume);
 
     public void setSpatialFallOff(double spatialFallOff);

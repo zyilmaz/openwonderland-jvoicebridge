@@ -621,8 +621,19 @@ public class RequestParser {
         }
 
 	try {
-	    value = getValue("remoteCallId", "rid", request);
-	    cp.setRemoteCallId(value);
+	    cp.setRecorder(getBooleanValue("recorder", "", request));
+	    return;
+        } catch (ParameterException e) {
+        }
+
+	try {
+	    cp.setRecordDirectory(getValue("recordDirectory", "", request));
+	    return;
+        } catch (ParameterException e) {
+        }
+
+	try {
+	    cp.setRemoteCallId(getValue("remoteCallId", "rid", request));
             return;
         } catch (ParameterException e) {
         }
@@ -2360,7 +2371,7 @@ public class RequestParser {
 		}
 	        recordingFile = tokens[2];
 
-		Recorder.checkPermission(recordingFile);
+		//Recorder.checkPermission(recordingFile);
 
 		if (tokens.length > 3) {
 		    type = tokens[3];
@@ -2487,7 +2498,7 @@ public class RequestParser {
 		}
 	        recordingFile = tokens[2];
 
-		Recorder.checkPermission(recordingFile);
+		//Recorder.checkPermission(recordingFile);
 
 		if (tokens.length > 3) {
 		    type = tokens[3];
@@ -2534,7 +2545,7 @@ public class RequestParser {
 		}
 	        recordingFile = tokens[2];
 
-		Recorder.checkPermission(recordingFile);
+		//Recorder.checkPermission(recordingFile);
 
 		if (tokens.length > 3) {
 		    type = tokens[3];

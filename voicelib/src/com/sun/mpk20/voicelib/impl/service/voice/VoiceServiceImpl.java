@@ -366,6 +366,13 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	bridgeManager.setSpatialBehindVolume(spatialBehindVolume);
     }
 
+    public void setMasterVolume(String callId, double masterVolume) {
+    }
+
+    public double getMasterVolume(String callId) {
+	return 0;
+    }
+
     public void setPrivateMix(String targetCallId, String fromCallId,
 	    double[] privateMixParameters) throws IOException {
 
@@ -440,6 +447,28 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
     public int getNumberOfPlayersInRange(String callId) {
 	return 0;
+    }
+
+    public void startRecording(String callId, String recordingFile) throws IOException {
+	getTxnState();
+
+	Work work = new Work(Work.STARTRECORDING, callId);
+	work.recordingFile = recordingFile;
+
+	localWorkToDo.get().add(work);
+    }
+
+    public void stopRecording(String callId) throws IOException {
+	getTxnState();
+
+	Work work = new Work(Work.STOPRECORDING, callId);
+	work.recordingFile = null;
+
+	localWorkToDo.get().add(work);
+    }
+
+    public void playRecording(String callId, String recordingFile) throws IOException {
+	newInputTreatment(callId, recordingFile);
     }
 
     public void setLogLevel(Level level) {
@@ -733,6 +762,26 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 			+ (work.isMuted ? " Mute " : " Unmute ")
 			+ " call " + work.targetCallId
 			+ " " + e.getMessage());
+		}
+		break;
+
+	    case Work.STARTRECORDING:
+		try {
+		    bridgeManager.startRecording(work.targetCallId,
+			work.recordingFile);
+		} catch (IOException e) {
+		    logger.warning("Unable to start recording "
+			+ work.recordingFile + " for " + work.targetCallId
+			+ " " + e.getMessage());
+	        }
+		break;
+
+	    case Work.STOPRECORDING:
+		try {
+		    bridgeManager.stopRecording(work.targetCallId);
+		} catch (IOException e) {
+		    logger.warning("Unable to stop recording "
+			+ work.targetCallId + " " + e.getMessage());
 		}
 		break;
 

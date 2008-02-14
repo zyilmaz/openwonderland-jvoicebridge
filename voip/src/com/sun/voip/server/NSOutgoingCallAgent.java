@@ -70,17 +70,19 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
 	TreatmentManager treatmentManager = null;
 
 	if (cp.getInputTreatment() != null) {
-	    try {
-		/*
-		 * Just make sure we can open the file
-		 */
-		treatmentManager = new TreatmentManager(cp.getInputTreatment(),
-                    RtpPacket.PCM_ENCODING, mixerMediaPreference.getSampleRate(), 
-		    mixerMediaPreference.getChannels());
-	    } catch (IOException e) {
-		Logger.println("Invalid input treatment:  " + cp.getInputTreatment());
-		throw new IOException(
-		    "Invalid input treatment:  " + cp.getInputTreatment());
+	    if (cp.getInputTreatment().length() > 0) {
+	        try {
+		    /*
+		     * Just make sure we can open the file
+		     */
+		    treatmentManager = new TreatmentManager(cp.getInputTreatment(),
+                        RtpPacket.PCM_ENCODING, mixerMediaPreference.getSampleRate(), 
+		        mixerMediaPreference.getChannels());
+	        } catch (IOException e) {
+		    Logger.println("Invalid input treatment:  " + cp.getInputTreatment());
+		    throw new IOException(
+		        "Invalid input treatment:  " + cp.getInputTreatment());
+	        }
 	    }
 
 	    /*
@@ -191,12 +193,19 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
 
 	MediaInfo mediaInfo;
 
+	int sampleRate = 8000;
+	int channels = 1;
+
+	if (treatmentManager != null) {
+	    sampleRate = treatmentManager.getSampleRate();
+	    channels = treatmentManager.getChannels();
+	}
+
 	try {
-	   mediaInfo = MediaInfo.findMediaInfo(RtpPacket.PCM_ENCODING,
-		treatmentManager.getSampleRate(),
-		treatmentManager.getChannels());
+	    mediaInfo = MediaInfo.findMediaInfo(RtpPacket.PCM_ENCODING,
+		sampleRate, channels);
 	} catch (IOException e) {
-	   throw new ParseException(e.getMessage(), 0);
+	    throw new ParseException(e.getMessage(), 0);
 	}
 
         InetSocketAddress isa = 

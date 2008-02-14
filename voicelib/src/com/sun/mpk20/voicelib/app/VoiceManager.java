@@ -107,6 +107,10 @@ public interface VoiceManager {
     public void setAttenuationVolume(String callId, double attenuationVolume)
 	throws IOException;
 
+    public void setMasterVolume(String callId, double masterVolume);
+
+    public double getMasterVolume(String callId);
+
     public void setPrivateMix(String targetCallId, String fromCallId, 
 	double[] privateMixParameters) throws IOException;
 
@@ -138,5 +142,14 @@ public interface VoiceManager {
     public int getNumberOfPlayersInRange(double x, double y, double z);
 
     public int getNumberOfPlayersInRange(String callId);
+
+    public void startRecording(String callId, String recordingFile)
+	throws IOException;
+
+    public void stopRecording(String callId)
+	throws IOException;
+
+    public void playRecording(String callId, String recordingFile)
+	throws IOException;
 
 }

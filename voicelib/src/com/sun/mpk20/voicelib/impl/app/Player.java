@@ -44,12 +44,16 @@ public class Player {
 
     private boolean isLivePerson;
 
+    private boolean isRecording;
+
     private Spatializer publicSpatializer;
 
     private Spatializer incomingSpatializer;
 
     private double talkAttenuator = 1.0;
     private double listenAttenuator = 1.0;
+
+    private double masterVolume = 1.0;
 
     public boolean positionChanged;
     public boolean orientationChanged;
@@ -133,6 +137,14 @@ public class Player {
 	return isLivePerson;
     }
 
+    public void setRecording(boolean isRecording) {
+	this.isRecording = isRecording;
+    }
+
+    public boolean isRecording() {
+	return isRecording;
+    }
+
     public void setPrivateSpatializer(String callId, Spatializer spatializer) {
 	if (spatializer == null) {
 	    privateSpatializers.remove(callId);
@@ -163,28 +175,19 @@ public class Player {
     }
 
     public void setListenAttenuator(double listenAttenuator) {
-        /*
-         * If we have any private spatializers, adjust their attenuation.
-         */
-	Collection<Spatializer> spatializers = privateSpatializers.values();
-
-	Iterator<Spatializer> iterator = spatializers.iterator();
-	
-	while (iterator.hasNext()) {
-	    Spatializer spatializer = iterator.next();
-	
-	    //System.out.println("adjusting spatializer att " 
-	    //	+ spatializer.getAttenuator() + " current att " 
-	    //	+ this.listenAttenuator + " new att " + listenAttenuator);
-
-	    spatializer.setAttenuator(listenAttenuator);
-	}
-
 	this.listenAttenuator = listenAttenuator;
     }
 
     public double getListenAttenuator() {
 	return listenAttenuator;
+    }
+
+    public void setMasterVolume(double masterVolume) {
+	this.masterVolume = masterVolume;
+    }
+
+    public double getMasterVolume() {
+	return masterVolume;
     }
 
     public boolean isInRange(Player p) {

@@ -254,6 +254,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
     public void createPlayer(String callId, double x, double y, double z,
 	    double orientation) {
 
+	logger.info("creating player at (" + x + ", " + y + ", " + z + ")");
+
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
 	voiceManager.createPlayer(callId, x, y, z, orientation);
@@ -430,7 +432,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    voiceManager.setupCall(cp, 0, 0, 0, 0, spatializer, null);
             voiceManager.setAttenuationVolume(callId, 1);
 	} catch (IOException e) {
-	    logger.info("Unable to place call to " + cp.getPhoneNumber()
+	    logger.info("Unable to setup treatment " + treatment
 		+ " " + e.getMessage());
 
 	    return null;
@@ -821,6 +823,18 @@ public class VoiceHandlerImpl implements VoiceHandler,
             logger.warning("Unable to set spatial audio behind volume: "
                 + e.getMessage());
         }
+    }
+
+    public void setMasterVolume(String callId, double masterVolume) {
+        VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+        voiceManager.setMasterVolume(callId, masterVolume);
+    }
+
+    public double getMasterVolume(String callId) {
+        VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+        return voiceManager.getMasterVolume(callId);
     }
 
     static class ListenerInfo implements Serializable {
@@ -1274,32 +1288,64 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	return voiceManager.getNumberOfPlayersInRange(callId);
     }
 
-    public void setupRecorder(String id, double x, double y, double z, 
-	    String recordingDirectoryPath) throws IOException {
+    public void setupRecorder(String callId, double x, double y, double z, 
+	    String recordDirectory) throws IOException {
 
-	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+	CallParticipant cp = new CallParticipant();
 
-	//voicemanager.setupRecorder(id, x, y, z, recordingDirectoryPath);
+        String conference = System.getProperty(
+	   "com.sun.sgs.impl.app.voice", DEFAULT_CONFERENCE);
+
+	cp.setConferenceId(conference);
+
+	cp.setInputTreatment("null");
+	cp.setRecorder(true);
+	cp.setName(callId);
+
+	cp.setCallId(callId);
+
+	cp.setRecordDirectory(recordDirectory);
+
+	logger.info("New recorder at (" + x + ":" + z + ":" + y + ")");
+
+	try {
+	    VoiceManager voiceManager = 
+		AppContext.getManager(VoiceManager.class);
+
+	    voiceManager.setupCall(cp, x / scale, z / scale, y / scale, 
+		0, null, null);
+	} catch (IOException e) {
+	    logger.info("Unable to setup recorder " + callId 
+		+ e.getMessage());
+	    return;
+	} 
+
+	logger.finest("back from starting recorder...");
     }
 
-    public void startRecording(String id, String recordingFile) 
+    public void startRecording(String callId, String recordingFile) 
 	    throws IOException {
 
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
-	//voiceManager.startRecording(id, recordingFile);
+	voiceManager.startRecording(callId, recordingFile);
     }
 
-    public void stopRecording(String id) throws IOException {
+    public void stopRecording(String callId) throws IOException {
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
-	//voiceManager.startRecording(id);
+	voiceManager.stopRecording(callId);
     }
 
-    public void playRecording(String id, String recordingFile) throws IOException {
-	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
-
-	//voiceManager.playRecording(id);
+    public void playRecording(String callId, String recordingFile) throws IOException {
+	try {
+	    VoiceManager voiceManager = 
+		AppContext.getManager(VoiceManager.class);
+	    voiceManager.newInputTreatment(callId, recordingFile);
+	} catch (IOException e) {
+	    logger.info("Unable to start recording " + callId
+		+ " " + e.getMessage());
+	}
     }
 
     static class AmbientSpatializer implements Spatializer {
