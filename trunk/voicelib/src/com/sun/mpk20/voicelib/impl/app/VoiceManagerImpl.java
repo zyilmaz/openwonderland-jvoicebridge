@@ -1033,7 +1033,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    while (iterator.hasNext()) {
 		Player p2 = iterator.next();
 
-		if (p1.isLivePerson() == false) {
+		if (p2.isLivePerson() == false) {
 		    continue;  // skip recordings
 		}
 
@@ -1047,6 +1047,7 @@ public class VoiceManagerImpl implements VoiceManager {
 		logger.finest("volume for " + p2 + " " + privateMixParameters[3]);
 
 	        if (privateMixParameters[3] > 0) {
+		    logger.finest(p2 + " is in range");
 		    n++;
 		}
 	    }
