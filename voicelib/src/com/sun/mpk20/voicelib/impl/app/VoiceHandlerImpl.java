@@ -261,6 +261,12 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	voiceManager.createPlayer(callId, x, y, z, orientation);
     }
 
+    public void removePlayer(String callId) {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	voiceManager.removePlayer(callId);
+    }
+
     public void transferCall(String callId) throws IOException {
 
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);

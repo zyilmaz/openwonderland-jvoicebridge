@@ -165,6 +165,12 @@ public class VoiceManagerImpl implements VoiceManager {
 	setPrivateMixes(p);
     }
 
+    public void removePlayer(String callId) {
+	logger.info("removed player " + callId);
+
+	players.remove(callId);
+    }
+
     public void transferCall(String callId, String conferenceId) 
 	    throws IOException {
 
@@ -391,10 +397,14 @@ public class VoiceManagerImpl implements VoiceManager {
     public void endCall(String callId, boolean tellBackingManager) 
 	    throws IOException {
 
-	logger.fine("call ending:  " + callId);
+	logger.fine("call ending:  " + callId + " players " + players.size());
 
-	removePlayer(callId);
+	removePlayerFromLists(callId);
 
+	/*
+	 * There is a timing problem when the softphone is reconnected
+	 * so we can't do this here.
+	 */
 	//players.remove(callId);
 
 	if (tellBackingManager) {
@@ -402,7 +412,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
     }
 
-    private void removePlayer(String callId) {
+    private void removePlayerFromLists(String callId) {
 	Player player = findPlayer(callId);
 
         if (player == null) {
