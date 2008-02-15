@@ -393,7 +393,7 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	logger.fine("call ending:  " + callId);
 
-	removePlayer(callId);
+	//removePlayer(callId);
 
 	players.remove(callId);
 
