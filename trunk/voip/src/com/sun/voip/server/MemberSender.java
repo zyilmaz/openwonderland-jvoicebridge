@@ -34,6 +34,7 @@ import com.sun.voip.SampleRateConverter;
 import com.sun.voip.SdpManager;
 import com.sun.voip.SpeexEncoder;
 import com.sun.voip.SpeexException;
+import com.sun.voip.TreatmentManager;
 import com.sun.voip.Util;
 
 import java.io.IOException;
@@ -950,6 +951,23 @@ public class MemberSender {
     }
 
     public void setDtmfKeyToSend(String dtmfKeyToSend) {
+	if (telephoneEventPayload == 0) {
+	    String treatment = dtmfKeyToSend + ".au";
+
+	    try {
+	        TreatmentManager tm = new TreatmentManager(treatment,
+		    0, conferenceMediaInfo.getSampleRate(),
+		    conferenceMediaInfo.getChannels());
+
+
+	        callHandler.getMember().addTreatment(tm);
+	    } catch (IOException e) {
+		Logger.println("Unable to play dtmf key " + dtmfKeyToSend
+		    + " " + e.getMessage());
+	    }
+	    return;
+	}
+
         if (dtmfKeyToSend != null) {
 	    if (this.dtmfKeyToSend != null) {
 	        this.dtmfKeyToSend += dtmfKeyToSend;
