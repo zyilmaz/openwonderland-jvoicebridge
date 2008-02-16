@@ -3205,7 +3205,7 @@ public class RequestParser {
     }
 
     private void displayTuneableParameters() {
-	requestHandler.writeToSocket("Built date			= " + BuildDate.getBuildDate());
+	requestHandler.writeToSocket("Build date			= " + BuildDate.getBuildDate());
 
 	requestHandler.writeToSocket("allowShortNames			= "
 	    + ConferenceManager.allowShortNames());
