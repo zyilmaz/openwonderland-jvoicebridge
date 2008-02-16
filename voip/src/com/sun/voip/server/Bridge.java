@@ -209,6 +209,7 @@ public class Bridge {
         Logger.println("Bridge started in location '"
             + getBridgeLocation() + "'");
 
+	Logger.println("Bridge private address:  " + privateHost);
 	Logger.println("Bridge server private control port:  " + privateControlPort);
 
 	new SipServer(privateHost, properties);   // Initialize SIP stack.
