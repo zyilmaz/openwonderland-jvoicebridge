@@ -1461,6 +1461,14 @@ public class RequestParser {
         }
 
         try {
+            CallHandler.enablePSTNCalls(
+		getBooleanValue("enablePSTNCalls" , "epc", request));
+
+	    return true;
+        } catch (ParameterException e) {
+        }
+
+        try {
             value = getValue("endConference" , "ec", request);
 	    ConferenceManager.endConference(value);
 	    return true;
@@ -3251,6 +3259,9 @@ public class RequestParser {
 
 	requestHandler.writeToSocket("duplicateCallLimit		= "
 	    + CallHandler.getDuplicateCallLimit());
+
+	requestHandler.writeToSocket("enablePSTNCalls			= "
+	    + CallHandler.enablePSTNCalls());
 
  	requestHandler.writeToSocket("firstRtpPortNumber		= "
 	    + ConferenceMember.getFirstRtpPort());

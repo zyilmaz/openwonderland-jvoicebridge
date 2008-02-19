@@ -82,6 +82,11 @@ public class IncomingCallHandler extends CallHandler
     public IncomingCallHandler(CallEventListener listener, 
 	    CallParticipant cp, Object requestEvent) {
 
+	if (CallHandler.enablePSTNCalls() == false) {
+	    Logger.println("Ignoring incoming call " + cp);
+	    return;
+	}
+
 	if (listener != null) {
 	    addCallEventListener(listener);
 	}
