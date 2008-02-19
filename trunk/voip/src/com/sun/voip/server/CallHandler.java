@@ -81,6 +81,8 @@ public abstract class CallHandler extends Thread {
 
     private static int duplicateCallLimit = 100;
    
+    private static boolean enablePSTNCalls = true;
+
     /*
      * Used by the OutgoingCallHandler to handle two party calls.
      * This is here so that dtmf keys can be forwarded with two party calls.
@@ -1107,6 +1109,14 @@ public abstract class CallHandler extends Thread {
 
     public static int getDuplicateCallLimit() {
 	return duplicateCallLimit;
+    }
+
+    public static void enablePSTNCalls(boolean enablePSTNCalls) {
+	CallHandler.enablePSTNCalls = enablePSTNCalls;
+    }
+
+    public static boolean enablePSTNCalls() {
+	return enablePSTNCalls;
     }
 
     /**

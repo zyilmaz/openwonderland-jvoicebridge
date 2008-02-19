@@ -361,6 +361,8 @@ if (false) {
 
 	String voipGateway = cp.getVoIPGateway();
 
+	boolean isPSTNCall = true;
+
 	if (toNumber.length() <= 4) {
 	    /*
 	     * XXX Special case for <= 4 digit phone numbers
@@ -423,6 +425,8 @@ if (false) {
 
             	    Logger.println("Call " + cp + " Sending INVITE directly to " 
 			+ inetAddress + ":" + toSipPort);
+
+		    isPSTNCall = false;
                 } catch (UnknownHostException e) {
 		    /*
 		     * Let proxy handle it
@@ -446,6 +450,10 @@ if (false) {
 	        //cp.setPhoneNumber(toNumber.substring(4));  // skip sip:
 		toNumber = toNumber.substring(4);
 	    }
+	}
+
+	if (isPSTNCall && CallHandler.enablePSTNCalls() == false) {
+	    throw new SipException("PSTN calls are not allowed:  " + cp);
 	}
 
 	if (Logger.logLevel >= Logger.LOG_SIP) {

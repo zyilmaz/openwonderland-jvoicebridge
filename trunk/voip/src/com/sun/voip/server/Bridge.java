@@ -24,6 +24,7 @@
 package com.sun.voip.server;
 
 import com.sun.voip.BridgeVersion;
+import com.sun.voip.FreeTTSClient;
 import com.sun.voip.Logger;
 import com.sun.voip.NetworkTester;
 
@@ -209,7 +210,6 @@ public class Bridge {
         Logger.println("Bridge started in location '"
             + getBridgeLocation() + "'");
 
-	Logger.println("Bridge private address:  " + privateHost);
 	Logger.println("Bridge server private control port:  " + privateControlPort);
 
 	new SipServer(privateHost, properties);   // Initialize SIP stack.
@@ -221,6 +221,15 @@ public class Bridge {
 	} catch (IOException e) {
 	    Logger.println("Unable to start STUN Server:  " + e.getMessage());
 	}
+
+        try {
+            Logger.println("Initializing FreeTTSClient...");
+            FreeTTSClient.initialize();
+            Logger.println("FreeTTSClient Initialization done...");
+        } catch (Throwable e) {
+            Logger.println("Can't start FreeTTSClient (ignoring) " 
+		+ e.getMessage());
+        }
 
         try {
             new NetworkTester();
@@ -253,6 +262,16 @@ public class Bridge {
 	} catch (IOException e) {
 	    Logger.println("Unable to start ReceiveMonitor:  " 
 		+ e.getMessage());
+	}
+
+	String outsideLinePrefix = System.getProperty(
+	    "com.sun.voip.server.OUTSIDE_LINE_PREFIX");
+
+	if (outsideLinePrefix != null) {
+	    RequestHandler.setOutsideLinePrefix(outsideLinePrefix);
+	    Logger.println("Outside line prefix set to '" + outsideLinePrefix + "'");
+	} else {
+	    Logger.println("Outside line prefix defaults to '" + outsideLinePrefix + "'");
 	}
 
         startSocketServer();
