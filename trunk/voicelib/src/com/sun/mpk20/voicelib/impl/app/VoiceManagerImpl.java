@@ -390,6 +390,12 @@ public class VoiceManagerImpl implements VoiceManager {
 	backingManager.stopTreatmentToCall(callId, treatment);
     }
 
+    public void migrateCall(String callId, String phoneNumber) 
+	    throws IOException {
+
+	backingManager.migrateCall(callId, phoneNumber);
+    }
+
     public void endCall(String callId) throws IOException {
 	endCall(callId, true);
     }

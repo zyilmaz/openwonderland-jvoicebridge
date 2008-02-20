@@ -448,6 +448,14 @@ public class BridgeManager extends Thread
 	bc.stopTreatmentToCall(callId, treatment);
     }
 
+    public void migrateCall(String callId, String phoneNumber) 
+	    throws IOException {
+
+	BridgeConnection bc = getBridgeConnection(callId);
+
+	bc.migrateCall(callId, phoneNumber);
+    }
+
     public void endCall(String callId) throws IOException {
 	BridgeConnection bc = getBridgeConnection(callId);
 

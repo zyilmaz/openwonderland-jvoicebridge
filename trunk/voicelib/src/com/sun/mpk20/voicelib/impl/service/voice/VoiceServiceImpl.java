@@ -302,6 +302,15 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	localWorkToDo.get().add(work);
     }
 
+    public void migrateCall(String callId, String toPhoneNumber) {
+	getTxnState();
+
+	Work work = new Work(Work.MIGRATECALL, callId);
+	work.phoneNumber = toPhoneNumber;
+
+	localWorkToDo.get().add(work);
+    }
+
     public void disconnectCall(String callId) throws IOException {
 	endCall(callId);
     }
@@ -741,6 +750,17 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 		try {
 		    bridgeManager.stopTreatmentToCall(work.targetCallId, 
 		        work.treatment);
+		} catch (IOException e) {
+		    logger.info("Unable to stop treatment " 
+			+ work.treatment + " to call " + work.targetCallId
+			+ " " + e.getMessage());
+		}
+		break;
+
+	    case Work.MIGRATECALL:
+		try {
+		    bridgeManager.migrateCall(work.targetCallId, 
+		        work.phoneNumber);
 		} catch (IOException e) {
 		    logger.info("Unable to stop treatment " 
 			+ work.treatment + " to call " + work.targetCallId
