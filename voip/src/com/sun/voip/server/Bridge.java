@@ -24,7 +24,6 @@
 package com.sun.voip.server;
 
 import com.sun.voip.BridgeVersion;
-import com.sun.voip.FreeTTSClient;
 import com.sun.voip.Logger;
 import com.sun.voip.NetworkTester;
 
@@ -221,15 +220,6 @@ public class Bridge {
 	} catch (IOException e) {
 	    Logger.println("Unable to start STUN Server:  " + e.getMessage());
 	}
-
-        try {
-            Logger.println("Initializing FreeTTSClient...");
-            FreeTTSClient.initialize();
-            Logger.println("FreeTTSClient Initialization done...");
-        } catch (Throwable e) {
-            Logger.println("Can't start FreeTTSClient (ignoring) " 
-		+ e.getMessage());
-        }
 
         try {
             new NetworkTester();

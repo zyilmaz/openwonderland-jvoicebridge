@@ -204,6 +204,9 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	double orientation) {
     }
 
+    public void removePlayer(String callId) {
+    }
+
     public void transferCall(String callId, String conferenceId) 
 	    throws IOException {
 
