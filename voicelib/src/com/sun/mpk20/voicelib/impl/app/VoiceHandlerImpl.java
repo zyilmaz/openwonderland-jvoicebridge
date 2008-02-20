@@ -639,6 +639,15 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	}
     }
 
+    public void migrateCall(String callId, String phoneNumber) 
+	    throws IOException {
+
+	VoiceManager voiceManager = 
+	    AppContext.getManager(VoiceManager.class);
+
+	voiceManager.migrateCall(callId, phoneNumber);
+    }
+
     public void endCall(String callId) {
 	logger.fine("ending call " + callId);
 

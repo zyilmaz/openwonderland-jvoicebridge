@@ -49,7 +49,9 @@ public class Work {
 
     public static final int STOPRECORDING = 10;
 
-    public static final int ENDCALL = 11;
+    public static final int MIGRATECALL = 11;
+
+    public static final int ENDCALL = 12;
 
     public int command;
     public CallParticipant cp;
@@ -60,6 +62,7 @@ public class Work {
     public String bridgeInfo;
     public boolean isMuted;
     public String recordingFile;
+    public String phoneNumber;
 
     public Work(int command) {
 	this.command = command;
