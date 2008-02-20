@@ -29,12 +29,21 @@ import java.io.IOException;
 
 public interface VoiceHandler {
 
+    /*
+     * Find an available voice bridge.  The voice bridge address is given
+     * to the softphone so it can register with the voice bridge.
+     */ 
     public String getVoiceBridge();
 
+    /*
+     * Initiate a call on a specific bridge.
+     */
     public String setupCall(String callId, String sipUrl, String bridge);
 
     public void createPlayer(String callId, double x, double y, double z,
 	double orientation);
+
+    public void removePlayer(String callId);
 
     public void transferCall(String callId) throws IOException;
 
