@@ -767,7 +767,7 @@ class RequestHandler extends Thread implements CallEventListener {
 			firstTime = false;
                         s = requestHandler.getSocket().toString();
 		    } else {
-			s += "\n\t\t\t\t" + requestHandler.getSocket().toString();
+			s += "\n\t\t\t\t  " + requestHandler.getSocket().toString();
 		    }
                 }
 	    }
