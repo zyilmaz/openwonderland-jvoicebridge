@@ -230,6 +230,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
         cp.setVoiceDetection(true);
 	cp.setDtmfDetection(true);
 	cp.setVoiceDetectionWhileMuted(true);
+	cp.setHandleSessionProgress(true);
 
 	try {
 	    VoiceManager voiceManager = 
