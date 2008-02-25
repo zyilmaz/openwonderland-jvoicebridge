@@ -24,6 +24,7 @@
 package com.sun.voip.server;
 
 import com.sun.voip.BridgeVersion;
+import com.sun.voip.FreeTTSClient;
 import com.sun.voip.Logger;
 import com.sun.voip.NetworkTester;
 
@@ -222,6 +223,15 @@ public class Bridge {
 	}
 
         try {
+            Logger.println("Initializing FreeTTSClient...");
+            FreeTTSClient.initialize();
+            Logger.println("FreeTTSClient Initialization done...");
+        } catch (Throwable e) {
+            Logger.println("Can't start FreeTTSClient (ignoring) " 
+		+ e.getMessage());
+        }
+
+        try {
             new NetworkTester();
         } catch (IOException e) {
             Logger.println("Failed to start NetworkTester:  " 
@@ -254,15 +264,15 @@ public class Bridge {
 		+ e.getMessage());
 	}
 
-	String outsideLinePrefix = System.getProperty(
-	    "com.sun.voip.server.OUTSIDE_LINE_PREFIX");
+        String outsideLinePrefix = System.getProperty(
+           "com.sun.voip.server.OUTSIDE_LINE_PREFIX");
 
-	if (outsideLinePrefix != null) {
-	    RequestHandler.setOutsideLinePrefix(outsideLinePrefix);
-	    Logger.println("Outside line prefix set to '" + outsideLinePrefix + "'");
-	} else {
-	    Logger.println("Outside line prefix defaults to '" + outsideLinePrefix + "'");
-	}
+        if (outsideLinePrefix != null) {
+            RequestHandler.setOutsideLinePrefix(outsideLinePrefix);
+            Logger.println("Outside line prefix set to '" + outsideLinePrefix + "'");
+        } else {
+            Logger.println("Outside line prefix defaults to '" + outsideLinePrefix + "'");
+        }
 
         startSocketServer();
     }

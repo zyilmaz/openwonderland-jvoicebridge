@@ -351,7 +351,8 @@ public class BridgeConnection extends VoiceBridgeConnection {
 
 	BridgeResponse br;
 
-	br = sendWithResponse("migrate=" + callId + ":" + phoneNumber + "\n\n");
+	br = sendWithResponse("name=" + callId + "\nmigrate=" 
+	    + callId + ":" + phoneNumber + "\n\n");
 
         logger.fine("migrate status " + br.getStatus());
         

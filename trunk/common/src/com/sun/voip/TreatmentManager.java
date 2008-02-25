@@ -476,7 +476,25 @@ public class TreatmentManager implements MixDataSource {
      * treatment is like <text>
      */ 
     private void addTtsTreatment(String treatment) throws IOException {
-	throw new IOException("FreeTTS is not supported.");
+        int[] linearData = null;
+
+        try {
+            linearData = FreeTTSClient.textToSpeech(treatment);
+        } catch (IOException e) {
+            Logger.println("Can't convert text to speech '" + treatment + "' "
+                + e.getMessage());
+            throw new IOException("Can't convert text to speech '" + treatment 
+		+ "'");
+        }
+
+        treatment = "FreeTTS";
+
+	/*
+	 * TTS data is always 8000/1
+	 */
+	synchronized (treatments) {
+	    treatments.add(new LinearDataAudioSource(linearData, 8000, 1));
+	}
     }
 
     private void addSineWaveTreatment(String treatment) throws IOException {

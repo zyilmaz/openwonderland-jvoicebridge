@@ -29,6 +29,8 @@ public class FullVolumeSpatializer implements Spatializer {
 
     private double fullVolumeRadius = 0;
 
+    private double attenuator;
+
     public FullVolumeSpatializer() {
 	this(0);
     }
@@ -62,10 +64,11 @@ public class FullVolumeSpatializer implements Spatializer {
     }
 
     public void setAttenuator(double attenuator) {
+	this.attenuator = attenuator;
     }
 
     public double getAttenuator() {
-	return 1.0;
+	return attenuator;
     }
 
 }
