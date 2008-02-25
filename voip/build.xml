@@ -147,7 +147,7 @@
             <manifest>
                 <attribute name="Main-Class" value="com.sun.voip.server.Bridge"/>
                 <attribute name="Class-Path" 
-                           value="JainSipApi1.2.jar JainSipRi1.2.jar codecLib_dtmf.jar codecLibwrapper_dtmf.jar jspeex.jar concurrent.jar log4j-1.2.8.jar Stun4J.jar voip.jar stun.jar"/>
+                           value="JainSipApi1.2.jar JainSipRi1.2.jar codecLib_dtmf.jar codecLibwrapper_dtmf.jar jspeex.jar concurrent.jar log4j-1.2.8.jar Stun4J.jar voip.jar stun.jar freetts.jar cmudict04.jar cmulex.jar cmu_time_awb.jar cmutimelex.jar cmu_us_kal.jar en_us.jar mbrola.jar"/>
             </manifest>
         </jar>
         

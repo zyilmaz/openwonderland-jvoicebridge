@@ -19,6 +19,14 @@
 	<pathelement location="${lib.dir}/JainSipApi1.2.jar"/>
 	<pathelement location="${lib.dir}/JainSipRi1.2.jar"/>
 	<pathelement location="${lib.dir}/log4j-1.2.8.jar"/>
+	<pathelement location="${lib.dir}/freetts.jar"/>
+	<pathelement location="${lib.dir}/mbrola.jar"/>
+	<pathelement location="${lib.dir}/cmudict04.jar"/>
+	<pathelement location="${lib.dir}/cmulex.jar"/>
+	<pathelement location="${lib.dir}/cmu_time_awb.jar"/>
+	<pathelement location="${lib.dir}/cmutimelex.jar"/>
+	<pathelement location="${lib.dir}/cmu_us_kal.jar"/>
+	<pathelement location="${lib.dir}/en_us.jar"/>
     </path>
     
     <target name="init">

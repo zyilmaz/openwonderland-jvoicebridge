@@ -978,7 +978,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	switch (code) {
         case CallStatus.ESTABLISHED:
-            logger.info("callEstablished: " + callId);
+            logger.fine("callEstablished: " + callId);
 
             try {
 	        voiceManager.callEstablished(callId);
