@@ -654,6 +654,10 @@ public abstract class CallHandler extends Thread {
 	}
     }
 
+    public String getReasonCallEnded() {
+	return reasonCallEnded;
+    }
+
     /*
      * Set cnThresh for the speech detector for a conference member.  
      */

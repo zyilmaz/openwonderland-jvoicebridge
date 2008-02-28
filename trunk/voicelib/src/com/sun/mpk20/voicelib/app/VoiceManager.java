@@ -154,7 +154,6 @@ public interface VoiceManager {
     public void playRecording(String callId, String recordingFile)
 	throws IOException;
 
-    public void migrateCall(String callId, String phoneNumber) 
-	throws IOException;
+    public void migrateCall(CallParticipant cp) throws IOException;
 
 }

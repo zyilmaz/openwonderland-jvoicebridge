@@ -64,6 +64,14 @@
 	   <fileset file="${softphone.dir}/build/lib/softphone.jar"/>
 	   <fileset file="${softphone.dir}/build/lib/softphone_native.jar"/>
 	   <fileset file="${stun.dir}/build/lib/stun.jar"/>
+	   <fileset file="${common.dir}/lib/freetts.jar"/>
+	   <fileset file="${common.dir}/lib/mbrola.jar"/>
+	   <fileset file="${common.dir}/lib/cmudict04.jar"/>
+	   <fileset file="${common.dir}/lib/cmulex.jar"/>
+	   <fileset file="${common.dir}/lib/cmu_time_awb.jar"/>
+	   <fileset file="${common.dir}/lib/cmutimelex.jar"/>
+	   <fileset file="${common.dir}/lib/cmu_us_kal.jar"/>
+	   <fileset file="${common.dir}/lib/en_us.jar"/>
 	</copy>
 
 	<copy todir="tmp/voicebridge/nist-sip">

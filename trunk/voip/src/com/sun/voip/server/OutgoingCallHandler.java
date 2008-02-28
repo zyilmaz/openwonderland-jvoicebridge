@@ -67,6 +67,8 @@ public class OutgoingCallHandler extends CallHandler
 	addCallEventListener(this);
         csl = callEventListener;
         this.cp = cp;
+
+	setName("Outgoing CallHandler for " + cp);
     }
     
     public CallEventListener getRequestHandler() {
@@ -274,8 +276,10 @@ public class OutgoingCallHandler extends CallHandler
                         return;
                     }
                 
-                    sendCallEventNotification(
-		        new CallEvent(CallEvent.MIGRATION_FAILED));
+		    callEvent = new CallEvent(CallEvent.MIGRATION_FAILED);
+
+		    callEvent.setInfo("Migration failed: " + getReasonCallEnded());
+                    sendCallEventNotification(callEvent);
                 }
             } else if (callEvent.getCallState().equals(CallState.ENDED)) {
                 reasonCallEnded = callEvent.getInfo();

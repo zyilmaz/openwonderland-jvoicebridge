@@ -358,15 +358,15 @@ public class BridgeManager extends Thread
 		throw new IOException("Unable to find bridge for '"
 		    + bridgeInfo + "'");
 	    }
+	}
 
-	    /*
-	     * Make sure a call with the same id is ended before starting a new call.
-	     */
-	    try {
-    		endCall(bc, callId);
-	    } catch (IOException e) {
-		logger.info("Unable to end call " + callId);
-	    }
+	/*
+	 * Make sure a call with the same id is ended before starting a new call.
+	 */
+	try {
+    	    endCall(bc, callId);
+	} catch (IOException e) {
+	    logger.fine("Unable to end call " + callId);
 	}
 
 	logger.info("Setting up call " + cp + " on " + bc);
@@ -448,12 +448,10 @@ public class BridgeManager extends Thread
 	bc.stopTreatmentToCall(callId, treatment);
     }
 
-    public void migrateCall(String callId, String phoneNumber) 
-	    throws IOException {
+    public void migrateCall(CallParticipant cp) throws IOException {
+	BridgeConnection bc = getBridgeConnection(cp.getCallId(), true);
 
-	BridgeConnection bc = getBridgeConnection(callId);
-
-	bc.migrateCall(callId, phoneNumber);
+	bc.migrateCall(cp);
     }
 
     public void endCall(String callId) throws IOException {

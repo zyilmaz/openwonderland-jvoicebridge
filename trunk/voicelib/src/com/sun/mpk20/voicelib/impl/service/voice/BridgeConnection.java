@@ -342,27 +342,26 @@ public class BridgeConnection extends VoiceBridgeConnection {
 	}
     }
 
-    public void migrateCall(String callId, String phoneNumber) 
-	    throws IOException {
-
+    public void migrateCall(CallParticipant cp) throws IOException {
 	if (isConnected() == false) {
 	    return;
 	}
 
 	BridgeResponse br;
 
-	br = sendWithResponse("name=" + callId + "\nmigrate=" 
-	    + callId + ":" + phoneNumber + "\n\n");
+	cp.setMigrateCall(true);
+
+	br = sendWithResponse(cp.getCallSetupRequest());
 
         logger.fine("migrate status " + br.getStatus());
         
 	switch (br.getStatus()) {
 	case SUCCESS:
-            logger.finest("migrate contents " + br.getContents());
-
+            logger.fine("migrate contents " + br.getContents());
 	    return;
 
 	default:
+	    logger.fine("migrate failed:  " + br.getMessage());
 	    throw new IOException("migrate failed:  " + br.getMessage());
 	}
     }

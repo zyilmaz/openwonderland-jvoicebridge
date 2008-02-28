@@ -302,11 +302,11 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	localWorkToDo.get().add(work);
     }
 
-    public void migrateCall(String callId, String toPhoneNumber) {
+    public void migrateCall(CallParticipant cp) {
 	getTxnState();
 
-	Work work = new Work(Work.MIGRATECALL, callId);
-	work.phoneNumber = toPhoneNumber;
+	Work work = new Work(Work.MIGRATECALL);
+	work.cp = cp;
 
 	localWorkToDo.get().add(work);
     }
@@ -679,6 +679,10 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 		} catch (ParseException e) {
 		    logger.info("Unable to setup call:  " + e.getMessage()
 			+ " " + work.cp);
+
+		    sendStatus(CallStatus.INFO, work.cp.getCallId(), 
+			"Unable to setup call:  " + e.getMessage() + " " 
+			+ work.cp);
 		}
 		break;
 
@@ -759,12 +763,14 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
 	    case Work.MIGRATECALL:
 		try {
-		    bridgeManager.migrateCall(work.targetCallId, 
-		        work.phoneNumber);
+		    bridgeManager.migrateCall(work.cp);
 		} catch (IOException e) {
-		    logger.info("Unable to stop treatment " 
-			+ work.treatment + " to call " + work.targetCallId
+		    logger.info("Unable to migrate to call " 
+			+ work.targetCallId
 			+ " " + e.getMessage());
+
+		    sendStatus(CallStatus.MIGRATE_FAILED, work.targetCallId,
+			e.getMessage());
 		}
 		break;
 
@@ -928,6 +934,27 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         public HashSet<String> cancelledSet = null;
     }
 
+    private void sendStatus(int statusCode, String callId, String info) {
+        String s = "SIPDialer/1.0 " + statusCode + " "
+            + CallStatus.getCodeString(statusCode)
+            + " CallId='" + callId + "'"
+            + " CallInfo='" + info + "'";
+
+	CallStatus callStatus = null;
+
+	try {
+	    callStatus = BridgeConnection.parseCallStatus(s);
+	} catch (IOException e) {
+	}
+
+	if (callStatus == null) {
+	    logger.info("Unable to parse call status:  " + s);
+	    return;
+	}
+
+	callStatusChanged(callStatus);
+    }
+
     private static final class CallStatusListeners extends 
 	    ArrayList<ManagedReference> implements ManagedObject,
 	    Serializable {
@@ -961,25 +988,25 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	    ManagedReference[] listenerList;
 
 	    synchronized (listeners) {
-		listenerList = listeners.toArray(new ManagedReference[0]);
+	        listenerList = listeners.toArray(new ManagedReference[0]);
 	    }
 
 	    logger.finest("CallStatusNotifier:  " + status);
 
 	    for (int i = 0; i < listenerList.length; i++) {
-		ManagedCallStatusListener mcsl = 
+	        ManagedCallStatusListener mcsl = 
 		    listenerList[i].get(ManagedCallStatusListener.class);
 
-		logger.finest("Notifying listener " + i + " status " + status);
+	        logger.finest("Notifying listener " + i + " status " + status);
 
-		try {
+	        try {
 		    mcsl.callStatusChanged(status);
-		} catch (IllegalStateException e) {
+	        } catch (IllegalStateException e) {
 		    logger.info("Can't send status:  " + status 
-			+ " " + e.getMessage());
-		}
+		        + " " + e.getMessage() + " removed listener");
+	        }
 	    }
-	}
+        }
 
     }
 
