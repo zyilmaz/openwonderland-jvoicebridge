@@ -103,7 +103,13 @@ public class IncomingCallHandler extends CallHandler
 	        incomingConferenceHandler = new IncomingConferenceHandler(this);
 	    }
 	} else {
-	    Logger.println("Have conf " + cp.getConferenceId());
+	    if (cp.getConferenceId().length() > 0) {
+	        Logger.println("Have conf " + cp.getConferenceId());
+	    } else {
+	        Logger.println(
+		    "Conference id length is 0, using 'DefaultConference'");
+		cp.setConferenceId("DefaultConference");
+	    }
             haveIncomingConferenceId = true;
 	}
 
