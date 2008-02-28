@@ -57,6 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.sun.voip.client.connector.CallStatus;
 import com.sun.voip.client.connector.CallStatusListener;
+import com.sun.voip.client.connector.impl.VoiceBridgeConnection;
 import com.sun.voip.CallParticipant;
 
 import com.sun.mpk20.voicelib.app.Spatializer;
@@ -200,16 +201,11 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	logger.info("setupCall:  callId " + callId + " Url: " + sipUrl
 	    + " Bridge: " + bridge);
 
-	CallParticipant cp = new CallParticipant();
-
-        String conference = System.getProperty(
-	   "com.sun.sgs.impl.app.voice", DEFAULT_CONFERENCE);
-
-	cp.setConferenceId(conference);
-
-	String name = "Anonymous";
+	CallParticipant cp = getCallParticipant(callId);
 
 	cp.setPhoneNumber(sipUrl);
+
+	String name = "Anonymous";
 
         int end;
 
@@ -224,13 +220,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
         }
 
 	cp.setName(name);
-
-	cp.setCallId(callId);
-
-        cp.setVoiceDetection(true);
-	cp.setDtmfDetection(true);
-	cp.setVoiceDetectionWhileMuted(true);
-	cp.setHandleSessionProgress(true);
 
 	try {
 	    VoiceManager voiceManager = 
@@ -252,6 +241,24 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	return null;
     }
     
+    private CallParticipant getCallParticipant(String callId) {
+	CallParticipant cp = new CallParticipant();
+
+        String conference = System.getProperty(
+	   "com.sun.sgs.impl.app.voice", DEFAULT_CONFERENCE);
+
+	cp.setConferenceId(conference);
+
+	cp.setCallId(callId);
+
+        cp.setVoiceDetection(true);
+	cp.setDtmfDetection(true);
+	cp.setVoiceDetectionWhileMuted(true);
+	cp.setHandleSessionProgress(true);
+
+	return cp;
+    }
+
     public void createPlayer(String callId, double x, double y, double z,
 	    double orientation) {
 
@@ -639,13 +646,18 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	}
     }
 
-    public void migrateCall(String callId, String phoneNumber) 
-	    throws IOException {
+    public void migrateCall(String callId, String phoneNumber) {
+	CallParticipant cp = getCallParticipant(callId);
 
-	VoiceManager voiceManager = 
-	    AppContext.getManager(VoiceManager.class);
+	cp.setPhoneNumber(phoneNumber);
 
-	voiceManager.migrateCall(callId, phoneNumber);
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	try {
+	    voiceManager.migrateCall(cp);
+	} catch (IOException e) {
+	    sendStatus(CallStatus.NOANSWER, callId, e.getMessage());
+	}
     }
 
     public void endCall(String callId) {
@@ -963,6 +975,29 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    logger.info("mr " + mr + " id " + mr.getId()
 		+ " is not in map of call status listeners!");
 	}
+    }
+
+    private void sendStatus(int statusCode, String callId, String info) {
+        String s = "SIPDialer/1.0 " + statusCode + " "
+            + CallStatus.getCodeString(statusCode)
+            + " CallId='" + callId + "'"
+            + " CallInfo='" + info + "'";
+
+        CallStatus callStatus = null;
+
+        try {
+            callStatus = VoiceBridgeConnection.parseCallStatus(s);
+
+            if (callStatus == null) {
+                logger.info("Unable to parse call status:  " + s);
+                return;
+            }
+
+	    callStatusChanged(callStatus);
+        } catch (IOException e) {
+            logger.info("Unable to parse call status:  " + s
+		+ " " + e.getMessage());
+        }
     }
 
     public void callStatusChanged(CallStatus callStatus) {

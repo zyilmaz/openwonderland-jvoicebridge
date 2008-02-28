@@ -390,10 +390,20 @@ public class VoiceManagerImpl implements VoiceManager {
 	backingManager.stopTreatmentToCall(callId, treatment);
     }
 
-    public void migrateCall(String callId, String phoneNumber) 
-	    throws IOException {
+    public void migrateCall(CallParticipant cp) throws IOException {
+	String callId = cp.getCallId();
 
-	backingManager.migrateCall(callId, phoneNumber);
+	Player player = findPlayer(callId);
+
+        if (player == null) {
+            logger.fine("no Player for " + callId);
+
+	    throw new IOException("No player for " + callId);
+	}
+
+	cp.setName(player.callId);
+
+	backingManager.migrateCall(cp);
     }
 
     public void endCall(String callId) throws IOException {
@@ -871,8 +881,8 @@ public class VoiceManagerImpl implements VoiceManager {
 	     */
 	    spatializer = p2.getPublicSpatializer();
 
-	    logger.finest("p1 " + p1.callId + ", public spatializer " + spatializer
-		+ " listen attenuator " + p1.getListenAttenuator()
+	    logger.finest("p1 " + p1.callId + ", public spatializer " 
+		+ spatializer + " listen attenuator " + p1.getListenAttenuator()
 		+ " talk attenuator " + p2.getTalkAttenuator());
 
 	    if (spatializer == null) {

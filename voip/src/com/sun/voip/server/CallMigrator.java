@@ -57,9 +57,16 @@ public class CallMigrator extends Thread {
 	CallHandler previousCall = CallHandler.findCall(callId);
 
 	if (previousCall == null) {
-	    Logger.println("Call migrator can't find call Id " + callId);
-	    requestHandler.writeToSocket("Can't find call Id " + callId);
-	    //Logger.logLevel = logLevel;
+	    if (cp.getConferenceId() == null) {
+	        Logger.println("Call migrator can't find call Id " + callId);
+	        requestHandler.writeToSocket("Can't find call Id " + callId);
+		return;
+	    }
+
+	    /*
+	     * Treat it like a new call
+	     */
+	    migrateWithNoPreviousCall(requestHandler, cp);
 	    return;
 	}
 		
@@ -124,8 +131,7 @@ public class CallMigrator extends Thread {
 	    /*
 	     * Use the request handler from the previous call (if there
 	     * is one) so that status changes will be sent to the same socket 
-	     * as the previous call.  This will make the migration seemless
-	     * to the Meeting Central Facilitator.
+	     * as the previous call.  This will make the migration seemless.
 	     */
 	    RequestHandler previousRequestHandler = (RequestHandler)
 		previousCall.getRequestHandler();
@@ -158,7 +164,9 @@ public class CallMigrator extends Thread {
 	         * Wait for call to be established
 	         */
 	        if (newCall.waitForCallToBeEstablished() == false) {
-		    Logger.println("Migration failed");
+		    String reason = newCall.getReasonCallEnded();
+
+		    Logger.println("Migration failed: " + reason);
 
 		    previousCp.setConferenceLeaveTreatment(previousLeaveTreatment);
 		    previousCp.setCallEndTreatment(previousEndTreatment);
@@ -170,7 +178,7 @@ public class CallMigrator extends Thread {
 
 			callEvent.setCallState(new CallState(CallState.ENDED));
 
-			callEvent.setInfo("Migration failed");
+			callEvent.setInfo("Migration failed: " + reason);
 
 	 	        previousCall.sendCallEventNotification(callEvent);
 		    }
@@ -216,6 +224,48 @@ public class CallMigrator extends Thread {
 
 	previousCall.cancelRequest("Call " + previousCp 
 	    + " migrated to " + cp.getPhoneNumber());
+    }
+
+    private void migrateWithNoPreviousCall(RequestHandler requestHandler, 
+	    CallParticipant cp) {
+
+        cp.setPhoneNumber(cp.getSecondPartyNumber());
+	
+	OutgoingCallHandler callHandler = new OutgoingCallHandler(requestHandler, cp);
+
+	synchronized(this) {
+	    callHandler.suppressStatus = true;
+
+	    callHandler.start();		// call new party
+
+	    /*
+	     * Wait for call to be established
+	     */
+	    if (callHandler.waitForCallToBeEstablished() == false) {
+		String reason = callHandler.getReasonCallEnded();
+
+		Logger.println("Migration failed:  " + reason);
+
+		CallEvent callEvent = new CallEvent(CallEvent.STATE_CHANGED);
+
+		callEvent.setCallState(new CallState(CallState.ENDED));
+
+		callEvent.setInfo("Migration failed: " + reason);
+
+	 	callHandler.sendCallEventNotification(callEvent);
+	        return;
+	    }
+
+	    callHandler.suppressStatus = false;
+	}
+
+	cp.setMigrateCall(false);	// call is no longer migrating
+
+	CallEvent callEvent = new CallEvent(CallEvent.MIGRATED);
+
+	callEvent.setInfo("migrated to " + cp);
+
+	callHandler.sendCallEventNotification(callEvent);
     }
 
     /*

@@ -558,6 +558,37 @@ public class RequestParser {
         } catch (ParameterException e) {
         }
 	   
+        try {
+            value = getValue("migrate" , "", request);
+            String callId = getFirstString(value);
+            cp.setCallId(callId);
+            lastCallId = callId;
+
+	    /*
+	     * The second party number may be a sip address
+	     * with colons.  So we treat everything after the
+	     * first colon as the second party number.
+	     */
+	    int ix;
+
+	    if ((ix = value.indexOf(":")) < 0) {
+                throw new ParseException(
+                    "secondPartyNumber must be specified:  " + request, 0);
+	    }
+
+            String secondPartyNumber = value.substring(ix + 1);
+
+            if (secondPartyNumber == null) {
+                throw new ParseException(
+                    "secondPartyNumber must be specified:  " + request, 0);
+            }
+
+            cp.setSecondPartyNumber(secondPartyNumber);
+            cp.setMigrateCall(true);
+	    return;
+        } catch (ParameterException e) {
+        }
+
 	try {
             booleanValue = getBooleanValue("mute" , "m", request);
 	    cp.setMuted(booleanValue);
@@ -1729,37 +1760,6 @@ public class RequestParser {
 
 	    RequestHandler.setLongDistancePrefix(value);
 	    return true;
-        } catch (ParameterException e) {
-        }
-
-        try {
-            value = getValue("migrate" , "", request);
-            String callId = getFirstString(value);
-            cp.setCallId(callId);
-            lastCallId = callId;
-
-	    /*
-	     * The second party number may be a sip address
-	     * with colons.  So we treat everything after the
-	     * first colon as the second party number.
-	     */
-	    int ix;
-
-	    if ((ix = value.indexOf(":")) < 0) {
-                throw new ParseException(
-                    "secondPartyNumber must be specified:  " + request, 0);
-	    }
-
-            String secondPartyNumber = value.substring(ix + 1);
-
-            if (secondPartyNumber == null) {
-                throw new ParseException(
-                    "secondPartyNumber must be specified:  " + request, 0);
-            }
-
-            cp.setSecondPartyNumber(secondPartyNumber);
-            cp.setMigrateCall(true);
-            return true;
         } catch (ParameterException e) {
         }
 

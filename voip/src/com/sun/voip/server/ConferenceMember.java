@@ -445,12 +445,12 @@ public class ConferenceMember implements TreatmentDoneListener,
 	    conferenceManager.getMediaInfo().getSamplesPerPacket(),
 	    conferenceManager.getMediaInfo().getChannels());
 
-        mixManager.addMix(memberReceiver, -1.0D); // subtract self (mix-minus)
-
-	/*
-	 * Restore private mixes which were set before we were initialized
-	 */
 	synchronized (mixManager) {
+            mixManager.addMix(memberReceiver, -1.0D); // subtract self (mix-minus)
+
+	    /*
+	     * Restore private mixes which were set before we were initialized
+	     */
 	    synchronized (oldMixManager) {
                 ArrayList mixDescriptors = oldMixManager.getMixDescriptors();
 
@@ -863,8 +863,6 @@ public class ConferenceMember implements TreatmentDoneListener,
     private static HashMap<ConferenceMember, HashMap> mixMap =
         new HashMap<ConferenceMember, HashMap>();
 
-    private static Object mixMapLock = new Object();
-
     /*
      * Set a private mix that this call has for member.
      */
@@ -873,7 +871,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 	    return;  // an input treatment doesn't need private mixes.  ignore.
 	}
 
-        synchronized (mixMapLock) {
+        synchronized (mixMap) {
 	    HashMap<ConferenceMember, double[]> mixesToApply =
 		mixMap.get(this);
 
@@ -895,8 +893,26 @@ public class ConferenceMember implements TreatmentDoneListener,
         }
     }
 
+    static class PrivateMix {
+
+	public ConferenceMember memberWithMix;
+	public ConferenceMember member;
+	public double[] spatialValues;
+
+	public PrivateMix(ConferenceMember memberWithMix, 
+		ConferenceMember member, double[] spatialValues) {
+
+	    this.memberWithMix = memberWithMix;
+	    this.member = member;
+	    this.spatialValues = spatialValues;
+	}
+
+    }
+
     public static void applyPrivateMixes() {
-        synchronized (mixMapLock) {
+	ArrayList<PrivateMix> mixes = new ArrayList();
+
+        synchronized (mixMap) {
             Set<ConferenceMember> keySet = mixMap.keySet();
 
             for (ConferenceMember memberWithMix : keySet) {
@@ -912,15 +928,8 @@ public class ConferenceMember implements TreatmentDoneListener,
 
 		for (ConferenceMember member : memberSet) {
                     double[] spatialValues = (double[]) mixesToApply.get(member);
-
-                    memberWithMix.applyPrivateMix(member, spatialValues);
-
-		    if (Logger.logLevel >= Logger.LOG_INFO) {
-                        Logger.println("Applying pm for " + memberWithMix
-			    + " from " + member + " " + spatialValues[0] + ":"
-			    + spatialValues[1] + ":" + spatialValues[2]
-			    + ":" + spatialValues[3]);
-		    }
+		
+		    mixes.add(new PrivateMix(memberWithMix, member, spatialValues));
 
 		    pmCount++;
 		}
@@ -928,6 +937,19 @@ public class ConferenceMember implements TreatmentDoneListener,
 
             mixMap = new HashMap<ConferenceMember, HashMap>();
         }
+
+	for (PrivateMix mix : mixes) {
+	    if (Logger.logLevel >= Logger.LOG_INFO) {
+		Logger.println("Applying pm for " + mix.memberWithMix
+		    + " from " + mix.member + " " + mix.spatialValues[0] + ":"
+		    + mix.spatialValues[1] + ":" + mix.spatialValues[2]
+		    + ":" + mix.spatialValues[3]);
+	    }
+
+	    synchronized (mix.member.getConferenceManager()) {
+	        mix.memberWithMix.applyPrivateMix(mix.member, mix.spatialValues);
+	    }
+	}
     }
 
     private void applyPrivateMix(ConferenceMember member, double[] spatialValues) {
@@ -967,6 +989,24 @@ public class ConferenceMember implements TreatmentDoneListener,
 		    return;
 	        }
 
+	        if (getCallHandler() == null || 
+			getCallHandler().isCallEstablished() == false) {
+
+	            if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+		        Logger.println("skipping " + this);
+		    }
+		    return;
+	        }
+
+	        if (member.getCallHandler() == null ||
+			member.getCallHandler().isCallEstablished() == false) {
+
+	            if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+		        Logger.println("skipping " + member);
+		    }
+		    return;
+	        }
+
 	        md = mixManager.setPrivateMix(member.getMemberReceiver(), 
 		    spatialValues);
 
@@ -1001,13 +1041,25 @@ public class ConferenceMember implements TreatmentDoneListener,
 	}
     }
 
-    public void removePrivateMix(ConferenceMember member) {
-	synchronized (mixManager) {
-	    mixManager.removeMix(member.getMemberReceiver());
-	}
+    private void removePrivateMix(ConferenceMember member) {
+	synchronized (mixMap) {
+	    synchronized (mixManager) {
+            	mixManager.removeMix(member.getMemberReceiver());
+	    }
 
-	removePrivateMixForMe(member);
+            member.removePrivateMixForMe(this);
+
+	    HashMap<ConferenceMember, double[]> mixesToApply =
+		mixMap.get(this);
+
+	    if (mixesToApply == null) {
+		return;
+	    }
+
+	    mixesToApply.remove(member);
+	}
     }
+
 
     static HashMap<String, ArrayList> memberDoneListeners = 
 	new HashMap<String, ArrayList>();
@@ -1080,6 +1132,9 @@ public class ConferenceMember implements TreatmentDoneListener,
 		+ member);
 	}
 
+	/*
+	 * Remove private mix for member if we have one.
+	 */
 	removePrivateMix(member);
 
 	memberReceiver.removeForwardMember(member.getMemberSender());
@@ -1181,13 +1236,13 @@ public class ConferenceMember implements TreatmentDoneListener,
 	    rtcpReceiver.end();
 	}
 
-	notifyMemberDoneListeners();
-
 	/*
 	 * Don't leave whisper groups or change private mixes if
 	 * the call is migrating.
 	 */
 	if (migrating == false) {
+	    notifyMemberDoneListeners();
+
 	    synchronized (conferenceManager) {
 		removeMyPrivateMixes();
 
@@ -1324,12 +1379,14 @@ public class ConferenceMember implements TreatmentDoneListener,
 	    return;  // input treatments don't have descriptors
 	}
 
-	if (whisperGroup.hasCommonMix()) {
-            mixManager.addMix(whisperGroup, 1);
-            mixManager.addMix(memberReceiver, -1); 	// mix-minus
-	} else {
-            mixManager.removeMix(whisperGroup);
-            mixManager.removeMix(memberReceiver); // no need for mix-minus
+	synchronized (mixManager) {
+	    if (whisperGroup.hasCommonMix()) {
+                mixManager.addMix(whisperGroup, 1);
+                mixManager.addMix(memberReceiver, -1); 	// mix-minus
+	    } else {
+                mixManager.removeMix(whisperGroup);
+                mixManager.removeMix(memberReceiver); // no need for mix-minus
+	    }
 	}
 
 	double[] spatialValues = new double[4];
@@ -1428,7 +1485,9 @@ public class ConferenceMember implements TreatmentDoneListener,
 		    setWhispering(whisperGroup);
 
                     if (Logger.logLevel >= Logger.LOG_MOREINFO) {
-                        mixManager.showDescriptors();
+		        synchronized (mixManager) {
+                            mixManager.showDescriptors();
+			}
                     }
 
                     return;
@@ -1492,8 +1551,6 @@ public class ConferenceMember implements TreatmentDoneListener,
      */
     public void migrate(ConferenceMember oldMember) {
         synchronized (conferenceManager) {
-	    ArrayList memberList = conferenceManager.getMemberList();
-
 	    /*
 	     * copy private mixes old call has to current call
 	     */
@@ -1552,7 +1609,9 @@ public class ConferenceMember implements TreatmentDoneListener,
 		        + " mix descriptors " + oldMember.getMixDescriptors());
 	        }
 
-	        setPrivateMix(mr.getMember(), md.getSpatialValues());
+		synchronized (mixMap) {
+	            applyPrivateMix(mr.getMember(), md.getSpatialValues());
+		}
 
 	        if (Logger.logLevel >= Logger.LOG_MOREINFO) {
 	            Logger.println("Call " + cp + " Set private mix for " 
@@ -1580,6 +1639,9 @@ public class ConferenceMember implements TreatmentDoneListener,
 		/*
 		 * Remove private mix oldMember has
 		 */
+	        if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+		    Logger.println(oldMember + " removing pm for " + mr.getMember());
+		}
 		oldMember.removePrivateMix(mr.getMember());
 	    }
 	}
@@ -1592,13 +1654,19 @@ public class ConferenceMember implements TreatmentDoneListener,
     private void updateOtherPrivateMixes(ConferenceMember oldMember) {
 	ArrayList privateMixesForMe = oldMember.getPrivateMixesForMe();
 
+	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	    Logger.println(oldMember + " private mixes for me " + 
+	        oldMember.getPrivateMixesForMe().size());
+	}
+
 	for (int i = 0; i < privateMixesForMe.size(); i++) {
 	    ConferenceMember m = (ConferenceMember) privateMixesForMe.get(i);
 
 	    MixManager mixManager = m.getMixManager();
 
 	    synchronized (mixManager) {
-	        ArrayList mixDescriptors = mixManager.getMixDescriptors();
+	        MixDescriptor[] mixDescriptors = (MixDescriptor[])
+		    mixManager.getMixDescriptors().toArray(new MixDescriptor[0]);
 
                 if (Logger.logLevel >= Logger.LOG_MOREINFO) {
                     Logger.println("member with pm " + m
@@ -1606,8 +1674,8 @@ public class ConferenceMember implements TreatmentDoneListener,
                     mixManager.showDescriptors();
                 }
 
-                for (int j = 0; j < mixDescriptors.size(); j++) {
-                    MixDescriptor md = (MixDescriptor) mixDescriptors.get(j);
+                for (int j = 0; j < mixDescriptors.length; j++) {
+                    MixDescriptor md = mixDescriptors[i];
 
 		    if (md.isPrivateMix() == false) {
 			continue; 	// not a private mix
@@ -1625,9 +1693,16 @@ public class ConferenceMember implements TreatmentDoneListener,
 		    }
 
 		    /*
+		     * Now remove private mix other call has for oldMember
+		     */
+		    m.removePrivateMix(oldMember);
+
+		    /*
 		     * Set private mix for new member
 		     */
-		    m.setPrivateMix(this, md.getSpatialValues());
+		    synchronized (mixMap) {
+		        m.applyPrivateMix(this, md.getSpatialValues());
+		    }
 
                     if (Logger.logLevel >= Logger.LOG_MOREINFO) {
 	                Logger.println("member with pm " + m 
@@ -1636,11 +1711,6 @@ public class ConferenceMember implements TreatmentDoneListener,
 		    }
 		    break;
 	        }
-
-		/*
-		 * Now remove private mix other call has for oldMember
-		 */
-		m.removePrivateMix(oldMember);
 	    }
 	}
     }

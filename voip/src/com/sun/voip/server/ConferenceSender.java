@@ -126,6 +126,7 @@ public class ConferenceSender extends Thread {
 		try {
                     listener.senderCallback();
 		} catch (Exception e) {
+		    e.printStackTrace();
 		    Logger.println("Sender callback failed!  " 
 			+ e.getMessage());
 		}
