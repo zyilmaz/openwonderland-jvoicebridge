@@ -393,11 +393,10 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 		    continue;
 	        }
                 
-                String[] items = tokens[i].split("@");
+                String[] items = tokens[i].split("@", 2);
+
                 String cID = items[0];
                 
-		System.out.println(tokens[i]);
-
                 String[] callDetails = items[1].split(" ");
                 int cdLen = callDetails.length;
 
