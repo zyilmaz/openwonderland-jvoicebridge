@@ -869,35 +869,45 @@ public class VoiceManagerImpl implements VoiceManager {
 	    return null;
 	}
 
-	Spatializer spatializer = p1.getPrivateSpatializer(p2.callId);
-
 	double attenuator = 1.0;
+
+	Spatializer spatializer = p1.getPrivateSpatializer(p2.callId);
 
 	if (spatializer == null) {
 	    attenuator = p1.getListenAttenuator() * p2.getTalkAttenuator();
 
 	    /*
-	     * If there is a public spatializer, use that.
+	     * If p1 has an incoming spatializer, use that.
 	     */
-	    spatializer = p2.getPublicSpatializer();
-
-	    logger.finest("p1 " + p1.callId + ", public spatializer " 
-		+ spatializer + " listen attenuator " + p1.getListenAttenuator()
-		+ " talk attenuator " + p2.getTalkAttenuator());
+	    spatializer = p1.getIncomingSpatializer();
 
 	    if (spatializer == null) {
 	        /*
-	         * If p1 has an incoming spatializer, use that.
+	         * If there is a public spatializer, use that.
 	         */
-		spatializer = p1.getIncomingSpatializer();
+	        spatializer = p2.getPublicSpatializer();
 
-		if (spatializer == null) {
-		    /*
-		     * Just use the default spatializer.
-		     */
-	            spatializer = defaultSpatializer;
+	        if (p1.callId.indexOf("BUR") >= 0) {
+	            logger.warning("p1 " + p1.callId + ", p2 has public spatializer " 
+		        + spatializer + " listen attenuator " + p1.getListenAttenuator()
+		        + " talk attenuator " + p2.getTalkAttenuator());
+	        }
+	    } else {
+		if (p1.callId.indexOf("BUR") >= 0) { 
+		    logger.warning(p1 + " has incoming spatializer p1 listen "
+			+ p1.getListenAttenuator() + " p2 " + p2 + " talk " 
+			+ p2.getTalkAttenuator());
+		}
+	    }
+
+	    if (spatializer == null) {
+		/*
+		 * Just use the default spatializer.
+		 */
+	        spatializer = defaultSpatializer;
 	
-		    logger.finest(" p1 " + p1.callId 
+		if (p1.callId.indexOf("BUR") >= 0) {
+		    logger.warning(" p1 " + p1.callId 
 		        + ", Using default spatializer"
 		        + " listen attenuator " + p1.getListenAttenuator()
 		        + " talk attenuator " + p2.getTalkAttenuator());
@@ -929,9 +939,12 @@ public class VoiceManagerImpl implements VoiceManager {
 
         privateMixParameters[3] *= (attenuator * p1.getMasterVolume());
 
-	logger.finest("p1 " + p1.callId + " v " + v + " attenuator " 
-	    + attenuator + " master volume " + p1.getMasterVolume()
-	    + " effective volume " + round(privateMixParameters[3]));
+	if (p1.callId.indexOf("BUR") >= 0) {
+	    logger.warning("p1 " + p1.callId + " v " + v 
+		+ " p2 " + p2 + " attenuator " + attenuator 
+		+ " master volume " + p1.getMasterVolume()
+	        + " effective volume " + round(privateMixParameters[3]));
+	}
 
 	double wallAttenuation = getWallAttenuation(p1, p2);
 
