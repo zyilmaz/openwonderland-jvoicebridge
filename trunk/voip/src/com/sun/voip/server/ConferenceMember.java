@@ -935,7 +935,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 		}
             }
 
-            mixMap = new HashMap<ConferenceMember, HashMap>();
+            mixMap.clear();
         }
 
 	for (PrivateMix mix : mixes) {
