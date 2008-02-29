@@ -187,7 +187,7 @@ public class StunServerImpl implements StunServer {
     public void processStunRequest(DatagramChannel channel,
 	    InetSocketAddress isa, byte[] request) {
 
-	logger.info("Got UDP Stun request for channel " + request.length 
+	logger.warning("Got UDP Stun request for channel " + request.length 
 	    + " bytes from " + isa);
 
 	byte[] response = getStunResponse(isa, request, request.length);
@@ -313,7 +313,7 @@ public class StunServerImpl implements StunServer {
 	try {
 	    responseSocket.send(packet);    
 
-	    logger.finer("Sent STUN Binding Response to " 
+	    logger.warning("Sent STUN Binding Response to " 
 		+ packet.getAddress() + ":" + packet.getPort());
 	} catch (IOException e) {
 	    logger.warning("Unable to send STUN response! " + e.getMessage());
