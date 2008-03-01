@@ -30,28 +30,42 @@ public class VoiceManagerParameters {
 
     public int logLevel;
     public double liveFalloff;
-    public double defaultFalloff;
-    public double liveFullVolRadius;
     public double liveZeroVolRadius;
-    public double defaultFullVolRadius;
+    public double liveFullVolRadius;
+    public double defaultFalloff;
     public double defaultZeroVolRadius;
+    public double defaultFullVolRadius;
+    public double orbFalloff;
+    public double orbZeroVolRadius;
+    public double orbFullVolRadius;
 
     public VoiceManagerParameters() {
     }
 
-    public VoiceManagerParameters(int logLevel, double liveFalloff,
-            double defaultFalloff, double liveFullVolRadius,
-	    double liveZeroVolRadius,
+    public VoiceManagerParameters(int logLevel, 
+	    double liveFalloff,
+            double liveZeroVolRadius, 
+	    double liveFullVolRadius,
+	    double defaultFalloff,
+	    double defaultZeroVolRadius,
 	    double defaultFullVolRadius,
-	    double defaultZeroVolRadius) {
+	    double orbFalloff,
+	    double orbZeroVolRadius,
+	    double orbFullVolRadius) {
 
 	this.logLevel = logLevel;
+
         this.liveFalloff = liveFalloff;
-        this.defaultFalloff = defaultFalloff;
-        this.liveFullVolRadius = liveFullVolRadius;
         this.liveZeroVolRadius = liveZeroVolRadius;
-        this.defaultFullVolRadius = defaultFullVolRadius;
+        this.liveFullVolRadius = liveFullVolRadius;
+
+        this.defaultFalloff = defaultFalloff;
         this.defaultZeroVolRadius = defaultZeroVolRadius;
+        this.defaultFullVolRadius = defaultFullVolRadius;
+
+	this.orbFalloff = orbFalloff;
+	this.orbZeroVolRadius = orbZeroVolRadius;
+	this.orbFullVolRadius = orbFullVolRadius;
     }
 
 }
