@@ -45,7 +45,7 @@ public class DefaultSpatializer implements Spatializer {
 
     private static final double DEFAULT_FALLOFF = .92;
 
-    private static final double DEFAULT_FULL_VOLUME_RADIUS = 0;
+    private static final double DEFAULT_FULL_VOLUME_RADIUS = .1;
 
     private static final double DEFAULT_ZERO_VOLUME_RADIUS = .26;
 
