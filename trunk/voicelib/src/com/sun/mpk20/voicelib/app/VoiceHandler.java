@@ -41,7 +41,7 @@ public interface VoiceHandler {
     public String setupCall(String callId, String sipUrl, String bridge);
 
     public void createPlayer(String callId, double x, double y, double z,
-	double orientation);
+	double orientation, boolean isOrb);
 
     public void removePlayer(String callId);
 

@@ -201,7 +201,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     }
 
     public void createPlayer(String callId, double x, double y, double z,
-	double orientation) {
+	double orientation, boolean isOrb) {
     }
 
     public void removePlayer(String callId) {

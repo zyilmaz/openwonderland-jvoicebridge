@@ -68,6 +68,8 @@ public class VoiceManagerImpl implements VoiceManager {
 
     private DefaultSpatializer livePlayerSpatializer;
 
+    private DefaultSpatializer orbSpatializer;
+
     private ConcurrentHashMap<String, Player> players = new ConcurrentHashMap<String, Player>();
 
     private static final double ZERO_VOLUME = .009;
@@ -85,6 +87,9 @@ public class VoiceManagerImpl implements VoiceManager {
 	defaultSpatializer = new DefaultSpatializer();
 
 	livePlayerSpatializer = new DefaultSpatializer();
+
+  	orbSpatializer = new DefaultSpatializer();
+	orbSpatializer.setFallOff(LIVE_PLAYER_FALLOFF);
 
 	livePlayerSpatializer.setFallOff(LIVE_PLAYER_FALLOFF);
     }
@@ -147,7 +152,7 @@ public class VoiceManagerImpl implements VoiceManager {
     }
 
     public void createPlayer(String callId, double x, double y, double z,
-	    double orientation) {
+	    double orientation, boolean isOrb) {
 
 	if (findPlayer(callId) != null) {
 	    logger.info("player already exists for " + callId);
@@ -155,10 +160,17 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
 
 	logger.info("Creating player for " + callId + " at "
-	    + " " + x + ":" + y + ":" + z + ":" + orientation);
+	    + " " + x + ":" + y + ":" + z + ":" + orientation
+	    + " isOrb " + isOrb);
 
 	Player p = new Player(callId, x, y, z, orientation);
 	p.setLivePerson();
+
+	if (isOrb) {
+	    p.setPublicSpatializer(orbSpatializer);
+	} else {
+	    p.setPublicSpatializer(livePlayerSpatializer);
+	}
 
 	players.put(callId, p);
 
@@ -993,27 +1005,42 @@ public class VoiceManagerImpl implements VoiceManager {
 
     public void setParameters(VoiceManagerParameters parameters) {
 	logger.info("logLevel set to " + parameters.logLevel
-	    + " liveFalloff set to " + parameters.liveFalloff
-	    + " defaultFalloff set to " + parameters.defaultFalloff
-	    + " liveFullVolRadius set to " 
-	    + parameters.liveFullVolRadius 
-	    + " liveZeroVolRadius set to "
+	    + " liveFalloff set to " 
+	    + parameters.liveFalloff
+	    + " liveZeroVolRadius set to " 
 	    + parameters.liveZeroVolRadius
+	    + " liveFullVolRadius set to " 
+	    + parameters.liveFullVolRadius
+	    + " defaultFalloff set to " 
+	    + parameters.defaultFalloff
+	    + " defaultZeroVolRadius set to "
+	    + parameters.defaultZeroVolRadius
 	    + " defaultFullVolRadius set to " 
 	    + parameters.defaultFullVolRadius 
-	    + " defaultZeroVolRadius set to "
-	    + parameters.defaultZeroVolRadius);
+	    + " orbFalloff set to " 
+	    + parameters.orbFalloff
+	    + " orbZeroVolRadius set to "
+	    + parameters.orbZeroVolRadius
+	    + " orbFullVolRadius set to " 
+	    + parameters.orbFullVolRadius);
 
 	livePlayerSpatializer.setFallOff(parameters.liveFalloff);
-	defaultSpatializer.setFallOff(parameters.defaultFalloff);
-	livePlayerSpatializer.setFullVolumeRadius(
-	    parameters.liveFullVolRadius);
 	livePlayerSpatializer.setZeroVolumeRadius(
 	    parameters.liveZeroVolRadius);
-	defaultSpatializer.setFullVolumeRadius(
-	    parameters.defaultFullVolRadius);
+	livePlayerSpatializer.setFullVolumeRadius(
+	    parameters.liveFullVolRadius);
+
+	defaultSpatializer.setFallOff(parameters.defaultFalloff);
 	defaultSpatializer.setZeroVolumeRadius(
 	    parameters.defaultZeroVolRadius);
+	defaultSpatializer.setFullVolumeRadius(
+	    parameters.defaultFullVolRadius);
+
+	orbSpatializer.setFallOff(parameters.orbFalloff);
+	orbSpatializer.setZeroVolumeRadius(
+	    parameters.orbZeroVolRadius);
+	orbSpatializer.setFullVolumeRadius(
+	    parameters.orbFullVolRadius);
 
 	/*
 	 * Reset all private mixes
@@ -1023,13 +1050,16 @@ public class VoiceManagerImpl implements VoiceManager {
 
     public VoiceManagerParameters getParameters() {
 	VoiceManagerParameters parameters = new VoiceManagerParameters(
-	    0,
+	    getLogLevel().intValue(),
 	    livePlayerSpatializer.getFallOff(),
-	    defaultSpatializer.getFallOff(),
-	    livePlayerSpatializer.getFullVolumeRadius(),
 	    livePlayerSpatializer.getZeroVolumeRadius(),
+	    livePlayerSpatializer.getFullVolumeRadius(),
+	    defaultSpatializer.getFallOff(),
+	    defaultSpatializer.getZeroVolumeRadius(),
 	    defaultSpatializer.getFullVolumeRadius(),
-	    defaultSpatializer.getZeroVolumeRadius());
+	    orbSpatializer.getFallOff(),
+	    orbSpatializer.getZeroVolumeRadius(),
+	    orbSpatializer.getFullVolumeRadius());
 
 	return parameters;
     }

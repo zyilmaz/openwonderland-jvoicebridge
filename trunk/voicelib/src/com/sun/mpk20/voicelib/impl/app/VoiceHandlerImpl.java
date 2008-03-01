@@ -260,13 +260,13 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void createPlayer(String callId, double x, double y, double z,
-	    double orientation) {
+	    double orientation, boolean isOrb) {
 
 	logger.info("creating player at (" + x + ", " + y + ", " + z + ")");
 
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
-	voiceManager.createPlayer(callId, x, y, z, orientation);
+	voiceManager.createPlayer(callId, x, y, z, orientation, isOrb);
     }
 
     public void removePlayer(String callId) {
