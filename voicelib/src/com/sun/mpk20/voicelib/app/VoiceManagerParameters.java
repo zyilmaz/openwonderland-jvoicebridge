@@ -32,12 +32,15 @@ public class VoiceManagerParameters {
     public double liveFalloff;
     public double liveZeroVolRadius;
     public double liveFullVolRadius;
+    public double liveMaxVolume;
     public double defaultFalloff;
     public double defaultZeroVolRadius;
     public double defaultFullVolRadius;
+    public double defaultMaxVolume;
     public double orbFalloff;
     public double orbZeroVolRadius;
     public double orbFullVolRadius;
+    public double orbMaxVolume;
 
     public VoiceManagerParameters() {
     }
@@ -46,26 +49,32 @@ public class VoiceManagerParameters {
 	    double liveFalloff,
             double liveZeroVolRadius, 
 	    double liveFullVolRadius,
+	    double liveMaxVolume,
 	    double defaultFalloff,
 	    double defaultZeroVolRadius,
 	    double defaultFullVolRadius,
+	    double defaultMaxVolume,
 	    double orbFalloff,
 	    double orbZeroVolRadius,
-	    double orbFullVolRadius) {
+	    double orbFullVolRadius,
+	    double orbMaxVolume) {
 
 	this.logLevel = logLevel;
 
         this.liveFalloff = liveFalloff;
         this.liveZeroVolRadius = liveZeroVolRadius;
         this.liveFullVolRadius = liveFullVolRadius;
+	this.liveMaxVolume = liveMaxVolume;
 
         this.defaultFalloff = defaultFalloff;
         this.defaultZeroVolRadius = defaultZeroVolRadius;
         this.defaultFullVolRadius = defaultFullVolRadius;
+	this.defaultMaxVolume = defaultMaxVolume;
 
 	this.orbFalloff = orbFalloff;
 	this.orbZeroVolRadius = orbZeroVolRadius;
 	this.orbFullVolRadius = orbFullVolRadius;
+	this.orbMaxVolume = orbMaxVolume;
     }
 
 }
