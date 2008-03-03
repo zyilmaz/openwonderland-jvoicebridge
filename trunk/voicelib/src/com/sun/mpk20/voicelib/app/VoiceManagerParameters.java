@@ -29,52 +29,52 @@ package com.sun.mpk20.voicelib.app;
 public class VoiceManagerParameters {
 
     public int logLevel;
-    public double liveFalloff;
+    public double liveMaxVolume;
     public double liveZeroVolRadius;
     public double liveFullVolRadius;
-    public double liveMaxVolume;
-    public double defaultFalloff;
+    public double liveFalloff;
+    public double defaultMaxVolume;
     public double defaultZeroVolRadius;
     public double defaultFullVolRadius;
-    public double defaultMaxVolume;
-    public double orbFalloff;
+    public double defaultFalloff;
+    public double orbMaxVolume;
     public double orbZeroVolRadius;
     public double orbFullVolRadius;
-    public double orbMaxVolume;
+    public double orbFalloff;
 
     public VoiceManagerParameters() {
     }
 
     public VoiceManagerParameters(int logLevel, 
-	    double liveFalloff,
+	    double liveMaxVolume,
             double liveZeroVolRadius, 
 	    double liveFullVolRadius,
-	    double liveMaxVolume,
-	    double defaultFalloff,
+	    double liveFalloff,
+	    double defaultMaxVolume,
 	    double defaultZeroVolRadius,
 	    double defaultFullVolRadius,
-	    double defaultMaxVolume,
-	    double orbFalloff,
+	    double defaultFalloff,
+	    double orbMaxVolume,
 	    double orbZeroVolRadius,
 	    double orbFullVolRadius,
-	    double orbMaxVolume) {
+	    double orbFalloff) {
 
 	this.logLevel = logLevel;
 
-        this.liveFalloff = liveFalloff;
+	this.liveMaxVolume = liveMaxVolume;
         this.liveZeroVolRadius = liveZeroVolRadius;
         this.liveFullVolRadius = liveFullVolRadius;
-	this.liveMaxVolume = liveMaxVolume;
+        this.liveFalloff = liveFalloff;
 
-        this.defaultFalloff = defaultFalloff;
+	this.defaultMaxVolume = defaultMaxVolume;
         this.defaultZeroVolRadius = defaultZeroVolRadius;
         this.defaultFullVolRadius = defaultFullVolRadius;
-	this.defaultMaxVolume = defaultMaxVolume;
+        this.defaultFalloff = defaultFalloff;
 
-	this.orbFalloff = orbFalloff;
+	this.orbMaxVolume = orbMaxVolume;
 	this.orbZeroVolRadius = orbZeroVolRadius;
 	this.orbFullVolRadius = orbFullVolRadius;
-	this.orbMaxVolume = orbMaxVolume;
+	this.orbFalloff = orbFalloff;
     }
 
 }

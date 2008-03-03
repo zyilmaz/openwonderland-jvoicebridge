@@ -127,9 +127,18 @@ public class SipServer implements SipListener {
             Logger.error("Invalid VoIP gateways " + gateways);
         }
 
-        Logger.println("VoIP gateways: " + getAllVoIPGateways());
+	String s = getAllVoIPGateways();
 
-        Logger.println("");
+	if (s.length() == 0) {
+	    Logger.println("There are no VoIP gateways.  "
+		+ "You cannot make calls to the phone system.");
+            Logger.println("If you want to use the phone system "
+		+ "you can specify VoIP gateways with "
+		+ "-Dcom.sun.voip.server.VoIPGateways.");
+	} else {
+            Logger.println("VoIP gateways: " + s);
+            Logger.println("");
+	}
 
         /*
 	 * Obtain an instance of the singleton SipFactory 
@@ -184,7 +193,7 @@ public class SipServer implements SipListener {
              * port to assign to outgoing messages from this provider
              * at this point. 
              */
-            String s = System.getProperty(
+            s = System.getProperty(
 		"gov.nist.jainsip.stack.enableUDP", String.valueOf(SIP_PORT));
 
 	    int sipPort = Integer.parseInt(s);
@@ -202,6 +211,11 @@ public class SipServer implements SipListener {
             sipProvider = sipStack.createSipProvider(lp); 
 
             sipProvider.addSipListener(this); 
+
+	    Logger.println("");
+            Logger.println("Bridge private address:   " 
+	        + properties.getProperty("javax.sip.IP_ADDRESS"));
+            Logger.println("Bridge private port:      " + lp.getPort());
 
             /*
 	     * get IPs of the SIP Proxy server
@@ -231,12 +245,7 @@ public class SipServer implements SipListener {
             System.exit(-1);
 	}
 
-        Logger.println("Default SIP Proxy:           " 
-	    + defaultSipProxy);
-
-        Logger.println("Conference Bridge address:   " 
-	    + properties.getProperty("javax.sip.IP_ADDRESS"));
-        Logger.println("Conference Bridge port:      " + lp.getPort());
+        Logger.println("Default SIP Proxy:        " + defaultSipProxy);
 	Logger.println("");
     }
 
@@ -276,13 +285,6 @@ public class SipServer implements SipListener {
             } catch (UnknownHostException e) {
                 return false;
             }
-        }
-
-        if (voIPGateways.size() == 0) {
-            Logger.println("WARNING: At least one SIP gateway should be " +
-                         "specified using -Dcom.sun.voip.server.VoIPGateways." +
-                         " Outgoing calls to PSTN will not work.");
-            return true;
         }
 
         return true;

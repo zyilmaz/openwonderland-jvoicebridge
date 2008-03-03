@@ -58,14 +58,14 @@ public class ModuleLoader extends URLClassLoader {
 	    System.getProperty("path.separator"));
 
 	for (int i = 0; i < path.length; i++) {
-	    Logger.println("Searching for modules in " + path[i]);
+	    Logger.writeFile("Searching for modules in " + path[i]);
 
 	    File f = new File(path[i]);
 
 	    String[] fileList = f.list();
 
 	    if (fileList == null) {
-	        Logger.println("module path '" + path[i] + "' "
+	        Logger.writeFile("module path '" + path[i] + "' "
 		    + "is not a directory.  Ignoring.");   
 		continue;
 	    }
