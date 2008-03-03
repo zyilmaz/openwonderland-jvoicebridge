@@ -112,7 +112,7 @@ public class SipUtil {
 	if (s != null) {
 	    try {
 	        ourPublicIpAddress = InetAddress.getByName(s).getHostAddress();
-		Logger.println("Bridge public address is " + ourPublicIpAddress);
+		Logger.println("Bridge public address:    " + ourPublicIpAddress);
 	    } catch (UnknownHostException e) {
 		Logger.println("Invalid public IP address, using " + ourIpAddress);
 	    }
@@ -125,6 +125,7 @@ public class SipUtil {
 	if (s != null) {
 	    try {
 		ourSipPort = Integer.parseInt(s);
+		Logger.println("Bridge public SIP port is " + ourSipPort);
 	    } catch (NumberFormatException e) {
 		Logger.println("Invalid public SIP Port, using " + ourSipPort);
 	    }

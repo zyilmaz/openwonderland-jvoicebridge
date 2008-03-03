@@ -106,7 +106,7 @@ public class StunServerImpl implements StunServer {
         }
 
         public void run() {
-	    logger.info("STUN Server:  Waiting for Stun requests on UDP port " 
+	    logger.fine("STUN Server:  Waiting for Stun requests on UDP port " 
 	        + stunServerPort + "...");
 
 	    synchronized (this) {

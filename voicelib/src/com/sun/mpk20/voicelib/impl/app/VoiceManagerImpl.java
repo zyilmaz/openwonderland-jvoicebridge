@@ -1004,55 +1004,58 @@ public class VoiceManagerImpl implements VoiceManager {
     }
 
     public void setParameters(VoiceManagerParameters parameters) {
-	logger.info("logLevel set to " + parameters.logLevel
-	    + " liveFalloff set to " 
-	    + parameters.liveFalloff
-	    + " liveZeroVolRadius set to " 
-	    + parameters.liveZeroVolRadius
-	    + " liveFullVolRadius set to " 
-	    + parameters.liveFullVolRadius
-	    + " liveMaxVolume set to " 
-	    + parameters.liveMaxVolume
-	    + " defaultFalloff set to " 
-	    + parameters.defaultFalloff
-	    + " defaultZeroVolRadius set to "
-	    + parameters.defaultZeroVolRadius
-	    + " defaultFullVolRadius set to " 
-	    + parameters.defaultFullVolRadius 
-	    + " default max volume "
-	    + parameters.defaultMaxVolume
-	    + " orbFalloff set to " 
-	    + parameters.orbFalloff
-	    + " orbZeroVolRadius set to "
-	    + parameters.orbZeroVolRadius
-	    + " orbFullVolRadius set to " 
-	    + parameters.orbFullVolRadius
-	    + " orb max volume "
-	    + parameters.orbMaxVolume);
+	logger.fine("logLevel set to " + parameters.logLevel);
 
-	livePlayerSpatializer.setFallOff(parameters.liveFalloff);
+	logger.fine("live: max v "
+	    + parameters.liveMaxVolume
+	    + " zero radius "
+	    + parameters.liveZeroVolRadius
+	    + " full radius "
+	    + parameters.liveFullVolRadius
+	    + " falloff "
+	    + parameters.liveFalloff);
+
+	logger.fine("default: max v "
+	    + parameters.defaultMaxVolume
+	    + " zero radius "
+	    + parameters.defaultZeroVolRadius
+	    + " full radius "
+	    + parameters.defaultFullVolRadius
+	    + " falloff "
+	    + parameters.defaultFalloff);
+
+	logger.fine("orb: max v "
+	    + parameters.orbMaxVolume
+	    + " zero radius "
+	    + parameters.orbZeroVolRadius
+	    + " full radius "
+	    + parameters.orbFullVolRadius
+	    + " falloff "
+	    + parameters.orbFalloff);
+
+	livePlayerSpatializer.setMaximumVolume(
+	    parameters.liveMaxVolume);
 	livePlayerSpatializer.setZeroVolumeRadius(
 	    parameters.liveZeroVolRadius);
 	livePlayerSpatializer.setFullVolumeRadius(
 	    parameters.liveFullVolRadius);
-	livePlayerSpatializer.setMaximumVolume(
-	    parameters.liveMaxVolume);
+	livePlayerSpatializer.setFallOff(parameters.liveFalloff);
 
-	defaultSpatializer.setFallOff(parameters.defaultFalloff);
+	defaultSpatializer.setMaximumVolume(
+	    parameters.defaultMaxVolume);
 	defaultSpatializer.setZeroVolumeRadius(
 	    parameters.defaultZeroVolRadius);
 	defaultSpatializer.setFullVolumeRadius(
 	    parameters.defaultFullVolRadius);
-	defaultSpatializer.setMaximumVolume(
-	    parameters.defaultMaxVolume);
+	defaultSpatializer.setFallOff(parameters.defaultFalloff);
 
-	orbSpatializer.setFallOff(parameters.orbFalloff);
+	orbSpatializer.setMaximumVolume(
+	    parameters.orbMaxVolume);
 	orbSpatializer.setZeroVolumeRadius(
 	    parameters.orbZeroVolRadius);
 	orbSpatializer.setFullVolumeRadius(
 	    parameters.orbFullVolRadius);
-	orbSpatializer.setMaximumVolume(
-	    parameters.orbMaxVolume);
+	orbSpatializer.setFallOff(parameters.orbFalloff);
 
 	/*
 	 * Reset all private mixes
@@ -1062,19 +1065,19 @@ public class VoiceManagerImpl implements VoiceManager {
 
     public VoiceManagerParameters getParameters() {
 	return new VoiceManagerParameters(
-	    getLogLevel().intValue(),
-	    livePlayerSpatializer.getFallOff(),
+	    0, 
+	    livePlayerSpatializer.getMaximumVolume(),
 	    livePlayerSpatializer.getZeroVolumeRadius(),
 	    livePlayerSpatializer.getFullVolumeRadius(),
-	    livePlayerSpatializer.getMaximumVolume(),
-	    defaultSpatializer.getFallOff(),
+	    livePlayerSpatializer.getFallOff(),
+	    defaultSpatializer.getMaximumVolume(),
 	    defaultSpatializer.getZeroVolumeRadius(),
 	    defaultSpatializer.getFullVolumeRadius(),
-	    defaultSpatializer.getMaximumVolume(),
-	    orbSpatializer.getFallOff(),
+	    defaultSpatializer.getFallOff(),
+	    orbSpatializer.getMaximumVolume(),
 	    orbSpatializer.getZeroVolumeRadius(),
 	    orbSpatializer.getFullVolumeRadius(),
-	    orbSpatializer.getMaximumVolume());
+	    orbSpatializer.getFallOff());
     }
 
     public void setLogLevel(Level level) {

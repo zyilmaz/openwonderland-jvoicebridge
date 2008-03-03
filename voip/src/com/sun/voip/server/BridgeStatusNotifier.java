@@ -55,6 +55,17 @@ public class BridgeStatusNotifier extends Thread {
 	    Logger.println("Invalid listener host:  " + e.getMessage());
 	}
 
+	try {
+	    socket = new Socket();
+	    socket.connect(isa);
+	} catch (IOException e) {
+	    Logger.println("Unable to notify " + isa
+		+ " that a bridge is online:  "
+		+ e.getMessage());
+
+	    Logger.println("Retrying once a second...");
+	}
+
 	start();
     }
 
@@ -92,14 +103,6 @@ public class BridgeStatusNotifier extends Thread {
 	        socket = new Socket();
 	        socket.connect(isa);
 	    } catch (IOException e) {
-	        if (firstTime) {
-		    firstTime = false;
-		    Logger.println("Unable to notify " + isa
-		        + " that a bridge is online:  "
-			+ e.getMessage());
-		    Logger.println("Retrying once a second...");
-	        }
-
 	        try {
 		    Thread.sleep(1000);
 	        } catch (InterruptedException ee) {

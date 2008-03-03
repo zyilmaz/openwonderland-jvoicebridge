@@ -274,6 +274,23 @@ public class Bridge {
             Logger.println("Outside line prefix defaults to '" + outsideLinePrefix + "'");
         }
 
+	String s = System.getProperty("com.sun.voip.server.BRIDGE_STATUS_LISTENERS");
+
+	if (s == null || s.length() == 0) {
+            Logger.println("There are no listeners to notify "
+		+ "that this bridge came online");
+        } else {
+	    String[] listeners = s.split(",");
+
+	    for (int i = 0; i < listeners.length; i++) {
+		new BridgeStatusNotifier(listeners[i]);
+	    }
+	}
+
+	Logger.println("");
+	Logger.println("The Bridge is initialized and Ready");
+	Logger.println("");
+
         startSocketServer();
     }
     
@@ -389,21 +406,6 @@ public class Bridge {
 	try {
 	    ServerSocket serverSocket = new ServerSocket(privateControlPort);
 
-	    String s = 
-		System.getProperty("com.sun.voip.server.BRIDGE_STATUS_LISTENERS");
-
-            if (s == null || s.length() == 0) {
-                Logger.println(
-                    "There are no listeners to notify "
-		    + "that this bridge came online");
-            } else {
-		String[] listeners = s.split(",");
-
-		for (int i = 0; i < listeners.length; i++) {
-		    new BridgeStatusNotifier(listeners[i]);
-		}
-	    }
-
 	    while (true) {
 		Socket socket = serverSocket.accept(); // wait for a connection
 
@@ -423,7 +425,7 @@ public class Bridge {
 			    host.equals("127.0.0.1") == false &&
 			    ia.getHostAddress().equals(privateHost) == false) {
 
-			s = "Connection from " + ia 
+			String s = "Connection from " + ia 
 			    + " rejected:  must connect from "
 			    + "site local address\n";
 
