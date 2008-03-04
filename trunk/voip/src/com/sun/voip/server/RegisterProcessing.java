@@ -179,14 +179,15 @@ class RegisterProcessing implements SipListener {
         try {
             requestURI = addressFactory.createSipURI(null, registrar);
 	} catch (ParseException e) {
-            throw new IOException("Bad registrar address:" + registrar, e);
+            throw new IOException("Bad registrar address:" + registrar + " " 
+		+ e.getMessage());
         }
         requestURI.setPort(registrarPort);
         try {
             requestURI.setTransportParam(sipProvider.getListeningPoint().getTransport());
         } catch (ParseException e) {
             throw new IOException(sipProvider.getListeningPoint().getTransport()
-		+ " is not a valid transport!", e);
+		+ " is not a valid transport! " + e.getMessage());
         }
         //Call ID Header
         CallIdHeader callIdHeader = sipProvider.getNewCallId();
