@@ -35,7 +35,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 
-import java.util.Vector;
+import java.util.ArrayList;
 
 /**
  * Initiate a call, and join a conference
@@ -120,7 +120,7 @@ public class OutgoingCallHandler extends CallHandler
         /*
          * Start the call (INVITE) and wait for it to end (BYE).
          */
-        Vector voIPGateways = SipServer.getVoIPGateways();
+        ArrayList voIPGateways = SipServer.getVoIPGateways();
         String gateway = cp.getVoIPGateway();
         
         if (gateway != null) {
@@ -144,7 +144,7 @@ public class OutgoingCallHandler extends CallHandler
             for (int i = 0; i < voIPGateways.size(); i++) {
                 reasonCallEnded = null;
 
-                String voIPGateway = (String) voIPGateways.elementAt(i);
+                String voIPGateway = (String) voIPGateways.get(i);
                 
                 cp.setVoIPGateway(voIPGateway);
                 
@@ -524,7 +524,7 @@ public class OutgoingCallHandler extends CallHandler
     public static void hangup(CallEventListener callEventListener, 
 	    String reason) {
 
-        Vector callsToCancel = new Vector();
+        ArrayList<CallHandler> callsToCancel = new ArrayList();
         
         synchronized(activeCalls) {
             /*
@@ -544,9 +544,9 @@ public class OutgoingCallHandler extends CallHandler
         cancel(callsToCancel, reason);
     }
     
-    private static void cancel(Vector callsToCancel, String reason) {
+    private static void cancel(ArrayList<CallHandler> callsToCancel, String reason) {
         while (callsToCancel.size() > 0) {
-            CallHandler call = (CallHandler)callsToCancel.remove(0);
+            CallHandler call = callsToCancel.remove(0);
             call.cancelRequest(reason);
         }
     }
