@@ -38,7 +38,7 @@ public class DefaultSpatializer implements Spatializer {
     private static final String MAXIMUM_VOLUME =
         "com.sun.server.impl.app.VoiceManager.MAXIMUM_VOLUME";
 
-    private static final double DEFAULT_MAXIMUM_VOLUME = 1;
+    private static final double DEFAULT_MAXIMUM_VOLUME = .8;
 
     private static final String FALLOFF =
         "com.sun.server.impl.app.VoiceManager.FALLOFF";
