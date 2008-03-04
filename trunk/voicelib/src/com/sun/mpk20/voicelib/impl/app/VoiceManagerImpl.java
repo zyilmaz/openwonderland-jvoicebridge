@@ -85,6 +85,7 @@ public class VoiceManagerImpl implements VoiceManager {
         this.backingManager = backingManager;
 
 	defaultSpatializer = new DefaultSpatializer();
+	defaultSpatializer.setZeroVolumeRadius(.2);
 
 	livePlayerSpatializer = new DefaultSpatializer();
 
