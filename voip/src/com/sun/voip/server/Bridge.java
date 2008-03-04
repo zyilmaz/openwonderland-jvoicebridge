@@ -482,7 +482,7 @@ public class Bridge {
 	    }
 
 	    InetAddress gateway = InetAddress.getByName(
-		(String) (SipServer.getVoIPGateways().elementAt(0)));
+		SipServer.getVoIPGateways().get(0));
 
             datagramPacket = new DatagramPacket(
 		s.getBytes(), s.length(), gateway, 9);

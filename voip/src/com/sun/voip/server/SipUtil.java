@@ -481,7 +481,7 @@ if (false) {
 	if (voipGateway == null) {
 	    Logger.println("Call " + cp + " voipGateway is null!");
 
-	    Vector voipGateways = SipServer.getVoIPGateways();
+	    ArrayList<String> voipGateways = SipServer.getVoIPGateways();
 
 	    if (voipGateways.size() == 0) {
 		throw new SipException(
@@ -489,7 +489,7 @@ if (false) {
 		    + cp);
 	    }
 
-	    voipGateway = (String) voipGateways.elementAt(0);
+	    voipGateway = voipGateways.get(0);
 	}
 
 	Logger.writeFile("Call " + cp + " voip gateway / proxy " + voipGateway

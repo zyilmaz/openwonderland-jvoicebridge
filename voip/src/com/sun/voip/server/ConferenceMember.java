@@ -157,7 +157,9 @@ public class ConferenceMember implements TreatmentDoneListener,
                     firstRtpPort++;
                 }
 
-                Logger.println("First RTP Port is " + firstRtpPort);
+		if (firstRtpPort != 0) {
+                    Logger.println("First RTP Port is " + firstRtpPort);
+		}
             } catch (NumberFormatException e) {
                 Logger.println(
                     "Invalid first RTP port, using next available: " + s);
