@@ -49,6 +49,32 @@
         </java>
     </target>
     
+    <target name="register" description="Register with gateway">
+        <java classname="com.sun.voip.server.SipServer" failonerror="true" fork="true">
+            <jvmarg value="-server"/>
+            <jvmarg value="-Dgov.nist.jainsip.stack.disableAuthentication=true"/>
+	    <jvmarg value="-Dgov.nist.jainsip.stack.traceLevel=8"/>
+	    <jvmarg value="-Dgov.nist.javax.sip.SERVER_LOG=sipMessages.log"/>
+	    <jvmarg value="-Dgov.nist.javax.sip.DEBUG_LOG=nistStack.log"/>
+            <jvmarg value="-Dgov.nist.jainsip.stack.enableUDP=${voicebridge.sip.port}"/>
+            <jvmarg value="-Djavax.sip.IP_ADDRESS=${voicebridge.local.hostAddress}"/>
+            <jvmarg value="-Dcom.sun.voip.server.VoIPGateways=129.148.75.22,10.1.224.22,10.6.4.192"/>
+            <jvmarg value="-ms200m"/>
+            <jvmarg value="-mx200m"/>
+	    <jvmarg value="-XX:NewSize=5m"/>
+            <jvmarg value="-XX:MaxNewSize=4m"/> 
+            <jvmarg value="-XX:+UseParNewGC"/> 
+            <jvmarg value="-XX:+UseConcMarkSweepGC"/>
+            <jvmarg value="-XX:+PrintClassHistogram"/> 
+	    <jvmarg value="-XX:+PrintGCDetails"/>
+            <jvmarg value="-XX:+PrintGCTimeStamps"/>
+            <jvmarg value="-XX:+TraceGen0Time"/>
+            <jvmarg value="-XX:+TraceGen1Time"/>
+        
+            <arg value="noprogram"/>
+            <classpath refid="run.classpath"/>
+        </java>
+    </target>
     <!-- shut down an existing bridge -->
     <target name="shutdown-bridge" description="Shutdown Conference Bridge">
         <java classname="com.sun.voip.server.ShutdownBridge" failonerror="true" fork="true">
