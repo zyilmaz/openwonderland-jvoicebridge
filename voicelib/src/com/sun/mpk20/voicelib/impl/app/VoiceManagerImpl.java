@@ -66,9 +66,9 @@ public class VoiceManagerImpl implements VoiceManager {
 
     private DefaultSpatializer livePlayerSpatializer;
 
-    private DefaultSpatializer defaultSpatializer;
+    private DefaultSpatializer stationarySpatializer;
 
-    private DefaultSpatializer orbSpatializer;
+    private DefaultSpatializer outworlderSpatializer;
 
     private ConcurrentHashMap<String, Player> players = new ConcurrentHashMap<String, Player>();
 
@@ -84,13 +84,13 @@ public class VoiceManagerImpl implements VoiceManager {
     public VoiceManagerImpl(VoiceManager backingManager) {
         this.backingManager = backingManager;
 
-	defaultSpatializer = new DefaultSpatializer();
-	defaultSpatializer.setZeroVolumeRadius(.2);
+	stationarySpatializer = new DefaultSpatializer();
+	stationarySpatializer.setZeroVolumeRadius(.2);
 
 	livePlayerSpatializer = new DefaultSpatializer();
 
-  	orbSpatializer = new DefaultSpatializer();
-	orbSpatializer.setFallOff(LIVE_PLAYER_FALLOFF);
+  	outworlderSpatializer = new DefaultSpatializer();
+	outworlderSpatializer.setFallOff(LIVE_PLAYER_FALLOFF);
 
 	livePlayerSpatializer.setFallOff(LIVE_PLAYER_FALLOFF);
     }
@@ -143,7 +143,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    if (cp.getInputTreatment() == null) {
 	        p.setPublicSpatializer(livePlayerSpatializer);
 	    } else {
-	        p.setPublicSpatializer(defaultSpatializer);
+	        p.setPublicSpatializer(stationarySpatializer);
 	    }
 	}
 
@@ -153,27 +153,29 @@ public class VoiceManagerImpl implements VoiceManager {
     }
 
     public void createPlayer(String callId, double x, double y, double z,
-	    double orientation, boolean isOrb) {
+	    double orientation, boolean isOutworlder) {
 
-	if (findPlayer(callId) != null) {
+	Player p;
+
+	if ((p = findPlayer(callId)) != null) {
 	    logger.info("player already exists for " + callId);
-	    return;
+	} else {
+	    logger.info("Creating player for " + callId + " at "
+	        + " " + x + ":" + y + ":" + z + ":" + orientation
+	        + " isOutworlder " + isOutworlder);
+
+	    p = new Player(callId, x, y, z, orientation);
+
+	    players.put(callId, p);
 	}
 
-	logger.info("Creating player for " + callId + " at "
-	    + " " + x + ":" + y + ":" + z + ":" + orientation
-	    + " isOrb " + isOrb);
-
-	Player p = new Player(callId, x, y, z, orientation);
 	p.setLivePerson();
 
-	if (isOrb) {
-	    p.setPublicSpatializer(orbSpatializer);
+	if (isOutworlder) {
+	    p.setPublicSpatializer(outworlderSpatializer);
 	} else {
 	    p.setPublicSpatializer(livePlayerSpatializer);
 	}
-
-	players.put(callId, p);
 
 	setPrivateMixes(p);
     }
@@ -668,8 +670,16 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
     }
 
-    public DefaultSpatializer getDefaultSpatializer() {
-	return defaultSpatializer;
+    public Spatializer getLivePlayerSpatializer() {
+	return livePlayerSpatializer;
+    }
+
+    public Spatializer getStationarySpatializer() {
+	return stationarySpatializer;
+    }
+
+    public Spatializer getOutworlderSpatializer() {
+	return outworlderSpatializer;
     }
 
     private ArrayList<Wall> walls = new ArrayList<Wall>();
@@ -905,7 +915,11 @@ public class VoiceManagerImpl implements VoiceManager {
 		/*
 		 * Just use the default spatializer.
 		 */
-	        spatializer = defaultSpatializer;
+		if (p2.isLivePerson() == true) {
+		    spatializer = livePlayerSpatializer;
+		} else {
+	            spatializer = stationarySpatializer;
+		}
 	    }
 	}
 
@@ -990,23 +1004,23 @@ public class VoiceManagerImpl implements VoiceManager {
 	    + " falloff "
 	    + parameters.liveFalloff);
 
-	logger.fine("default: max v "
-	    + parameters.defaultMaxVolume
+	logger.fine("stationary: max v "
+	    + parameters.stationaryMaxVolume
 	    + " zero radius "
-	    + parameters.defaultZeroVolRadius
+	    + parameters.stationaryZeroVolRadius
 	    + " full radius "
-	    + parameters.defaultFullVolRadius
+	    + parameters.stationaryFullVolRadius
 	    + " falloff "
-	    + parameters.defaultFalloff);
+	    + parameters.stationaryFalloff);
 
-	logger.fine("orb: max v "
-	    + parameters.orbMaxVolume
+	logger.fine("outworlder: max v "
+	    + parameters.outworlderMaxVolume
 	    + " zero radius "
-	    + parameters.orbZeroVolRadius
+	    + parameters.outworlderZeroVolRadius
 	    + " full radius "
-	    + parameters.orbFullVolRadius
+	    + parameters.outworlderFullVolRadius
 	    + " falloff "
-	    + parameters.orbFalloff);
+	    + parameters.outworlderFalloff);
 
 	livePlayerSpatializer.setMaximumVolume(
 	    parameters.liveMaxVolume);
@@ -1016,21 +1030,21 @@ public class VoiceManagerImpl implements VoiceManager {
 	    parameters.liveFullVolRadius);
 	livePlayerSpatializer.setFallOff(parameters.liveFalloff);
 
-	defaultSpatializer.setMaximumVolume(
-	    parameters.defaultMaxVolume);
-	defaultSpatializer.setZeroVolumeRadius(
-	    parameters.defaultZeroVolRadius);
-	defaultSpatializer.setFullVolumeRadius(
-	    parameters.defaultFullVolRadius);
-	defaultSpatializer.setFallOff(parameters.defaultFalloff);
+	stationarySpatializer.setMaximumVolume(
+	    parameters.stationaryMaxVolume);
+	stationarySpatializer.setZeroVolumeRadius(
+	    parameters.stationaryZeroVolRadius);
+	stationarySpatializer.setFullVolumeRadius(
+	    parameters.stationaryFullVolRadius);
+	stationarySpatializer.setFallOff(parameters.stationaryFalloff);
 
-	orbSpatializer.setMaximumVolume(
-	    parameters.orbMaxVolume);
-	orbSpatializer.setZeroVolumeRadius(
-	    parameters.orbZeroVolRadius);
-	orbSpatializer.setFullVolumeRadius(
-	    parameters.orbFullVolRadius);
-	orbSpatializer.setFallOff(parameters.orbFalloff);
+	outworlderSpatializer.setMaximumVolume(
+	    parameters.outworlderMaxVolume);
+	outworlderSpatializer.setZeroVolumeRadius(
+	    parameters.outworlderZeroVolRadius);
+	outworlderSpatializer.setFullVolumeRadius(
+	    parameters.outworlderFullVolRadius);
+	outworlderSpatializer.setFallOff(parameters.outworlderFalloff);
 
 	/*
 	 * Reset all private mixes
@@ -1045,14 +1059,14 @@ public class VoiceManagerImpl implements VoiceManager {
 	    livePlayerSpatializer.getZeroVolumeRadius(),
 	    livePlayerSpatializer.getFullVolumeRadius(),
 	    livePlayerSpatializer.getFallOff(),
-	    defaultSpatializer.getMaximumVolume(),
-	    defaultSpatializer.getZeroVolumeRadius(),
-	    defaultSpatializer.getFullVolumeRadius(),
-	    defaultSpatializer.getFallOff(),
-	    orbSpatializer.getMaximumVolume(),
-	    orbSpatializer.getZeroVolumeRadius(),
-	    orbSpatializer.getFullVolumeRadius(),
-	    orbSpatializer.getFallOff());
+	    stationarySpatializer.getMaximumVolume(),
+	    stationarySpatializer.getZeroVolumeRadius(),
+	    stationarySpatializer.getFullVolumeRadius(),
+	    stationarySpatializer.getFallOff(),
+	    outworlderSpatializer.getMaximumVolume(),
+	    outworlderSpatializer.getZeroVolumeRadius(),
+	    outworlderSpatializer.getFullVolumeRadius(),
+	    outworlderSpatializer.getFallOff());
     }
 
     public void setLogLevel(Level level) {

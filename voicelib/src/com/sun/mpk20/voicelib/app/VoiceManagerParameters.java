@@ -33,14 +33,14 @@ public class VoiceManagerParameters {
     public double liveZeroVolRadius;
     public double liveFullVolRadius;
     public double liveFalloff;
-    public double defaultMaxVolume;
-    public double defaultZeroVolRadius;
-    public double defaultFullVolRadius;
-    public double defaultFalloff;
-    public double orbMaxVolume;
-    public double orbZeroVolRadius;
-    public double orbFullVolRadius;
-    public double orbFalloff;
+    public double stationaryMaxVolume;
+    public double stationaryZeroVolRadius;
+    public double stationaryFullVolRadius;
+    public double stationaryFalloff;
+    public double outworlderMaxVolume;
+    public double outworlderZeroVolRadius;
+    public double outworlderFullVolRadius;
+    public double outworlderFalloff;
 
     public VoiceManagerParameters() {
     }
@@ -50,14 +50,14 @@ public class VoiceManagerParameters {
             double liveZeroVolRadius, 
 	    double liveFullVolRadius,
 	    double liveFalloff,
-	    double defaultMaxVolume,
-	    double defaultZeroVolRadius,
-	    double defaultFullVolRadius,
-	    double defaultFalloff,
-	    double orbMaxVolume,
-	    double orbZeroVolRadius,
-	    double orbFullVolRadius,
-	    double orbFalloff) {
+	    double stationaryMaxVolume,
+	    double stationaryZeroVolRadius,
+	    double stationaryFullVolRadius,
+	    double stationaryFalloff,
+	    double outworlderMaxVolume,
+	    double outworlderZeroVolRadius,
+	    double outworlderFullVolRadius,
+	    double outworlderFalloff) {
 
 	this.logLevel = logLevel;
 
@@ -66,15 +66,15 @@ public class VoiceManagerParameters {
         this.liveFullVolRadius = liveFullVolRadius;
         this.liveFalloff = liveFalloff;
 
-	this.defaultMaxVolume = defaultMaxVolume;
-        this.defaultZeroVolRadius = defaultZeroVolRadius;
-        this.defaultFullVolRadius = defaultFullVolRadius;
-        this.defaultFalloff = defaultFalloff;
+	this.stationaryMaxVolume = stationaryMaxVolume;
+        this.stationaryZeroVolRadius = stationaryZeroVolRadius;
+        this.stationaryFullVolRadius = stationaryFullVolRadius;
+        this.stationaryFalloff = stationaryFalloff;
 
-	this.orbMaxVolume = orbMaxVolume;
-	this.orbZeroVolRadius = orbZeroVolRadius;
-	this.orbFullVolRadius = orbFullVolRadius;
-	this.orbFalloff = orbFalloff;
+	this.outworlderMaxVolume = outworlderMaxVolume;
+	this.outworlderZeroVolRadius = outworlderZeroVolRadius;
+	this.outworlderFullVolRadius = outworlderFullVolRadius;
+	this.outworlderFalloff = outworlderFalloff;
     }
 
 }

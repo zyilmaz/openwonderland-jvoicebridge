@@ -63,7 +63,7 @@ public interface VoiceManager {
     public void callEstablished(String callId) throws IOException;
 
     public void createPlayer(String callId, double x, double y, double z,
-	double orientation, boolean isOrb);
+	double orientation, boolean isOutworlder);
 
     public void removePlayer(String callId);
 
@@ -133,7 +133,11 @@ public interface VoiceManager {
     public void addWall(double startX, double startY, 
 	double endX, double endY, double characteristic) throws IOException;
 
-    public DefaultSpatializer getDefaultSpatializer();
+    public Spatializer getLivePlayerSpatializer();
+
+    public Spatializer getStationarySpatializer();
+
+    public Spatializer getOutworlderSpatializer();
 
     public void setParameters(VoiceManagerParameters p);
 

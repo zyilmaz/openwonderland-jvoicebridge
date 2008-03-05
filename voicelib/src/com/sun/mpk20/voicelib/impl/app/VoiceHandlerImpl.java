@@ -260,13 +260,15 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void createPlayer(String callId, double x, double y, double z,
-	    double orientation, boolean isOrb) {
+	    double orientation, boolean isOutworlder) {
 
-	logger.info("creating player at (" + x + ", " + y + ", " + z + ")");
+	logger.info("creating player for " + callId 
+	    + " at (" + x + ", " + y + ", " + z + ")" 
+	    + " isOutworlder " + isOutworlder);
 
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
-	voiceManager.createPlayer(callId, x, y, z, orientation, isOrb);
+	voiceManager.createPlayer(callId, x, y, z, orientation, isOutworlder);
     }
 
     public void removePlayer(String callId) {
@@ -765,27 +767,22 @@ public class VoiceHandlerImpl implements VoiceHandler,
         return treatment;
     }
     
-    public void setFallOff(double fallOff) {
+    public Spatializer getLivePlayerSpatializer() {
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
-        voiceManager.getDefaultSpatializer().setFallOff(fallOff);
+
+	return voiceManager.getLivePlayerSpatializer();
     }
 
-    public void setFallOffFunction(String s) {
+    public Spatializer getStationarySpatializer() {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	return voiceManager.getStationarySpatializer();
     }
 
-    public void setFullVolumeRadius(double fullVolumeRadius) {
+    public Spatializer getOutworlderSpatializer() {
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
-	voiceManager.getDefaultSpatializer().setFullVolumeRadius(fullVolumeRadius);
-    }
 
-    public void setZeroVolumeRadius(double zeroVolumeRadius) {
-	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
-	voiceManager.getDefaultSpatializer().setZeroVolumeRadius(zeroVolumeRadius);
-    }
-
-    public void setMaximumVolume(double maximumVolume) {
-	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
-	voiceManager.getDefaultSpatializer().setMaximumVolume(maximumVolume);
+	return voiceManager.getOutworlderSpatializer();
     }
 
     public void setSpatialAudio(boolean enabled) {

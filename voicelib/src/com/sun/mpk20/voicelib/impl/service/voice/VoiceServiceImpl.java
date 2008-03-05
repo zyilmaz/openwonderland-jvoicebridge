@@ -442,7 +442,15 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	    double endX, double endY, double characteristic) throws IOException{
     }
 
-    public DefaultSpatializer getDefaultSpatializer() {
+    public Spatializer getLivePlayerSpatializer() {
+	return null;
+    }
+
+    public Spatializer getStationarySpatializer() {
+	return null;
+    }
+
+    public Spatializer getOutworlderSpatializer() {
 	return null;
     }
 

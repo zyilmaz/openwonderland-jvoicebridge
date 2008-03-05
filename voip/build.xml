@@ -252,6 +252,12 @@
         </ant>
     </target>
     
+    <target name="register" depends="jar">
+        <ant antfile="run.xml" target="register">
+            <reference refid="run.classpath"/>
+        </ant>
+    </target>
+    
     <target name="run-config" depends="jar">
         <ant antfile="run.xml" target="run-config">
             <reference refid="run.classpath"/>

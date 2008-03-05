@@ -41,7 +41,7 @@ public interface VoiceHandler {
     public String setupCall(String callId, String sipUrl, String bridge);
 
     public void createPlayer(String callId, double x, double y, double z,
-	double orientation, boolean isOrb);
+	double orientation, boolean isOutworlder);
 
     public void removePlayer(String callId);
 
@@ -92,15 +92,11 @@ public interface VoiceHandler {
     
     public void muteCall(String callId, boolean isMuted);
 
-    public void setFallOff(double fallOff);
+    public Spatializer getLivePlayerSpatializer();
 
-    public void setFallOffFunction(String s);
+    public Spatializer getStationarySpatializer();
 
-    public void setFullVolumeRadius(double fullVolumeRadius);
-
-    public void setZeroVolumeRadius(double zeroVolumeRadius);
-
-    public void setMaximumVolume(double maximumVolume);
+    public Spatializer getOutworlderSpatializer();
 
     public void setMasterVolume(String callId, double masterVolume);
 
