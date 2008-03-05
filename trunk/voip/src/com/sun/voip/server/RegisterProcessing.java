@@ -115,7 +115,8 @@ class RegisterProcessing implements SipListener {
     }
 
     public void processRequest(RequestEvent requestReceivedEvent) {
-	Logger.println("Request ignored:  " + requestReceivedEvent.getRequest());
+	Logger.println("Request ignored:  " 
+	    + requestReceivedEvent.getRequest());
     }
 
     public void processResponse(ResponseEvent responseReceivedEvent) {
@@ -130,12 +131,14 @@ class RegisterProcessing implements SipListener {
 	if (statusCode == Response.OK) {
             isRegistered = true;
 
-	    Logger.println("Voice bridge successfully registered with " + registrar);
+	    Logger.println("Voice bridge successfully registered with " 
+	        + registrar);
 	} else if (statusCode == Response.UNAUTHORIZED || 
 		statusCode == Response.PROXY_AUTHENTICATION_REQUIRED) {
 
 	    Logger.println("Registration with " + registrar 
-	        + " got an authentication challenge which the bridge does not support!");
+	        + " got an authentication challenge which "
+		+ "the bridge does not support!");
 	} else {
 	    Logger.println("Unrecognized response:  " + response);
 	}
@@ -184,7 +187,8 @@ class RegisterProcessing implements SipListener {
         }
         requestURI.setPort(registrarPort);
         try {
-            requestURI.setTransportParam(sipProvider.getListeningPoint().getTransport());
+            requestURI.setTransportParam(
+		sipProvider.getListeningPoint().getTransport());
         } catch (ParseException e) {
             throw new IOException(sipProvider.getListeningPoint().getTransport()
 		+ " is not a valid transport! " + e.getMessage());
@@ -214,7 +218,8 @@ class RegisterProcessing implements SipListener {
                 SipURI toURI = (SipURI)(requestURI.clone());
                 toURI.setUser(System.getProperty("user.name"));
 
-                toHeader = headerFactory.createToHeader(addressFactory.createAddress(toURI), null);
+                toHeader = headerFactory.createToHeader(
+		    addressFactory.createAddress(toURI), null);
             } else {
                 toHeader = headerFactory.createToHeader(fromAddress, null);
             }
@@ -237,7 +242,8 @@ class RegisterProcessing implements SipListener {
                 viaHeaders,
                 maxForwardsHeader);
         } catch (ParseException e) {
-            throw new IOException("Could not create the register request! " + e.getMessage());
+            throw new IOException(
+		"Could not create the register request! " + e.getMessage());
 	}
         //Expires Header
         ExpiresHeader expHeader = null;
@@ -265,7 +271,8 @@ class RegisterProcessing implements SipListener {
             regTrans = sipProvider.getNewClientTransaction(request);
         } catch (TransactionUnavailableException e) {
             throw new IOException("Could not create a register transaction!\n"
-                + "Check that the Registrar address is correct! " + e.getMessage());
+                + "Check that the Registrar address is correct! " 
+		+ e.getMessage());
         } try {
 	    sipCallId = callIdHeader.getCallId();
 	    sipServerCallback.addSipListener(sipCallId, this);
@@ -281,7 +288,8 @@ class RegisterProcessing implements SipListener {
 	    }
         } catch (Exception e) {
             //we sometimes get a null pointer exception here so catch them all
-	    throw new IOException("Could not send out the register request! " + e.getMessage());
+	    throw new IOException("Could not send out the register request! " 
+		+ e.getMessage());
         }
 
         this.registerRequest = request;
@@ -326,7 +334,8 @@ class RegisterProcessing implements SipListener {
         try {
             unregisterTransaction.sendRequest();
         } catch (SipException e) {
-            Logger.println("Faied to send unregister request " + e.getMessage());
+            Logger.println("Faied to send unregister request " 
+		+ e.getMessage());
 	    return;
         }
     }
@@ -344,7 +353,8 @@ class RegisterProcessing implements SipListener {
 
 	try {
 	    SipURI fromURI = (SipURI) addressFactory.createURI(loginInfo);
-            fromURI.setTransportParam(sipProvider.getListeningPoint().getTransport());
+            fromURI.setTransportParam(
+		sipProvider.getListeningPoint().getTransport());
 
             fromURI.setPort(sipProvider.getListeningPoint().getPort());
             Address fromAddress = addressFactory.createAddress(fromURI);
@@ -352,7 +362,8 @@ class RegisterProcessing implements SipListener {
 	    fromHeader = headerFactory.createFromHeader(fromAddress,
             Integer.toString(hashCode()));
         } catch (ParseException e) {
-            throw new IOException("A ParseException occurred while creating From Header! " 
+            throw new IOException(
+		"A ParseException occurred while creating From Header! " 
 		+ e.getMessage());
         }
 
@@ -404,7 +415,8 @@ class RegisterProcessing implements SipListener {
         }
 
 	try {
-            maxForwardsHeader = headerFactory.createMaxForwardsHeader(MAX_FORWARDS);
+            maxForwardsHeader = 
+		headerFactory.createMaxForwardsHeader(MAX_FORWARDS);
             return maxForwardsHeader;
         } catch (InvalidArgumentException e) {
                 throw new IOException(
@@ -423,7 +435,8 @@ class RegisterProcessing implements SipListener {
         try {
             SipURI contactURI = (SipURI) addressFactory.createURI( loginInfo);
 
-            contactURI.setTransportParam(sipProvider.getListeningPoint().getTransport());
+            contactURI.setTransportParam(
+		sipProvider.getListeningPoint().getTransport());
 	    contactURI.setPort(sipProvider.getListeningPoint().getPort());
             Address contactAddress = addressFactory.createAddress(contactURI);
             contactAddress.setDisplayName("VoiceBridge");
