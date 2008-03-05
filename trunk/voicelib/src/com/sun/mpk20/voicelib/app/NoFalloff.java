@@ -23,7 +23,7 @@
 
 package com.sun.mpk20.voicelib.app;
 
-public class NoFallOff extends FallOffFunction {
+public class NoFalloff extends FalloffFunction {
 
     public double getVolume(double distance) {
 	return 1;

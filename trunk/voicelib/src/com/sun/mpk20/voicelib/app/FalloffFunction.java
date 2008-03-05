@@ -25,25 +25,25 @@ package com.sun.mpk20.voicelib.app;
 
 import java.util.logging.Logger;
 
-public abstract class FallOffFunction {
+public abstract class FalloffFunction {
 
     /** a logger */
     protected static final Logger logger =
-            Logger.getLogger(FallOffFunction.class.getName());
+            Logger.getLogger(FalloffFunction.class.getName());
 
-    protected double fallOff;
+    protected double falloff;
     protected double maximumVolume;
     protected double fullVolumeRadius;
     protected double zeroVolumeRadius;
 
     protected double attenuationDistance;
 
-    public void setFallOff(double fallOff) {
-        this.fallOff = fallOff;
+    public void setFalloff(double falloff) {
+        this.falloff = falloff;
     }
 
-    public double getFallOff() {
-	return fallOff;
+    public double getFalloff() {
+	return falloff;
     }
 
     public void setFullVolumeRadius(double fullVolumeRadius) {
@@ -102,7 +102,7 @@ public abstract class FallOffFunction {
 		+ " fvr " + round(fullVolumeRadius) + " zvr " 
 		+ round(zeroVolumeRadius));
 
-	    return maximumVolume; // * fallOff;
+	    return maximumVolume; // * falloff;
 	}
 
 	if (distance >= zeroVolumeRadius) {
@@ -143,7 +143,7 @@ public abstract class FallOffFunction {
 	    v = 0;
 	}
 
-	return v; // * fallOff;
+	return v; // * falloff;
     }
 
     public double round(double v) {

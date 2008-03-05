@@ -33,7 +33,7 @@ public class DefaultSpatializer implements Spatializer {
     protected static final Logger logger =
             Logger.getLogger(DefaultSpatializer.class.getName());
 
-    private FallOffFunction fallOffFunction;
+    private FalloffFunction falloffFunction;
 
     private static final String MAXIMUM_VOLUME =
         "com.sun.server.impl.app.VoiceManager.MAXIMUM_VOLUME";
@@ -62,7 +62,7 @@ public class DefaultSpatializer implements Spatializer {
     }
 
     public DefaultSpatializer() {
-	fallOffFunction = new InverseFallOff();
+	falloffFunction = new InverseFalloff();
 
 	String s = System.getProperty(MAXIMUM_VOLUME);
 
@@ -80,72 +80,72 @@ public class DefaultSpatializer implements Spatializer {
 
 	s = System.getProperty(FALLOFF);
 
-	double fallOff = DEFAULT_FALLOFF;
+	double falloff = DEFAULT_FALLOFF;
 
 	if (s != null) {
 	    try {
-	        fallOff = Double.parseDouble(s);
+	        falloff = Double.parseDouble(s);
 	    } catch (NumberFormatException e) {
 	        logger.warning("Invalid maximum volume:  " + s);
 	    }
 	}
 	
 	/*
-	 * Initialize fallOffFunction
+	 * Initialize falloffFunction
 	 */
-	setFallOff(fallOff);
+	setFalloff(falloff);
 	setMaximumVolume(maximumVolume);
         setFullVolumeRadius(DEFAULT_FULL_VOLUME_RADIUS);
 	setZeroVolumeRadius(DEFAULT_ZERO_VOLUME_RADIUS);
     }
 
-    public void setFallOffFunction(FallOffFunction fallOffFunction) {
-	this.fallOffFunction = fallOffFunction;
+    public void setFalloffFunction(FalloffFunction falloffFunction) {
+	this.falloffFunction = falloffFunction;
     }
 
-    public FallOffFunction getFallOffFunction() {
-	return fallOffFunction;
+    public FalloffFunction getFalloffFunction() {
+	return falloffFunction;
     }
 
-    public void setFallOff(double fallOff) {
-        fallOffFunction.setFallOff(fallOff);
+    public void setFalloff(double falloff) {
+        falloffFunction.setFalloff(falloff);
 
-        logger.fine("Set fallOff to " + round(fallOff));
+        logger.fine("Set falloff to " + round(falloff));
 
-        fallOffFunction.setFallOff(fallOff);
+        falloffFunction.setFalloff(falloff);
     }
 
-    public double getFallOff() {
-	return fallOffFunction.getFallOff();
+    public double getFalloff() {
+	return falloffFunction.getFalloff();
     }
 
     public void setFullVolumeRadius(double fullVolumeRadius) {
 	logger.fine("Set full volume radius to " 
 	    + round(fullVolumeRadius));
-	fallOffFunction.setFullVolumeRadius(fullVolumeRadius);
+	falloffFunction.setFullVolumeRadius(fullVolumeRadius);
     }
 
     public double getFullVolumeRadius() {
-	return fallOffFunction.getFullVolumeRadius();
+	return falloffFunction.getFullVolumeRadius();
     }
 
     public void setZeroVolumeRadius(double zeroVolumeRadius) {
 	logger.fine("Set zero volume radius to " 
 	    + round(zeroVolumeRadius));
-	fallOffFunction.setZeroVolumeRadius(zeroVolumeRadius);
+	falloffFunction.setZeroVolumeRadius(zeroVolumeRadius);
     }
 
     public double getZeroVolumeRadius() {
-	return fallOffFunction.getZeroVolumeRadius();
+	return falloffFunction.getZeroVolumeRadius();
     }
 
     public void setMaximumVolume(double maximumVolume) {
 	logger.fine("Set maximum volume to " + round(maximumVolume));
-	fallOffFunction.setMaximumVolume(maximumVolume);
+	falloffFunction.setMaximumVolume(maximumVolume);
     }
 
     public double getMaximumVolume() {
-	return fallOffFunction.getMaximumVolume();
+	return falloffFunction.getMaximumVolume();
     }
 
     /*
@@ -247,7 +247,7 @@ public class DefaultSpatializer implements Spatializer {
 	 */
 	double distance = getDistance(p1, p2);
 
-	double volume = fallOffFunction.distanceToVolumeLevel(distance);
+	double volume = falloffFunction.distanceToVolumeLevel(distance);
 
 	logger.finest("distance " + round(distance) + " volume " 
 	    + round(volume));

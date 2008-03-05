@@ -632,19 +632,19 @@ if (false) {
         }
     }
 
-    public void setSpatialFallOff(double spatialFallOff) throws IOException {
-        BridgeResponse br = sendWithResponse("spatialFallOff="
-            + spatialFallOff + "\n");
+    public void setSpatialFalloff(double spatialFalloff) throws IOException {
+        BridgeResponse br = sendWithResponse("spatialFalloff="
+            + spatialFalloff + "\n");
 
         logger.finest("setSpatialAudio status " + br.getStatus());
 
         switch (br.getStatus()) {
         case SUCCESS:
-            logger.finest("setSpatialFallOff success");
+            logger.finest("setSpatialFalloff success");
             return;
 
         default:
-            throw new IOException("setSpatialFallOff failed:  "
+            throw new IOException("setSpatialFalloff failed:  "
               + br.getMessage());
         }
     }

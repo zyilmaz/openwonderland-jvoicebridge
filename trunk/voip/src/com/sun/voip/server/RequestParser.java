@@ -2761,8 +2761,8 @@ public class RequestParser {
         }
 
         try {
-            value = getValue("spatialFallOff" , "sfo", request);
-            SunSpatialAudio.setSpatialFallOff(getDouble(value));
+            value = getValue("spatialFalloff" , "sfo", request);
+            SunSpatialAudio.setSpatialFalloff(getDouble(value));
             return true;
         } catch (ParameterException e) {
         }
@@ -3333,7 +3333,7 @@ public class RequestParser {
 	    + SunSpatialAudio.getSpatialEchoVolume());
 
  	requestHandler.writeToSocket("spatialFalloff			= "
-	    + SunSpatialAudio.getSpatialFallOff());
+	    + SunSpatialAudio.getSpatialFalloff());
 
  	requestHandler.writeToSocket("spatialMinVolume		= "
 	    + SunSpatialAudio.getSpatialMinVolume());

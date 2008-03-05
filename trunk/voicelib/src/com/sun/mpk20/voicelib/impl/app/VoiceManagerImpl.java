@@ -72,9 +72,22 @@ public class VoiceManagerImpl implements VoiceManager {
 
     private ConcurrentHashMap<String, Player> players = new ConcurrentHashMap<String, Player>();
 
-    private static final double ZERO_VOLUME = .009;
+    private static final double LIVE_PLAYER_MAXIMUM_VOLUME = .8;
+    private static final double LIVE_PLAYER_ZERO_VOLUME_RADIUS = .22;
+    private static final double LIVE_PLAYER_FULL_VOLUME_RADIUS = .08;
+    private static final double LIVE_PLAYER_FALLOFF = .95;
 
-    private static final double LIVE_PLAYER_FALLOFF = .94;
+    private static final double STATIONARY_MAXIMUM_VOLUME = .5;
+    private static final double STATIONARY_ZERO_VOLUME_RADIUS = .18;
+    private static final double STATIONARY_FULL_VOLUME_RADIUS = .06;
+    private static final double STATIONARY_FALLOFF = .95;
+
+    private static final double OUTWORLDER_MAXIMUM_VOLUME = .7;
+    private static final double OUTWORLDER_ZERO_VOLUME_RADIUS = .26;
+    private static final double OUTWORLDER_FULL_VOLUME_RADIUS = .1;
+    private static final double OUTWORLDER_FALLOFF = .94;
+
+    private static final double ZERO_VOLUME = .009;
 
     private static Object lock = new Object();
 
@@ -84,15 +97,31 @@ public class VoiceManagerImpl implements VoiceManager {
     public VoiceManagerImpl(VoiceManager backingManager) {
         this.backingManager = backingManager;
 
-	stationarySpatializer = new DefaultSpatializer();
-	stationarySpatializer.setZeroVolumeRadius(.2);
-
 	livePlayerSpatializer = new DefaultSpatializer();
+	livePlayerSpatializer.setMaximumVolume(LIVE_PLAYER_MAXIMUM_VOLUME);
+	livePlayerSpatializer.setZeroVolumeRadius(
+	    LIVE_PLAYER_ZERO_VOLUME_RADIUS);
+	livePlayerSpatializer.setFullVolumeRadius(
+	    LIVE_PLAYER_FULL_VOLUME_RADIUS);
+	livePlayerSpatializer.setFalloff(LIVE_PLAYER_FALLOFF);
+
+	stationarySpatializer = new DefaultSpatializer();
+	stationarySpatializer.setMaximumVolume(
+	    STATIONARY_MAXIMUM_VOLUME);
+	stationarySpatializer.setZeroVolumeRadius(
+	    STATIONARY_ZERO_VOLUME_RADIUS);
+	stationarySpatializer.setFullVolumeRadius(
+	    STATIONARY_FULL_VOLUME_RADIUS);
+	stationarySpatializer.setFalloff(
+	    STATIONARY_FALLOFF);
 
   	outworlderSpatializer = new DefaultSpatializer();
-	outworlderSpatializer.setFallOff(LIVE_PLAYER_FALLOFF);
-
-	livePlayerSpatializer.setFallOff(LIVE_PLAYER_FALLOFF);
+	outworlderSpatializer.setMaximumVolume(OUTWORLDER_MAXIMUM_VOLUME);
+	outworlderSpatializer.setZeroVolumeRadius(
+	    OUTWORLDER_ZERO_VOLUME_RADIUS);
+	outworlderSpatializer.setFullVolumeRadius(
+	    OUTWORLDER_FULL_VOLUME_RADIUS);
+	outworlderSpatializer.setFalloff(OUTWORLDER_FALLOFF);
     }
 
     public void monitorConference(String conferenceId) throws IOException {
@@ -646,9 +675,9 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
     }
 
-    public void setSpatialFallOff(double spatialFallOff) throws IOException {
+    public void setSpatialFalloff(double spatialFalloff) throws IOException {
 	if (backingManager != null) {
-	    backingManager.setSpatialFallOff(spatialFallOff);
+	    backingManager.setSpatialFalloff(spatialFalloff);
 	}
     }
 
@@ -1028,7 +1057,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    parameters.liveZeroVolRadius);
 	livePlayerSpatializer.setFullVolumeRadius(
 	    parameters.liveFullVolRadius);
-	livePlayerSpatializer.setFallOff(parameters.liveFalloff);
+	livePlayerSpatializer.setFalloff(parameters.liveFalloff);
 
 	stationarySpatializer.setMaximumVolume(
 	    parameters.stationaryMaxVolume);
@@ -1036,7 +1065,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    parameters.stationaryZeroVolRadius);
 	stationarySpatializer.setFullVolumeRadius(
 	    parameters.stationaryFullVolRadius);
-	stationarySpatializer.setFallOff(parameters.stationaryFalloff);
+	stationarySpatializer.setFalloff(parameters.stationaryFalloff);
 
 	outworlderSpatializer.setMaximumVolume(
 	    parameters.outworlderMaxVolume);
@@ -1044,7 +1073,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    parameters.outworlderZeroVolRadius);
 	outworlderSpatializer.setFullVolumeRadius(
 	    parameters.outworlderFullVolRadius);
-	outworlderSpatializer.setFallOff(parameters.outworlderFalloff);
+	outworlderSpatializer.setFalloff(parameters.outworlderFalloff);
 
 	/*
 	 * Reset all private mixes
@@ -1058,15 +1087,15 @@ public class VoiceManagerImpl implements VoiceManager {
 	    livePlayerSpatializer.getMaximumVolume(),
 	    livePlayerSpatializer.getZeroVolumeRadius(),
 	    livePlayerSpatializer.getFullVolumeRadius(),
-	    livePlayerSpatializer.getFallOff(),
+	    livePlayerSpatializer.getFalloff(),
 	    stationarySpatializer.getMaximumVolume(),
 	    stationarySpatializer.getZeroVolumeRadius(),
 	    stationarySpatializer.getFullVolumeRadius(),
-	    stationarySpatializer.getFallOff(),
+	    stationarySpatializer.getFalloff(),
 	    outworlderSpatializer.getMaximumVolume(),
 	    outworlderSpatializer.getZeroVolumeRadius(),
 	    outworlderSpatializer.getFullVolumeRadius(),
-	    outworlderSpatializer.getFallOff());
+	    outworlderSpatializer.getFalloff());
     }
 
     public void setLogLevel(Level level) {
