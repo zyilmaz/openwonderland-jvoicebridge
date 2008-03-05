@@ -227,7 +227,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	    //DefaultSpatializer spatializer = new DefaultSpatializer();
 
-	    //spatializer.setFallOff(.95);
+	    //spatializer.setFalloff(.95);
 
 	    //voiceManager.setupCall(cp, 0, 0, 0, 0, spatializer, bridge);
 
@@ -806,11 +806,11 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	}
     }
 
-    public void setSpatialFallOff(double spatialFallOff) {
+    public void setSpatialFalloff(double spatialFalloff) {
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
 	try {
-	    voiceManager.setSpatialFallOff(spatialFallOff);
+	    voiceManager.setSpatialFalloff(spatialFalloff);
 	} catch (IOException e) {
 	    logger.warning("Unable to set spatial audio fall off: " 
 		+ e.getMessage());
