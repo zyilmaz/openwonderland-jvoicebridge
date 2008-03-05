@@ -23,7 +23,7 @@
 
 package com.sun.mpk20.voicelib.app;
 
-public class InverseFallOff extends FallOffFunction {
+public class InverseFalloff extends FalloffFunction {
 
     public double getVolume(double distance) {
 	/*
@@ -44,23 +44,23 @@ public class InverseFallOff extends FallOffFunction {
 	 * and zero (or near zero) when distance is 1.  
 	 *
 	 * f(0) = 1;
-	 * f(1) = fallOff * f(0);
-	 * f(2) = fallOff * f(1);
+	 * f(1) = falloff * f(0);
+	 * f(2) = falloff * f(1);
 	 * ...
 	 * 
-	 * In general f(x) = fallOff ** x;
+	 * In general f(x) = falloff ** x;
 	 *
-	 * When fallOff is < 1, f(x) will decrease as x increases.
+	 * When falloff is < 1, f(x) will decrease as x increases.
 	 */
 	int iD = (int) (d * 100);
 
-	double v = Math.pow(fallOff, iD);
+	double v = Math.pow(falloff, iD);
 
-	logger.finer("InverseFallOff d " + round(distance) 
+	logger.finer("InverseFalloff d " + round(distance) 
 	   + " fvr " + fullVolumeRadius + " zvr " + zeroVolumeRadius
 	   + " a " + round(attenuationDistance) 
 	   + " d/a " + round(distance / attenuationDistance) 
-	   + " falloff " + round(fallOff) + " iD " + iD 
+	   + " falloff " + round(falloff) + " iD " + iD 
 	   + " v " + round(v));
 
         return v;

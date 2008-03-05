@@ -1316,7 +1316,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    return;
 	}
 
-	logger.info("Setting log level to " + level);
+	logger.fine("Setting log level to " + level);
 	logger.setLevel(level);
 	
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);

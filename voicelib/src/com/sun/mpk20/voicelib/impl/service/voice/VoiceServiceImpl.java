@@ -356,8 +356,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	bridgeManager.setSpatialMinVolume(spatialMinVolume);
     }
 
-    public void setSpatialFallOff(double spatialFallOff) throws IOException {
-	bridgeManager.setSpatialFallOff(spatialFallOff);
+    public void setSpatialFalloff(double spatialFalloff) throws IOException {
+	bridgeManager.setSpatialFalloff(spatialFalloff);
     }
 
     public void setSpatialEchoDelay(double spatialEchoDelay) 

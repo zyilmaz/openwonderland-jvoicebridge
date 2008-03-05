@@ -28,7 +28,7 @@ public class NoAttenuationSpatializer extends DefaultSpatializer {
     public NoAttenuationSpatializer() {
 	super();
 
-	setFallOffFunction(new NoFallOff());
+	setFalloffFunction(new NoFalloff());
     }
 
     public void setAttenuator(double attenuator) {

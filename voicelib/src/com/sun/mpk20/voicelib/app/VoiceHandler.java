@@ -104,7 +104,7 @@ public interface VoiceHandler {
 
     public void setSpatialMinVolume(double spatialMinVolume);
 
-    public void setSpatialFallOff(double spatialFallOff);
+    public void setSpatialFalloff(double spatialFalloff);
 
     public void setSpatialEchoDelay(double spatialEchoDelay);
 

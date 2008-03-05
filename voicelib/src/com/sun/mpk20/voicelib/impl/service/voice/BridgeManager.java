@@ -761,10 +761,10 @@ public class BridgeManager extends Thread
 	}
     }
 
-    public void setSpatialFallOff(double spatialFallOff) throws IOException {
+    public void setSpatialFalloff(double spatialFalloff) throws IOException {
 	synchronized (bridgeConnections) {
 	    for (BridgeConnection bc : bridgeConnections) {
-	        bc.setSpatialFallOff(spatialFallOff);
+	        bc.setSpatialFalloff(spatialFalloff);
 	    }
 	}
     }

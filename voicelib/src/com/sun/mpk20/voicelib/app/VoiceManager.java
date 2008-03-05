@@ -122,7 +122,7 @@ public interface VoiceManager {
 
     public void setSpatialMinVolume(double spatialMinVolume) throws IOException ;
 
-    public void setSpatialFallOff(double spatialFallOff) throws IOException ;
+    public void setSpatialFalloff(double spatialFalloff) throws IOException ;
 
     public void setSpatialEchoDelay(double spatialEchoDelay) throws IOException ;
 

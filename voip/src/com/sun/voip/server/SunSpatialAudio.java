@@ -31,7 +31,7 @@ public class SunSpatialAudio implements SpatialAudio {
 
     private static final double MAX_DELAY = .63;
 
-    private static double fallOff = .94;
+    private static double falloff = .94;
     private static double minVolume = .7;
     private static double echoDelay = 0;   // .5 seems to be a reasonable value;
     private static double echoVolume = .35;
@@ -105,14 +105,14 @@ public class SunSpatialAudio implements SpatialAudio {
 	return echoVolume;
     }
 
-    public static void setSpatialFallOff(double fallOff) {
-	SunSpatialAudio.fallOff = fallOff;
+    public static void setSpatialFalloff(double falloff) {
+	SunSpatialAudio.falloff = falloff;
 
 	setMaxExp();
     }
 
-    public static double getSpatialFallOff() {
-	return fallOff;
+    public static double getSpatialFalloff() {
+	return falloff;
     }
 
     public static void setSpatialMinVolume(double minVolume) {
@@ -133,23 +133,23 @@ public class SunSpatialAudio implements SpatialAudio {
 
     private static void setMaxExp() {
 	/*
-	 * Calculate the exponent by which fallOff must be raised to
+	 * Calculate the exponent by which falloff must be raised to
 	 * in order to get a value near minVolume.
 	 *
-	 * fallOff**maxExp = minVolume which is equivalent to
+	 * falloff**maxExp = minVolume which is equivalent to
 	 *
-	 * maxExp * log(fallOff) = log(minVolume) which means 
+	 * maxExp * log(falloff) = log(minVolume) which means 
 	 *
-	 * maxExp = log(minVolume) / log(fallOff);
+	 * maxExp = log(minVolume) / log(falloff);
 	 */
-	if (minVolume >= fallOff) {
+	if (minVolume >= falloff) {
 	    maxExp = 0;
 	} else {
-	    maxExp = (int) ((Math.log(minVolume) / Math.log(fallOff)));
+	    maxExp = (int) ((Math.log(minVolume) / Math.log(falloff)));
 	}
 
 	if (Logger.logLevel >= Logger.LOG_INFO) {
-	    Logger.println("minVolume " + minVolume + " fallOff " + fallOff
+	    Logger.println("minVolume " + minVolume + " falloff " + falloff
 	        + " maxExp set to " + maxExp);
 	}
     }
@@ -531,7 +531,7 @@ public class SunSpatialAudio implements SpatialAudio {
 
 	int exp = (int) (Math.abs(offset) * maxExp);
 
-	return volume * Math.pow(fallOff, exp);
+	return volume * Math.pow(falloff, exp);
     }
 
     public String toString() {
