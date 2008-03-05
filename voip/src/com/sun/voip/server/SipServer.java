@@ -238,8 +238,11 @@ public class SipServer implements SipListener {
             SipUtil.initialize();
 
 	    for (int i = 0; i < voIPGatewayLoginInfo.size(); i++) {
-		new RegisterProcessing(voIPGateways.get(i), 
-		    voIPGatewayLoginInfo.get(i));
+		String loginInfo = voIPGatewayLoginInfo.get(i);
+
+		if (loginInfo.length() > 0) {
+		    new RegisterProcessing(voIPGateways.get(i), loginInfo);
+		}
 	    }
         } catch(NullPointerException e) { 
             Logger.exception("Stack has no ListeningPoints", e); 
