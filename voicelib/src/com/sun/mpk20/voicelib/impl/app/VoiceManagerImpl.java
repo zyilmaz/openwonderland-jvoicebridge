@@ -77,8 +77,8 @@ public class VoiceManagerImpl implements VoiceManager {
     private static final double LIVE_PLAYER_FULL_VOLUME_RADIUS = .08;
     private static final double LIVE_PLAYER_FALLOFF = .95;
 
-    private static final double STATIONARY_MAXIMUM_VOLUME = .4;
-    private static final double STATIONARY_ZERO_VOLUME_RADIUS = .18;
+    private static final double STATIONARY_MAXIMUM_VOLUME = .2;
+    private static final double STATIONARY_ZERO_VOLUME_RADIUS = .16;
     private static final double STATIONARY_FULL_VOLUME_RADIUS = .06;
     private static final double STATIONARY_FALLOFF = .94;
 
