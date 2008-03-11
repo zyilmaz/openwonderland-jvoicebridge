@@ -224,6 +224,10 @@ public class VoiceServiceImpl implements VoiceManager, Service,
             Spatializer spatializer) {
     }
 
+    public Spatializer getIncomingSpatializer(String targetCallId) {
+	return null;
+    }
+
     public void setTalkAttenuator(String callId, double talkAttenuator) {
     }
 
