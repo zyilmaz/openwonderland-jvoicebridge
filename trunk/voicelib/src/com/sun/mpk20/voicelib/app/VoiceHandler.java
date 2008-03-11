@@ -60,6 +60,8 @@ public interface VoiceHandler {
     public void setIncomingSpatializer(String targetCallId, 
 	Spatializer spatializer);
 
+    public Spatializer getIncomingSpatializer(String targetCallId);
+
     public void removeIncomingSpatializer(String targetCallId);
 
     public void setTalkAttenuator(String callId, double talkAttenuator);

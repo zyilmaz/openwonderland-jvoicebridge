@@ -201,6 +201,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	p.setLivePerson();
 
 	if (isOutworlder) {
+	    p.setIncomingSpatializer(outworlderSpatializer);
 	    p.setPublicSpatializer(outworlderSpatializer);
 	} else {
 	    p.setPublicSpatializer(livePlayerSpatializer);
@@ -323,6 +324,17 @@ public class VoiceManagerImpl implements VoiceManager {
 	 * Update everything
 	 */
 	setPrivateMixes();
+    }
+
+    public Spatializer getIncomingSpatializer(String targetCallId) {
+        Player targetPlayer = findPlayer(targetCallId);
+
+        if (targetPlayer == null) {
+            logger.info("no targetPlayer for " + targetCallId);
+            return null;
+	}
+
+	return targetPlayer.getIncomingSpatializer();
     }
 
     public void setTalkAttenuator(String callId, double talkAttenuator) {
@@ -938,18 +950,18 @@ public class VoiceManagerImpl implements VoiceManager {
 	         * If there is a public spatializer, use that.
 	         */
 	        spatializer = p2.getPublicSpatializer();
-	    } 
 
-	    if (spatializer == null) {
-		/*
-		 * Just use the default spatializer.
-		 */
-		if (p2.isLivePerson() == true) {
-		    spatializer = livePlayerSpatializer;
-		} else {
-	            spatializer = stationarySpatializer;
+	        if (spatializer == null) {
+		    /*
+		     * Just use the default spatializer.
+		     */
+		    if (p2.isLivePerson() == true) {
+		        spatializer = livePlayerSpatializer;
+		    } else {
+	                spatializer = stationarySpatializer;
+		    }
 		}
-	    }
+	    } 
 	}
 
 	double[] privateMixParameters = spatializer.spatialize(

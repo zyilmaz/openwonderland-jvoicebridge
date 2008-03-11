@@ -321,6 +321,12 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	voiceManager.setIncomingSpatializer(targetCallId, spatializer);
     }
 
+    public Spatializer getIncomingSpatializer(String targetCallId) {
+	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
+
+	return voiceManager.getIncomingSpatializer(targetCallId);
+    }
+
     public void removeIncomingSpatializer(String targetCallId) {
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 
