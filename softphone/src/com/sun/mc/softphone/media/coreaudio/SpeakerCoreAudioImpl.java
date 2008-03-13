@@ -302,7 +302,7 @@ public class SpeakerCoreAudioImpl implements Speaker {
 
 	    int bufferSize = 8 * dataSize;
 
-            audioDriver.initialize(bufferSize);
+            audioDriver.initialize(bufferSize, bufferSize);
 
             audioDriver.start(
 		sampleRate, channels, 2*channels, 1, 2*channels, 16,

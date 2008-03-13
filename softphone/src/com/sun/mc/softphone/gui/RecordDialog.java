@@ -96,7 +96,7 @@ public class RecordDialog extends JDialog implements CallDoneListener {
     private Style basicStyle;
     private Style boldStyle;
 
-    private String recordingType = "rtp";
+    private String recordingType = "au";
 
     private boolean recordingMic;
 
@@ -147,7 +147,13 @@ public class RecordDialog extends JDialog implements CallDoneListener {
 
         contentPane.setLayout(gridBag);
         
-        recordFilePath = new JTextField(20);
+        String s = Utils.getPreference("com.sun.mc.softphone.gui.LAST_FILE_PLAYED");
+
+        if (s != null && s.length() > 0) {
+            recordFilePath = new JTextField(s, 20);
+        } else {
+            recordFilePath = new JTextField(20);
+        }
 
         recordFilePath.getDocument().addDocumentListener(
 	    new DocumentListener() {
@@ -206,14 +212,14 @@ public class RecordDialog extends JDialog implements CallDoneListener {
 
 	wizardGroup = new ButtonGroup();
 
-	JRadioButton rb = new JRadioButton(setRtpAction);
+	JRadioButton rb = new JRadioButton(setAudioAction);
 
 	rb.setAlignmentY(0);
 	rb.setSelected(true);
 	choices.add(rb);
 	wizardGroup.add(rb);
 
-	rb = new JRadioButton(setAudioAction);
+	rb = new JRadioButton(setRtpAction);
 	rb.setAlignmentY(0);
 	choices.add(rb);
 	wizardGroup.add(rb);
@@ -329,6 +335,8 @@ public class RecordDialog extends JDialog implements CallDoneListener {
 
     private void startRecording() {
         String path = recordFilePath.getText();
+
+	Utils.setPreference("com.sun.mc.softphone.gui.LAST_FILE_RECORDED", path);
 
 	try {
 	    mediaManager.startRecording(path, recordingType, recordingMic, this);

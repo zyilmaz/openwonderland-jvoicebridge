@@ -465,10 +465,12 @@ public class AudioDriverMac extends Object implements AudioDriver {
     }
     
     /* set up the buffer and whatever else needs setting up before startup */
-    public void initialize(int bufferSize) {    
-	println("initialize enter " + bufferSize);
-        speakerByteBuffer = ByteBuffer.allocateDirect(bufferSize);
-        micByteBuffer = ByteBuffer.allocateDirect(bufferSize);
+    public void initialize(int microphoneBufferSize, int speakerBufferSize) {    
+	println("initialize enter, mic buffer size " + microphoneBufferSize
+	    + " speaker buffer size " + speakerBufferSize);
+
+        micByteBuffer = ByteBuffer.allocateDirect(microphoneBufferSize);
+        speakerByteBuffer = ByteBuffer.allocateDirect(speakerBufferSize);
 
         nInitializeBuffers(speakerByteBuffer, micByteBuffer);
 	println("initialize leave ");

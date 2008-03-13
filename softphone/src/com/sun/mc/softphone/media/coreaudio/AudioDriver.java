@@ -174,8 +174,9 @@ public interface AudioDriver {
     public void stop();
     
     /* call before starting
-     * @param bufferSize size of both the mic and speaker buffers
+     * @param microphoneBufferSize microphone buffer size
+     * @param speakerBufferSize speaker buffer size
      */
-    public void initialize(int bufferSize);
+    public void initialize(int microphoneBufferSize, int speakerBufferSize);
 
 }

@@ -114,7 +114,7 @@ public class AudioDriverMacTest extends TestCase {
         }
         
         // put the bytes into the ByteBuffer in multiple steps
-        adm.initialize(10000);
+        adm.initialize(10000, 10000);
         adm.start(8000.f, 1, 2, 1, 2, 16,
                   8000.f, 1, 2, 1, 2, 16);
 
@@ -143,7 +143,7 @@ public class AudioDriverMacTest extends TestCase {
         for (int h = 0; h < 5; h++) {
             
             System.out.println(rates[h]);
-            adm.initialize(500000);
+            adm.initialize(500000, 500000);
             adm.start(rates[h], 2, 4, 1, 4, 16,
                       rates[h], 2, 4, 1, 4, 16);
             
