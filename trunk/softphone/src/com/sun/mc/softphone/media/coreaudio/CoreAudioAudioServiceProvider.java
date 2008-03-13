@@ -75,10 +75,11 @@ public class CoreAudioAudioServiceProvider implements AudioServiceProvider {
 
         audioDriver = new AudioDriverMac();
 
-        audioDriver.initialize(speakerBufferSize);
+        audioDriver.initialize(microphoneBufferSize, speakerBufferSize);
 
 	Logger.println("Initializing audio driver to " + sampleRate
-	    + "/" + channels + " bufferSize " + speakerBufferSize);
+	    + "/" + channels + " microphoneBufferSize " + microphoneBufferSize
+	    + " speakerBufferSize " + speakerBufferSize);
 
         /*
          * The speaker is always set to 2 channels.

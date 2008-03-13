@@ -498,6 +498,12 @@ if (false) {
             microphoneBufferSizeMillis = Microphone.DEFAULT_BUFFER_SIZE;
         }
 
+	if (Utils.isMacOS() && microphoneBufferSizeMillis < 1000) {
+	    Logger.println("Microphone buffer size milliseconds " 
+		+ microphoneBufferSizeMillis + " is too small for MacOS. "
+		+ " Resetting to 1000.");
+	}
+
         int speakerBufferSizeMillis = Utils.getIntPreference(
             Speaker.BUFFER_SIZE_PROPERTY);
 
