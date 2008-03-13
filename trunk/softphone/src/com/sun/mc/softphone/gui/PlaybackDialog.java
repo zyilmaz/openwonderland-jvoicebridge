@@ -165,7 +165,6 @@ public class PlaybackDialog extends JDialog implements PacketGeneratorListener {
 	String s = Utils.getPreference("com.sun.mc.softphone.gui.LAST_FILE_PLAYED");
 	
 	if (s != null && s.length() > 0) {
-	    System.out.println("Setting last file to " + s);
             playbackFilePath = new JTextField(s, 20);
 	} else {
             playbackFilePath = new JTextField(20);

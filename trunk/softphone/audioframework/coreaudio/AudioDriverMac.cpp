@@ -349,7 +349,8 @@ JNIEXPORT jint JNICALL Java_com_sun_mc_softphone_media_coreaudio_AudioDriverMac_
                     /* manually compact, then set the pointers appropriately */
                     memmove(nativeMicBuffer, 
                             &nativeMicBuffer[micBufferReadPosition], 
-                            length);
+                            used);
+
                     micBufferReadPosition = 0;
                     micBufferWritePosition = used;
                     debug("\t\t\t\t\t\t\t\t\t\t\tcompacting mic buffer\n");
@@ -563,26 +564,31 @@ jobjectArray getAudioDevices(bool input, JNIEnv* env)
                                    (void*)p_devices);
     checkStatus(err);
 
-    ///* Get something from each of the devices */
-    //int numDevices = i_param_size / sizeof(AudioDeviceID);
-    //jclass adc = env->FindClass("com/sun/mc/softphone/media/coreaudio/AudioDevice");
-    //jmethodID mid = env->GetMethodID(adc, "<init>", "()V");
-    //
-    ///* allocate the array to return */
-    //ret = (jobjectArray)env->NewObjectArray(numDevices, adc,
-    //                                        env->NewObject(adc, mid));
-    //
-    ///* put the devices in the array */
-    //for (int i = 0; i < numDevices; i++) {
-    //    env->SetObjectArrayElement(ret, i, getAudioDevice(p_devices[i], 
-    //                               input, env));
-    //}
+    /* Get something from each of the devices */
+    int numDevices = i_param_size / sizeof(AudioDeviceID);
+    jclass adc = env->FindClass("com/sun/mc/softphone/media/coreaudio/AudioDevice");
+    jmethodID mid = env->GetMethodID(adc, "<init>", "()V");
+    
+    /* allocate the array to return */
+    ret = (jobjectArray)env->NewObjectArray(numDevices, adc,
+                                            env->NewObject(adc, mid));
+    
+    /* put the devices in the array */
+    for (int i = 0; i < numDevices; i++) {
+        env->SetObjectArrayElement(ret, i, getAudioDevice(p_devices[i], 
+                                   input, env));
+    }
 
-    jobjectArray ret = (jobjectArray) env->NewObjectArray(numDevices,
+    ret = (jobjectArray) env->NewObjectArray(numDevices,
         env->FindClass("java/lang/String"), env->NewStringUTF(""));
 
+    int i;
+
+    char s[100];
+
     for (i = 0; i < numDevices; i++) {
-        env->SetObjectArrayElement(ret, i, env->NewStringUTF(p_devices[i].toString()));
+	sprintf(s, "%d", p_devices[i]);
+        env->SetObjectArrayElement(ret, i, env->NewStringUTF(s));
     }
 
     free(p_devices);

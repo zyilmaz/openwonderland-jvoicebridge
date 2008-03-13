@@ -147,13 +147,7 @@ public class RecordDialog extends JDialog implements CallDoneListener {
 
         contentPane.setLayout(gridBag);
         
-        String s = Utils.getPreference("com.sun.mc.softphone.gui.LAST_FILE_PLAYED");
-
-        if (s != null && s.length() > 0) {
-            recordFilePath = new JTextField(s, 20);
-        } else {
-            recordFilePath = new JTextField(20);
-        }
+        recordFilePath = new JTextField(20);
 
         recordFilePath.getDocument().addDocumentListener(
 	    new DocumentListener() {
@@ -274,6 +268,14 @@ public class RecordDialog extends JDialog implements CallDoneListener {
         JPanel buttonPanel = createButtonPanel();
         gridBag.setConstraints(buttonPanel, constraints);
         contentPane.add(buttonPanel);
+
+        String s = Utils.getPreference("com.sun.mc.softphone.gui.LAST_FILE_PLAYED");
+
+        if (s != null && s.length() > 0) {
+            recordFilePath.setText(s);
+            recordMicButton.setEnabled(true);
+            recordSpeakerButton.setEnabled(true);
+        } 
     }
 
     /**
