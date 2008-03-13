@@ -498,10 +498,25 @@ if (false) {
             microphoneBufferSizeMillis = Microphone.DEFAULT_BUFFER_SIZE;
         }
 
-	if (Utils.isMacOS() && microphoneBufferSizeMillis < 1000) {
-	    Logger.println("Microphone buffer size milliseconds " 
-		+ microphoneBufferSizeMillis + " is too small for MacOS. "
-		+ " Resetting to 1000.");
+	if (Utils.isMacOS()) {
+	    int min = Utils.getIntPreference(Microphone.MINIMUM_MAC_BUFFER_SIZE_PROPERTY);
+
+	    if (min <= 0) {
+		min = Microphone.DEFAULT_MINIMUM_MAC_BUFFER_SIZE;
+
+		if (Logger.logLevel >= Logger.LOG_INFO) {
+		    Logger.println("Setting default minimum Mac Buffer size to " 
+			+ min);
+		}
+	    }
+		
+	    if (microphoneBufferSizeMillis < min) {
+	        Logger.println("Microphone buffer size milliseconds " 
+		    + microphoneBufferSizeMillis + " is too small for MacOS. "
+		    + " Resetting to " + min);
+
+		microphoneBufferSizeMillis = min;
+	    }
 	}
 
         int speakerBufferSizeMillis = Utils.getIntPreference(
