@@ -3,5 +3,8 @@ This library contains the native code for Mac Core Audio use by java.
 
 To build the library:
 
+You must install Apple Xcode tools in order to have the Core Audio header
+files!
+
 	- build the softphone
 	- Then on a Mac (you must run this on a Mac!) type ./build.sh.
