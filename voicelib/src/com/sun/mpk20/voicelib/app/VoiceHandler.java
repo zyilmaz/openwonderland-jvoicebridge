@@ -49,6 +49,8 @@ public interface VoiceHandler {
 
     public void setPublicSpatializer(String callId, Spatializer spatializer);
 
+    public Spatializer getPublicSpatializer(String callId);
+
     public void removePublicSpatializer(String callId);
 
     public void setPrivateSpatializer(String targetCallId, String sourceCallId,

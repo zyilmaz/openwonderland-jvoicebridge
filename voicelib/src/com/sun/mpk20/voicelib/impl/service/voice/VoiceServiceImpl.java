@@ -216,6 +216,10 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     public void setPublicSpatializer(String callId, Spatializer publicSpatializer) {
     }
 
+    public Spatializer getPublicSpatializer(String callId) {
+	return null;
+    }
+
     public void setPrivateSpatializer(String fromCallId, String targetCallId,
 	    Spatializer spatializer) {
     }

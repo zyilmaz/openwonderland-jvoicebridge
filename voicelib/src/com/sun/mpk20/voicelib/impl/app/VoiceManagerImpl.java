@@ -158,8 +158,6 @@ public class VoiceManagerImpl implements VoiceManager {
 
         p = new Player(callId, x, y, z, orientation);
 
-	p.setPublicSpatializer(spatializer);
-
 	if (cp.getInputTreatment() == null) {
 	    /*
 	     * If there is an input treatment, this is not a live player.
@@ -168,13 +166,21 @@ public class VoiceManagerImpl implements VoiceManager {
 	    p.setLivePerson();
 	}
 
-	if (p.getPublicSpatializer() == null) {
+	if (spatializer == null) {
 	    if (cp.getInputTreatment() == null) {
 	        p.setPublicSpatializer(livePlayerSpatializer);
+		logger.fine(callId + " setting pub spatializer to live " 
+		    + livePlayerSpatializer);
 	    } else {
 	        p.setPublicSpatializer(stationarySpatializer);
+		logger.fine(callId + " setting pub spatializer to stationary" 
+		    + stationarySpatializer);
 	    }
+	} else {
+	    logger.fine(callId + " setting pub spatializer to " + spatializer);
+	    p.setPublicSpatializer(spatializer);
 	}
+
 
 	if (players.put(callId, p) != null) {
 	    logger.info("Player for " + callId + " already existed");
@@ -203,8 +209,12 @@ public class VoiceManagerImpl implements VoiceManager {
 	if (isOutworlder) {
 	    p.setIncomingSpatializer(outworlderSpatializer);
 	    p.setPublicSpatializer(outworlderSpatializer);
+	    logger.fine(callId + " setting pub spatializer to outworlder " 
+		+ outworlderSpatializer);
 	} else {
 	    p.setPublicSpatializer(livePlayerSpatializer);
+	    logger.fine(callId + " setting pub spatializer to live " 
+		+ livePlayerSpatializer);
 	}
 
 	setPrivateMixes(p);
@@ -230,9 +240,11 @@ public class VoiceManagerImpl implements VoiceManager {
 	Player player = findPlayer(callId);
 
         if (player == null) {
-            logger.fine("no Player for " + callId);
+            logger.warning("no Player for " + callId);
             return;
 	}
+
+	logger.fine(callId + " setting public spatialializer " + publicSpatializer);
 
 	player.setPublicSpatializer(publicSpatializer);
 
@@ -240,6 +252,17 @@ public class VoiceManagerImpl implements VoiceManager {
 	 * Update everything
 	 */
 	setPrivateMixes();
+    }
+
+    public Spatializer getPublicSpatializer(String targetCallId) {
+        Player targetPlayer = findPlayer(targetCallId);
+
+        if (targetPlayer == null) {
+            logger.info("no targetPlayer for " + targetCallId);
+            return null;
+	}
+
+	return targetPlayer.getPublicSpatializer();
     }
 
     public void setPrivateSpatializer(String targetCallId, String sourceCallId,
@@ -960,8 +983,17 @@ public class VoiceManagerImpl implements VoiceManager {
 		    } else {
 	                spatializer = stationarySpatializer;
 		    }
+		} else {
+	            logger.finest(p1 + " using public spatializer for " + p2
+		        + " " + spatializer);
 		}
-	    } 
+	    } else {
+	        logger.finest(p1 + " using incoming spatializer for " + p2
+		    + " " + spatializer);
+	    }
+	} else {
+	    logger.finest(p1 + " using private spatializer for " + p2
+		+ " " + spatializer);
 	}
 
 	double[] privateMixParameters = spatializer.spatialize(

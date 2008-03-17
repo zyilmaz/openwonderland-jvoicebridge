@@ -77,7 +77,7 @@ public class SineWaveAudioSource implements AudioSource {
 	 */
         for (int i = 0; i < length; i += (2 * channels)) {
 	    int s = (int) (amplitude * volume * 
-		Math.sin(frequency * sample * (twoPI / sampleRate)));
+		Math.sin(sample * twoPI * frequency / sampleRate));
 
             linearData[i] = s;
 

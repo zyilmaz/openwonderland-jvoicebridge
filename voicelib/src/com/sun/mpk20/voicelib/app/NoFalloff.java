@@ -23,7 +23,10 @@
 
 package com.sun.mpk20.voicelib.app;
 
-public class NoFalloff extends FalloffFunction {
+import java.io.Serializable;
+
+public class NoFalloff extends FalloffFunction 
+	implements Serializable {
 
     public double getVolume(double distance) {
 	return 1;

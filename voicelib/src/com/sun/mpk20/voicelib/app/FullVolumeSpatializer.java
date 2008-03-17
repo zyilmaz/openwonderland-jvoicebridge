@@ -23,9 +23,13 @@
 
 package com.sun.mpk20.voicelib.app;
 
+import java.io.Serializable;
+
 import java.util.logging.Logger;
 
-public class FullVolumeSpatializer implements Spatializer {
+public class FullVolumeSpatializer implements Spatializer, Serializable {
+
+    private static final long serialVersionUID = 1;
 
     private double fullVolumeRadius = 0;
 
