@@ -279,6 +279,10 @@ public class SipServer implements SipListener {
 
         gateways = gateways.replaceAll("\\s", "");
 
+	if (gateways.length() == 0) {
+	    return true;
+	}
+
 	String[] g = gateways.split(",");
 
         for (int i = 0; i < g.length; i++) {
