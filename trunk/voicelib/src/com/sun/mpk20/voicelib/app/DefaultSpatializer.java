@@ -23,9 +23,13 @@
 
 package com.sun.mpk20.voicelib.app;
 
+import java.io.Serializable;
+
 import java.util.logging.Logger;
 
-public class DefaultSpatializer implements Spatializer {
+public class DefaultSpatializer implements Spatializer, Serializable {
+
+    private static final long serialVersionUID = 1;
 
     private boolean debug;
 
@@ -95,8 +99,8 @@ public class DefaultSpatializer implements Spatializer {
 	 */
 	setFalloff(falloff);
 	setMaximumVolume(maximumVolume);
-        setFullVolumeRadius(DEFAULT_FULL_VOLUME_RADIUS);
 	setZeroVolumeRadius(DEFAULT_ZERO_VOLUME_RADIUS);
+        setFullVolumeRadius(DEFAULT_FULL_VOLUME_RADIUS);
     }
 
     public void setFalloffFunction(FalloffFunction falloffFunction) {
@@ -461,4 +465,11 @@ public class DefaultSpatializer implements Spatializer {
 	}
     }
 
+    public String toString() {
+	return "DefaultSpatializer:  "
+	    + " max volume " + getMaximumVolume()
+	    + " attenuator " + attenuator
+	    + " fvr " + getFullVolumeRadius() 
+	    + " zvr " + getZeroVolumeRadius();
+    }
 }

@@ -23,9 +23,13 @@
 
 package com.sun.mpk20.voicelib.app;
 
+import java.io.Serializable;
+
 import java.util.logging.Logger;
 
-public abstract class FalloffFunction {
+public abstract class FalloffFunction implements Serializable {
+    
+    protected static final long serialVersionUID = 1;
 
     /** a logger */
     protected static final Logger logger =
@@ -50,8 +54,9 @@ public abstract class FalloffFunction {
 	this.fullVolumeRadius = fullVolumeRadius;
 
 	if (fullVolumeRadius > zeroVolumeRadius) {
-            logger.warning("full volume radius > zero volume radius, "
-                + " adjusting zvr to fvr");
+            logger.warning("full volume radius " + fullVolumeRadius
+	        + " > zero volume radius " + zeroVolumeRadius
+                + ", adjusting zvr to fvr");
 
 	    zeroVolumeRadius = fullVolumeRadius;
 	}
@@ -67,10 +72,11 @@ public abstract class FalloffFunction {
 	this.zeroVolumeRadius = zeroVolumeRadius;
 
         if (zeroVolumeRadius < fullVolumeRadius) {
-            this.zeroVolumeRadius = fullVolumeRadius;
+            logger.warning("zero volume radius " + zeroVolumeRadius
+		+ " < full volume radius " + fullVolumeRadius
+                + ", adjusting zvr to fvr");
 
-            logger.warning("zero volume radius < full volume radius, "
-                + " adjusting zvr to fvr");
+            this.zeroVolumeRadius = fullVolumeRadius;
         }
 
 	attenuationDistance = zeroVolumeRadius - fullVolumeRadius;

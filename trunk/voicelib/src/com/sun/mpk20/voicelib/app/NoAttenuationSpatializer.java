@@ -23,7 +23,10 @@
 
 package com.sun.mpk20.voicelib.app;
 
-public class NoAttenuationSpatializer extends DefaultSpatializer {
+import java.io.Serializable;
+
+public class NoAttenuationSpatializer extends DefaultSpatializer
+	implements Serializable {
 
     public NoAttenuationSpatializer() {
 	super();
