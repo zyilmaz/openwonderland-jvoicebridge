@@ -310,14 +310,17 @@ public class Bridge {
                         "Using localhost System property javax.sip.IP_ADDRESS: "
                         + localHostAddress);
 
-		if (localHostAddress.equals("127.0.0.1") || 
-		 	localHostAddress.equalsIgnoreCase("localhost")) {
+		if (localHostAddress.equalsIgnoreCase("localhost")) {
+                    localHostAddress = InetAddress.getLocalHost().getHostAddress();
 
-                    localHostAddress = 
-			InetAddress.getLocalHost().getHostAddress();
 		}
             }
             
+	    if (localHostAddress.equals("127.0.0.1")) {
+		Logger.println("WARNING:  THE BRIDGE'S IP ADDRESS IS 127.0.0.1. "
+		    + " THE BRIDGE WILL ONLY WORK LOCALLY!");
+	    }
+
             privateHost = InetAddress.getByName(localHostAddress).getHostAddress();
         } catch (UnknownHostException e) {
 	    Logger.error("Unable to determine local IP Address:  "
