@@ -492,6 +492,13 @@ if (false) {
 	    voipGateway = voipGateways.get(0);
 	}
 
+	if (Bridge.getPrivateHost().equals("127.0.0.1") && 
+	    voipGateway.equals("127.0.0.1") == false) {
+
+	    throw new SipException("The bridge's ip address is 127.0.0.1.  "
+		+ "It is not possible to initiate a call to " + voipGateway);
+	}
+
 	Logger.writeFile("Call " + cp + " voip gateway / proxy " + voipGateway
 	    + " port " + toSipPort);
 

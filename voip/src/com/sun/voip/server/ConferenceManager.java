@@ -1359,12 +1359,23 @@ public class ConferenceManager {
 
     public void addTreatment(String treatment) throws IOException {
 	if (!done) {
-	    TreatmentManager treatmentManager = new TreatmentManager(
-		treatment, 0, mediaInfo.getSampleRate(),
-		mediaInfo.getChannels());
-
 	    synchronized (this) {
-	        wgManager.addConferenceTreatment(treatmentManager);
+		if (wgManager.hasCommonMix()) {
+	            wgManager.addConferenceTreatment(new TreatmentManager(
+			treatment, 0, mediaInfo.getSampleRate(),
+			mediaInfo.getChannels()));
+		} else {
+                    synchronized (memberList) {
+                        for (int i = 0; i < memberList.size(); i++) {
+                            ConferenceMember member = (ConferenceMember)
+                                memberList.get(i);
+
+			    member.addTreatment(new TreatmentManager(
+				    treatment, 0, mediaInfo.getSampleRate(),
+				    mediaInfo.getChannels()));
+			}
+		    }
+		}
 	    }
 	}
     }
