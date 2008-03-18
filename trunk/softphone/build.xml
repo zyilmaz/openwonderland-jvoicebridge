@@ -162,10 +162,8 @@
         <property name="coreaudio.native.dir"
                   value="${classes.dir}/com/sun/mc/softphone/media/coreaudio/native"/>
 	<mkdir dir="${coreaudio.native.dir}"/>
-	<copy file="${intel.coreaudio.native.library}"
-	      tofile="${coreaudio.native.dir}/libmedia.intel.jnilib"/>
-	<copy file="${powerpc.coreaudio.native.library}"
-	      tofile="${coreaudio.native.dir}/libmedia.powerpc.jnilib"/>
+	<copy file="${coreaudio.native.library}"
+	      tofile="${coreaudio.native.dir}/libMediaFramework.jnilib"/>
 
         <property name="alsa.native.dir"
                   value="${classes.dir}/com/sun/mc/softphone/media/alsa/native"/>
@@ -201,8 +199,7 @@
         </jar>
         
         <copy file="${alsa.native.library}" tofile="${build.lib.dir}/libMediaFramework.so"/>
-        <copy file="${intel.coreaudio.native.library}" tofile="${build.lib.dir}/libmedia.intel.jnilib"/>
-        <copy file="${powerpc.coreaudio.native.library}" tofile="${build.lib.dir}/libmedia.powerpc.jnilib"/>
+        <copy file="${coreaudio.native.library}" tofile="${build.lib.dir}/libMediaFramework.jnilib"/>
 
         <jar compress="true" jarfile="${build.lib.dir}/softphone_inst.jar">
             <fileset dir="${classes.dir}">
@@ -212,8 +209,7 @@
             <fileset dir="${build.lib.dir}" file="${softphone.jar}"/>    
 
             <fileset dir="${build.lib.dir}" file="libMediaFramework.so"/>    
-            <fileset dir="${build.lib.dir}" file="libmedia.powerpc.jnilib"/>    
-            <fileset dir="${build.lib.dir}" file="libmedia.intel.jnilib"/>    
+            <fileset dir="${build.lib.dir}" file="libMediaFramework.jnilib"/>    
             
             <manifest>
                 <attribute name="Main-Class" value="com.sun.mc.softphone.inst.SoftphoneExtInstaller"/>
