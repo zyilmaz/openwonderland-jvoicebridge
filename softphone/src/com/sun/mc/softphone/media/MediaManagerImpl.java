@@ -525,6 +525,9 @@ if (false) {
 		    + " Resetting to " + min);
 
 		microphoneBufferSizeMillis = min;
+
+	        Utils.setPreference(Microphone.MINIMUM_MAC_BUFFER_SIZE_PROPERTY, 
+		    String.valueOf(min));
 	    }
 	}
 

@@ -39,8 +39,7 @@ import com.sun.mc.softphone.media.Speaker;
 
 public class CoreAudioAudioServiceProvider implements AudioServiceProvider {
 
-    private static final String INTEL_CORE_AUDIO_NAME = "libmedia.intel.jnilib";
-    private static final String POWERPC_CORE_AUDIO_NAME = "libmedia.powerpc.jnilib";
+    private static final String CORE_AUDIO_NAME = "libMediaFramework.jnilib";
 
     private static AudioDriver audioDriver;
 
@@ -54,12 +53,7 @@ public class CoreAudioAudioServiceProvider implements AudioServiceProvider {
         // load the libarary
         String arch = System.getProperty("os.arch");
         
-        String nativeLibraryName;
-        if (arch.equalsIgnoreCase("i386")) {
-            nativeLibraryName = INTEL_CORE_AUDIO_NAME;
-        } else {
-            nativeLibraryName = POWERPC_CORE_AUDIO_NAME;
-        }
+        String nativeLibraryName = CORE_AUDIO_NAME;
 
         Logger.println("Loading native library: " + nativeLibraryName);
         NativeLibUtil.loadLibrary(getClass(), nativeLibraryName);
