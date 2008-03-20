@@ -499,6 +499,10 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	newInputTreatment(callId, recordingFile);
     }
 
+    public void stopPlayingRecording(String callId, String recordingFile) 
+	throws IOException {
+    }
+
     public void setLogLevel(Level level) {
 	logger.setLevel(level);
     }

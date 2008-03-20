@@ -162,6 +162,9 @@ public interface VoiceHandler {
     public void playRecording(String id, String recordingFile)
 	throws IOException; 
 
+    public void stopPlayingRecording(String id, String recordingFile) 
+	throws IOException; 
+
     public void migrateCall(String callId, String phoneNumber)
 	throws IOException;
 

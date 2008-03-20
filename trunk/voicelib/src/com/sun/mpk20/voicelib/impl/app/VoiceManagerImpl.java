@@ -1274,6 +1274,10 @@ public class VoiceManagerImpl implements VoiceManager {
 	backingManager.playRecording(callId, recordingFile);
     }
 
+    public void stopPlayingRecording(String callId, String recordingFile) 
+	throws IOException {
+    }
+
     public double round(double v) {
 	return Math.round(v * 100) / (double) 100;
     }
