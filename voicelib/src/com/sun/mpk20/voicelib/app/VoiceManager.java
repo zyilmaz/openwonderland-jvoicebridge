@@ -162,6 +162,9 @@ public interface VoiceManager {
     public void playRecording(String callId, String recordingFile)
 	throws IOException;
 
+    public void stopPlayingRecording(String callId, String recordingFile) 
+	throws IOException;
+
     public void migrateCall(CallParticipant cp) throws IOException;
 
 }

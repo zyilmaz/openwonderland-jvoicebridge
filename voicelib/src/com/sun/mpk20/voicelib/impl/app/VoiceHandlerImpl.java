@@ -1408,6 +1408,12 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	}
     }
 
+    public void stopPlayingRecording(String callId, String recordingFile) 
+	    throws IOException {
+
+	stopTreatmentToCall(callId, recordingFile);
+    }
+
     static class AmbientSpatializer implements Spatializer {
         double minX;
         double maxX;
