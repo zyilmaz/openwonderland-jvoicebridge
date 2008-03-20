@@ -191,21 +191,19 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
 	    return;
 	}
 
-	MediaInfo mediaInfo;
-
-	int sampleRate = 8000;
-	int channels = 1;
+	MediaInfo mediaInfo = mixerMediaPreference;
 
 	if (treatmentManager != null) {
-	    sampleRate = treatmentManager.getSampleRate();
-	    channels = treatmentManager.getChannels();
-	}
+	    int sampleRate = treatmentManager.getSampleRate();
+	    int channels = treatmentManager.getChannels();
 
-	try {
-	    mediaInfo = MediaInfo.findMediaInfo(RtpPacket.PCM_ENCODING,
-		sampleRate, channels);
-	} catch (IOException e) {
-	    throw new ParseException(e.getMessage(), 0);
+	    try {
+	        mediaInfo = MediaInfo.findMediaInfo(RtpPacket.PCM_ENCODING,
+		    sampleRate, channels);
+	    } catch (IOException e) {
+	        Logger.println("Using conference media preference " 
+		    + mediaInfo + ": " + e.getMessage());
+	    }
 	}
 
         InetSocketAddress isa = 
