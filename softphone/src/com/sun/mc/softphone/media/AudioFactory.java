@@ -79,9 +79,9 @@ public class AudioFactory {
 	    try {
                 audioServiceProvider = new CoreAudioAudioServiceProvider();
             } catch (Throwable e) {
-                Logger.println("Unable to load Mac Core Audio "
-		    + "native library, resorting to javasound. " 
-		    + e.getMessage());
+		Logger.println("Unable to load Mac Core Audio "
+		    + "native library: " + e.getMessage());
+		Logger.println("THE SOFTPHONE WILL NOT WORK PROPERLY!");
 	    }
 	} else if (Utils.isLinux()) {
 	    try {
