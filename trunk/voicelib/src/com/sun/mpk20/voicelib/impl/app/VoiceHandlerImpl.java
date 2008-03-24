@@ -1354,7 +1354,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	CallParticipant cp = new CallParticipant();
 
         String conference = System.getProperty(
-	   "com.sun.sgs.impl.app.voice", DEFAULT_CONFERENCE);
+	   "com.sun.sgs.impl.service.voice.DEFAULT_CONFERENCE", 
+	   DEFAULT_CONFERENCE);
 
 	cp.setConferenceId(conference);
 
