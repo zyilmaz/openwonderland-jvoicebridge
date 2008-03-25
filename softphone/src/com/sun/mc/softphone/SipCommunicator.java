@@ -205,6 +205,7 @@ public class SipCommunicator extends Thread implements
 	        initialize();
 	    }
 	} catch (ParseException e) {
+	    Logger.println(e.getMessage());
 	    usage();
 	    throw e;
         } finally {
@@ -1154,7 +1155,8 @@ public class SipCommunicator extends Thread implements
 		String tokens[] = registrarAddress.split(":");
 
 		if (tokens.length < 2) {
-		    throw new ParseException("Invalid registrar:  " + args[i], 0);
+		    throw new ParseException("Registrar is missing port number:  " 
+			+ args[i], 0);
 		}
 
 		String s = tokens[0];
@@ -1257,7 +1259,7 @@ public class SipCommunicator extends Thread implements
                 Utils.setPreference("com.sun.mc.softphone.media.TRANSMIT_ENCODING",
                     args[++i]);
             } else {
-	        throw new ParseException("Invalid arguments", 0);
+	        throw new ParseException("Invalid argument:  " + args[i], 0);
 	    }
 	}
     }
