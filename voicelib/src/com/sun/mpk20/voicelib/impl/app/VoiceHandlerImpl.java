@@ -214,8 +214,10 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
             int start;
 
-            if ((start = sipUrl.indexOf(":")) >= 0) {
-                name = sipUrl.substring(start + 1, end);
+	    String pattern = "sip:";
+
+            if ((start = sipUrl.indexOf(pattern)) >= 0) {
+                name = sipUrl.substring(start + pattern.length(), end);
             }
         }
 
@@ -1381,8 +1383,10 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    VoiceManager voiceManager = 
 		AppContext.getManager(VoiceManager.class);
 
+	    Spatializer spatializer = voiceManager.getLivePlayerSpatializer();
+
 	    voiceManager.setupCall(cp, x / scale, z / scale, y / scale, 
-		0, null, null);
+		0, spatializer, null);
 	} catch (IOException e) {
 	    logger.info("Unable to setup recorder " + callId 
 		+ e.getMessage());
