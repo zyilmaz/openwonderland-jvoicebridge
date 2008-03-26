@@ -425,8 +425,10 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	    String absolutePath = cp.getInputTreatment();
 
 	    try {
-	        absolutePath = Recorder.getAbsolutePath(cp.getRecordDirectory(),
-		    cp.getInputTreatment());
+		if (cp.getRecordDirectory() != null) {
+	            absolutePath = Recorder.getAbsolutePath(cp.getRecordDirectory(),
+		        cp.getInputTreatment());
+		}
 
 	        inputTreatment = new TreatmentManager(absolutePath,
 		    0, conferenceMediaInfo.getSampleRate(),
@@ -434,8 +436,11 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
 		inputTreatment.addTreatmentDoneListener(this);
 	    } catch (IOException e) {
-	        Logger.println("Invalid input treatment " 
-		    + absolutePath + ":  " + e.getMessage());
+	        e.printStackTrace();
+
+		Logger.println("MemberReceiver:  Invalid input treatment " 
+		    + absolutePath);
+
 	        callHandler.cancelRequest("Invalid input treatment " 
 		    + absolutePath + ":  " + e.getMessage());
 	        return;
@@ -528,8 +533,12 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 		    MediaInfo conferenceMediaInfo = 
 			conferenceManager.getMediaInfo();
 
-	    	    String absolutePath = Recorder.getAbsolutePath(
-			cp.getRecordDirectory(), cp.getInputTreatment());
+	    	    String absolutePath = cp.getInputTreatment();
+
+		    if (cp.getRecordDirectory() != null) {
+	    	        absolutePath = Recorder.getAbsolutePath(
+			    cp.getRecordDirectory(), cp.getInputTreatment());
+		    }
 
 	            inputTreatment = new TreatmentManager(
 			absolutePath, 0, 
