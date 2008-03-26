@@ -771,6 +771,14 @@ public class VoiceHandlerImpl implements VoiceHandler,
      * @return the resolved treatment name
      */
     private String getTreatmentFile(String treatment) {
+	/*
+	 * If it's a URL, leave it alone
+	 * XXX there must be a better way to check for this!
+	 */
+	if (treatment.startsWith("http:")) {
+	    return treatment;
+	}
+
         String ps = System.getProperty("file.separator");
         if (!treatment.startsWith(ps)) {
             treatment = audioDir + ps + treatment;
