@@ -38,11 +38,11 @@ public interface Microphone {
         "com.sun.mc.softphone.media.MICROPHONE_BUFFER_SIZE";
 
     /** the property to read for the buffer size */
-    public static final String MINIMUM_MAC_BUFFER_SIZE_PROPERTY =
-        "com.sun.mc.softphone.media.MINIMUM_MAC_MICROPHONE_BUFFER_SIZE";
+    public static final String MINIMUM_BUFFER_SIZE_PROPERTY =
+        "com.sun.mc.softphone.media.MINIMUM_MICROPHONE_BUFFER_SIZE";
 
     /** the minimum mac buffer size default */
-    public static final int DEFAULT_MINIMUM_MAC_BUFFER_SIZE = 160;
+    public static final int DEFAULT_MINIMUM_BUFFER_SIZE = 160;
 
     /** the property for volume level */
     public static final String VOLUME_LEVEL =

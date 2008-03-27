@@ -508,10 +508,10 @@ if (false) {
 	 * on MacOS Leopard, probably due to buffer overruns.
 	 */
 	if (Utils.isWindows() == false) {
-	    int min = Utils.getIntPreference(Microphone.MINIMUM_MAC_BUFFER_SIZE_PROPERTY);
+	    int min = Utils.getIntPreference(Microphone.MINIMUM_BUFFER_SIZE_PROPERTY);
 
 	    if (min <= 0) {
-		min = Microphone.DEFAULT_MINIMUM_MAC_BUFFER_SIZE;
+		min = Microphone.DEFAULT_MINIMUM_BUFFER_SIZE;
 
 		if (Logger.logLevel >= Logger.LOG_INFO) {
 		    Logger.println("Setting default minimum Mac Buffer size to " 
@@ -522,11 +522,11 @@ if (false) {
 	    if (microphoneBufferSizeMillis < min) {
 	        Logger.println("Microphone buffer size milliseconds " 
 		    + microphoneBufferSizeMillis + " is too small. "
-		    + " Resetting to " + min);
+		    + " Resetting to " + min + ".");
 
 		microphoneBufferSizeMillis = min;
 
-	        Utils.setPreference(Microphone.MINIMUM_MAC_BUFFER_SIZE_PROPERTY, 
+	        Utils.setPreference(Microphone.BUFFER_SIZE_PROPERTY,
 		    String.valueOf(min));
 	    }
 	}
