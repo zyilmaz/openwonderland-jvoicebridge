@@ -34,6 +34,8 @@ public class Player {
 
     public String callId;
 
+    public String groupId;
+
     public double x;
     public double y;
     public double z;
@@ -188,6 +190,14 @@ public class Player {
 
     public double getMasterVolume() {
 	return masterVolume;
+    }
+
+    public void setGroupId(String groupId) {
+	this.groupId = groupId;
+    }
+
+    public String getGroupId() {
+	return groupId;
     }
 
     public boolean isInRange(Player p) {

@@ -693,6 +693,13 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	}
     }
 
+    public void setGroupId(String callId, String groupId) {
+	VoiceManager voiceManager = 
+	    AppContext.getManager(VoiceManager.class);
+
+	voiceManager.setGroupId(callId, groupId);
+    }
+	
     public void disconnectCall(String callId) {
 	logger.info("Disconnecting call " + callId);
 

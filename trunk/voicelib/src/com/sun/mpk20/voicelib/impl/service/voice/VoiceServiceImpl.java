@@ -319,6 +319,9 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	localWorkToDo.get().add(work);
     }
 
+    public void setGroupId(String callId, String groupId) {
+    }
+
     public void disconnectCall(String callId) throws IOException {
 	endCall(callId);
     }

@@ -167,4 +167,7 @@ public interface VoiceManager {
 
     public void migrateCall(CallParticipant cp) throws IOException;
 
+    public void setGroupId(String callId, String groupId);
+
 }
+
