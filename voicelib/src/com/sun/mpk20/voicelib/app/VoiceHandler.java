@@ -168,4 +168,6 @@ public interface VoiceHandler {
     public void migrateCall(String callId, String phoneNumber)
 	throws IOException;
 
+    public void setGroupId(String callId, String groupId);
+
 }

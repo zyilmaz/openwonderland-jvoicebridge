@@ -507,6 +507,17 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
     }
 
+    public void setGroupId(String callId, String groupId) {
+	Player player = findPlayer(callId);
+
+        if (player == null) {
+            logger.info("no Player for " + callId);
+            return;
+	}
+
+	player.setGroupId(groupId);
+    }
+
     private void removePlayerFromLists(String callId) {
 	Player player = findPlayer(callId);
 
@@ -956,6 +967,13 @@ public class VoiceManagerImpl implements VoiceManager {
 	    return null;
 	}
 
+	if (inSameGroup(p1.getGroupId(), p2.getGroupId()) == false) {
+	     /*
+	      * Players are in different groups.  They can't hear each other.
+	      */
+	     return new double[4];
+	}
+
 	double attenuator = 1.0;
 
 	Spatializer spatializer = p1.getPrivateSpatializer(p2.callId);
@@ -1043,6 +1061,14 @@ public class VoiceManagerImpl implements VoiceManager {
 	return privateMixParameters;
     }
  
+    private boolean inSameGroup(String p1GroupId, String p2GroupId) {
+	if (p1GroupId != null && p2GroupId != null) {
+	    return p1GroupId.equals(p2GroupId);
+	}
+
+	return p1GroupId == p2GroupId;
+    }
+
     private double getWallAttenuation(Player p1, Player p2) {
 	double wallAttenuation = 1.0;
 
