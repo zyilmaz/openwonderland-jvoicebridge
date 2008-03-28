@@ -499,16 +499,14 @@ if (false) {
         }
 
 	/*
-	 * On Windows we intentionally keep the microphone buffer size small
-	 * because a read of 20ms of data doesn't complete until the buffer is full.
+	 * On Windows and Solaris we intentionally keep the microphone 
+	 * buffer size small because a read of 20ms of data doesn't 
+	 * complete until the buffer is full.
 	 * A bigger buffer means more latency.
-	 * For other systems, there doesn't appear to be any downside to using
-	 * a very big microphone buffer except for using more memory.
-	 * This seems to solve or at least reduce a ticking problem heard
-	 * on MacOS Leopard, probably due to buffer overruns.
 	 */
-	if (Utils.isWindows() == false) {
-	    int min = Utils.getIntPreference(Microphone.MINIMUM_BUFFER_SIZE_PROPERTY);
+	if (Utils.isLinux() || Utils.isMacOS()) {
+	    int min = Utils.getIntPreference(
+		Microphone.MINIMUM_BUFFER_SIZE_PROPERTY);
 
 	    if (min <= 0) {
 		min = Microphone.DEFAULT_MINIMUM_BUFFER_SIZE;
