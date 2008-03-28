@@ -322,6 +322,10 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     public void setGroupId(String callId, String groupId) {
     }
 
+    public String getGroupId(String callId) {
+ 	return null;
+    }
+
     public void disconnectCall(String callId) throws IOException {
 	endCall(callId);
     }
