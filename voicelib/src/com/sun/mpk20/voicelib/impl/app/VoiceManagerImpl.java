@@ -181,6 +181,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    p.setPublicSpatializer(spatializer);
 	}
 
+	logger.info("Creating player for " + callId);
 
 	if (players.put(callId, p) != null) {
 	    logger.info("Player for " + callId + " already existed");
@@ -515,7 +516,22 @@ public class VoiceManagerImpl implements VoiceManager {
             return;
 	}
 
+	logger.warning("Setting group Id for " + callId + " to " + groupId);
+
 	player.setGroupId(groupId);
+
+	setPrivateMixes();
+    }
+
+    public String getGroupId(String callId) {
+	Player player = findPlayer(callId);
+
+        if (player == null) {
+            logger.info("no Player for " + callId);
+            return null;
+	}
+
+	return player.getGroupId();
     }
 
     private void removePlayerFromLists(String callId) {
@@ -971,6 +987,9 @@ public class VoiceManagerImpl implements VoiceManager {
 	     /*
 	      * Players are in different groups.  They can't hear each other.
 	      */
+	     logger.finest("different groups! p1 g " + p1.getGroupId()
+		 + " p2 g " + p2.getGroupId());
+
 	     return new double[4];
 	}
 

@@ -170,4 +170,6 @@ public interface VoiceHandler {
 
     public void setGroupId(String callId, String groupId);
 
+    public String getGroupId(String callId);
+
 }

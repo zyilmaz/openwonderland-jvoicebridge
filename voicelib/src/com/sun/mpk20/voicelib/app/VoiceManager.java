@@ -169,5 +169,7 @@ public interface VoiceManager {
 
     public void setGroupId(String callId, String groupId);
 
+    public String getGroupId(String callId);
+
 }
 

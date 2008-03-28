@@ -700,6 +700,13 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	voiceManager.setGroupId(callId, groupId);
     }
 	
+    public String getGroupId(String callId) {
+	VoiceManager voiceManager = 
+	    AppContext.getManager(VoiceManager.class);
+
+	return voiceManager.getGroupId(callId);
+    }
+
     public void disconnectCall(String callId) {
 	logger.info("Disconnecting call " + callId);
 
