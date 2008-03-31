@@ -135,8 +135,10 @@ public class ConferenceReceiver extends Thread {
 
 		    membersToRegister.remove(member);
 
-		    member.getCallHandler().cancelRequest(
-			"ConferenceReceiver failed to register member ");
+		    if (member.getCallHandler() != null) {
+		        member.getCallHandler().cancelRequest(
+			    "ConferenceReceiver failed to register member ");
+		    }
 		}
 	    }
 
