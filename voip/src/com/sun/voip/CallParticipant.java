@@ -1062,9 +1062,13 @@ public class CallParticipant {
 	}
 
         // decide whether to migrate or just call
-        if (migrateCall) {
-            request += "migrate=" + phoneNumber + "\r\n";
-        }
+	if (phoneNumber != null) {
+            if (migrateCall) {
+                request += "migrate=" + phoneNumber + "\r\n";
+            } else {
+                request += "phoneNumber=" + phoneNumber + "\r\n";
+	    }
+        } 
 
 	if (phoneNumberLocation != null) {
             request += "phoneNumberLocation=" + phoneNumberLocation + "\r\n";
