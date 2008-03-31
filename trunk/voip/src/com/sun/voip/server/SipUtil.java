@@ -238,7 +238,7 @@ if (false) {
 
             if ((ix = callee.indexOf("@")) < 0) {
                 Logger.println("generateSdp can't translate address "
-                    + " because callee doesn't have host in it:  " + callee);
+                    + "because callee doesn't have host in it:  " + callee);
             } else {
                 server = callee.substring(ix + 1);
 
@@ -248,7 +248,7 @@ if (false) {
 			(ix = server.indexOf("\n")) < 0 &&
 			(ix = server.indexOf(" ")) < 0) {
                     Logger.println("generateSdp can't translate address "
-                        + " because callee doesn't have host in it:  " + callee);
+                        + "because callee doesn't have host in it:  " + callee);
                 } else {
 		    server = server.substring(0, ix);
                     remoteAddress = InetAddress.getByName(server);

@@ -1163,16 +1163,24 @@ OSStatus micProc(void 			    *inRefCon,
     pthread_mutex_lock(&readMicLock);
         /* now put this data in the local buffer */
         int length = rendered->mBuffers[0].mDataByteSize;
+
+        pthread_mutex_lock(&localMicBufferLock);
         if (localMicBufferCapacity - localMicBufferPosition - length > 0) {
-            pthread_mutex_lock(&localMicBufferLock);
-                memcpy(&localMicBuffer[localMicBufferPosition],
-                        rendered->mBuffers[0].mData,
-                        length);
-                localMicBufferPosition += length;
-            pthread_mutex_unlock(&localMicBufferLock);
+	 	if (length > 0 && localMicBufferPosition < localMicBufferCapacity &&
+		        rendered->mBuffers[0].mData != NULL) {
+
+                    memcpy(&localMicBuffer[localMicBufferPosition],
+                           rendered->mBuffers[0].mData, length);
+                    localMicBufferPosition += length;
+		} else {
+		    printf("micProc bad parameterws:  length %d., position %d, data %x\n",
+			length, localMicBufferPosition, rendered->mBuffers[0].mData);
+		}
         } else {
             debug("Dropped inside of micProc\n");
         }
+        pthread_mutex_unlock(&localMicBufferLock);
+
     pthread_mutex_unlock(&readMicLock);
     pthread_cond_signal(&readMicCond);
     
