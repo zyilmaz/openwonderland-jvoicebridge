@@ -77,12 +77,12 @@ FILE *fp;
 void p(char *msg) 
 {
 #if 0
-    if (fp == NULL) {
-        fp = fopen("/tmp/alsa.out", "w");
-    }
+    //if (fp == NULL) {
+    //    fp = fopen("/tmp/alsa.out", "w");
+    //}
 
-    fprintf(fp, "%X: %s\n", pthread_self(), msg);
-    fflush(fp);
+    //fprintf(fp, "%X: %s\n", pthread_self(), msg);
+    //fflush(fp);
 
     fprintf(stderr, "%X: %s\n", pthread_self(), msg);
     fflush(stderr);
@@ -383,7 +383,7 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nWriteSpeaker(
 
     (*env)->ReleaseShortArrayElements(env, speakerBuffer, buffer, 0);
 
-    if (ret < 0) {
+    if (ret <= 0) {
 	return 0;
     }
 
@@ -414,22 +414,15 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nFlushSpeaker(
 void 
 closeSpeaker() 
 {
-    if (speaker_mutex == NULL) {
-	return;
-    }
-
     p("closeSpeaker");
-    pthread_mutex_lock(speaker_mutex);
+    p("back from close speaker");
 
     if (speaker_handle == NULL) {
-        pthread_mutex_unlock(speaker_mutex);
 	return;
     }
 
     snd_pcm_close(speaker_handle);
     speaker_handle = NULL;
-
-    pthread_mutex_unlock(speaker_mutex);
 }
 
 short *silence;
@@ -487,40 +480,44 @@ async_callback(snd_async_handler_t *ahandler)
     //fprintf(stderr, "Used frames %d, buf frames %d, writing silence!\n",
     //	used_frames, speaker_buffer_frames);
 
-    if (used_frames == 0) {
-	fprintf(stderr, "Used frames is zero!\n");
-    }
+    //if (used_frames == 0) {
+    //	fprintf(stderr, "Used frames is zero!\n");
+    //}
 
-    write_speaker(handle, silence, silence_frames);
+    //write_speaker(handle, silence, silence_frames);
 }
 
+int recovering;
+
 int write_speaker(snd_pcm_t *handle, jshort *data, int frames) {
+    if (recovering) {
+	fprintf(stderr, "dropping data during recovery!\n");
+	//return 0;
+    }
+
+    pthread_mutex_lock(speaker_mutex);
+
     int ret = snd_pcm_writei(handle, data, frames);
 
     if (ret < 0) {
-        fprintf(stderr, "write speaker error:  %s\n", 
-	    snd_strerror(ret));
+        //fprintf(stderr, "write speaker error:  %s\n", 
+	//    snd_strerror(ret));
 
         if (snd_pcm_recover(handle, ret, 0) < 0) {
+	    recovering++;
             fprintf(stderr, 
 		"write speaker failed to recover from writei:  "
 		"%s reinitializing the speaker\n", snd_strerror(ret));
 
 	    //initialize_microphone();
-	    p("write_speaker error recovering");
 	    initialize_speaker();
-            return ret;
-        }
+	    recovering--;
+	}
 
-        /*
-         * Retry
-         */
-        ret = write_speaker(handle, data, frames);
-
-        if (ret < 0) {
-            fprintf(stderr, "writei retry failed:  %s\n", snd_strerror(ret));
-        }
+	ret = 0;
     }
+
+    pthread_mutex_unlock(speaker_mutex);
 
     //fprintf(stderr, "callback:  wrote %d bytes of silence\n", 
     //    silence_frames * 2 * speaker_channels);
