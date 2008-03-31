@@ -50,6 +50,9 @@ public class PlaceCall implements CallStatusListener {
     
     /** the phone number to dial */
     private String number;
+
+    /** the callId */
+    private String callId;
     
     /** the call controller */
     private CallControl control;
@@ -61,11 +64,14 @@ public class PlaceCall implements CallStatusListener {
      * @param conference the name of the conference to connect to
      * @param number the phone number or SIP address to dial
      */
-    public PlaceCall(String host, int port, String conference, String number) {
+    public PlaceCall(String host, int port, String conference, String number, 
+	    String callId) {
+
         bridge = new BridgeConnectorImpl(host, port);
     
         this.conference = conference;
         this.number = number;
+	this.callId = callId;
     }
     
     /**
@@ -79,7 +85,7 @@ public class PlaceCall implements CallStatusListener {
         cp.setVoiceDetection(true);
         
         // create the call control, and set up a listener
-        control = bridge.createCallControl(conference);
+        control = bridge.createCallControl(callId, conference);
         control.addCallStatusListener(this);
         
         // now place the call
@@ -111,9 +117,9 @@ public class PlaceCall implements CallStatusListener {
     }
     
     public static void main(String args[]) {
-        if (args.length != 4) {
+        if (args.length < 4) {
             System.err.println("Usage: PlaceCall <bridge host> <bridge port>" +
-                               "<confefence name> <phone number>");
+                               "<confefence name> <phone number> [<callId>]");
             System.exit(-1);
         }
         
@@ -129,9 +135,14 @@ public class PlaceCall implements CallStatusListener {
         int port = Integer.parseInt(args[1]);
         String conference = args[2];
         String number = args[3];
+	String callId = null;
+
+	if (args.length > 4) {
+	    callId = args[4];
+	}
         
         try {
-            PlaceCall pc = new PlaceCall(host, port, conference, number);
+            PlaceCall pc = new PlaceCall(host, port, conference, number, callId);
             pc.placeCall();
         } catch (Exception ex) {
             ex.printStackTrace();
