@@ -477,14 +477,14 @@ async_callback(snd_async_handler_t *ahandler)
         return;
     }
 
-    //fprintf(stderr, "Used frames %d, buf frames %d, writing silence!\n",
-    //	used_frames, speaker_buffer_frames);
+    fprintf(stderr, "Used frames %d, buf frames %d, writing silence!\n",
+    	used_frames, speaker_buffer_frames);
 
     //if (used_frames == 0) {
     //	fprintf(stderr, "Used frames is zero!\n");
     //}
 
-    //write_speaker(handle, silence, silence_frames);
+    write_speaker(handle, silence, silence_frames);
 }
 
 int recovering;
