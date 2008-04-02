@@ -68,5 +68,17 @@ public class InverseFalloff extends FalloffFunction
 
         return v;
     }
+
+    public Object clone() {
+	InverseFalloff i = new InverseFalloff();
+
+        i.falloff = falloff;
+        i.maximumVolume = maximumVolume;
+        i.fullVolumeRadius = fullVolumeRadius;
+        i.zeroVolumeRadius = zeroVolumeRadius;
+        i.attenuationDistance = attenuationDistance;
+
+	return i;
+    }
 	
 }

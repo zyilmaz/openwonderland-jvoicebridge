@@ -32,4 +32,8 @@ public class NoFalloff extends FalloffFunction
 	return 1;
     }
 	
+    public Object clone() {
+	return new NoFalloff();
+    }
+
 }

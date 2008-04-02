@@ -482,7 +482,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    }
 
 	    if (treatmentGroups == null) {
-	        treatmentGroups = new Hashtable<String, Hashtable>();
+		treatmentGroups = new Hashtable<String, Hashtable>();
 	    }
 
             if (treatmentGroupId == null) {
@@ -744,6 +744,10 @@ public class VoiceHandlerImpl implements VoiceHandler,
      */
     private void restartInputTreatments(String treatmentGroupId) {
 	logger.fine("Restarting input treatments for " + treatmentGroupId);
+
+	if (treatmentGroups == null || treatmentGroupId == null) {
+	    return;
+	}
 
 	synchronized (treatmentLock) {
 	    Hashtable<String, Hashtable<String, Boolean>> treatmentGroup = 
@@ -1449,8 +1453,11 @@ public class VoiceHandlerImpl implements VoiceHandler,
         double minZ;
         double maxZ;
 
-	double attenuator;
+	double attenuator = 1.0;
 
+        public AmbientSpatializer() {
+	}
+	
         public AmbientSpatializer(double lowerLeftX, double lowerLeftY,
 	 	double lowerLeftZ, double upperRightX,
 		double upperRightY, double upperRightZ) {
@@ -1487,7 +1494,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 		//  + " max (" + round(maxX) + ", " + round(maxY) + ", " 
 		//  + round(maxZ) + ") " + " dest (" + round(destX) + ", " 
 		//  + round(destY) + ", " + round(destZ) + ")");
-                return new double[] { 0, 0, 0, 1 };
+                return new double[] { 0, 0, 0, attenuator };
             } else {
 		//logger.info("outside min (" + round(minX) + ", " + round(minY) 
 		//  + ", " + round(minZ) + ") "
@@ -1519,6 +1526,26 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	public double getAttenuator() {
 	    return attenuator;
+	}
+
+	public Object clone() {
+	    AmbientSpatializer a = new AmbientSpatializer();
+
+            a.minX = minX;
+            a.maxX = maxX;
+            a.minY = minY;
+            a.maxY = maxY;
+            a.minZ = minZ;
+            a.maxZ = maxZ;
+	    a.attenuator = attenuator;
+
+	    return a;
+	}
+
+        public String toString() {
+	    return "AmbientSpatializer:  minX=" + minX + " maxX=" + maxX
+		+ " minY=" + minY + " minZ=" + minZ + " maxZ=" + maxZ 
+		+ " attenuator=" + attenuator;
 	}
 
     }

@@ -173,15 +173,15 @@ public class VoiceManagerImpl implements VoiceManager {
 		    + livePlayerSpatializer);
 	    } else {
 	        p.setPublicSpatializer(stationarySpatializer);
-		logger.fine(callId + " setting pub spatializer to stationary" 
+		logger.fine(p + " setting pub spatializer to stationary" 
 		    + stationarySpatializer);
 	    }
 	} else {
-	    logger.fine(callId + " setting pub spatializer to " + spatializer);
+	    logger.fine(p + " setting pub spatializer to " + spatializer);
 	    p.setPublicSpatializer(spatializer);
 	}
 
-	logger.info("Creating player for " + callId);
+	logger.info("Creating player for " + p);
 
 	if (players.put(callId, p) != null) {
 	    logger.info("Player for " + callId + " already existed");
@@ -313,7 +313,9 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	    logger.finest(targetCallId + " Setting private spatializer for "
 	        + sourceCallId + " att " + attenuator + " target att "
-	        + targetPlayer.getListenAttenuator());
+	        + targetPlayer.getListenAttenuator()
+		+ " source att "
+		+ sourcePlayer.getTalkAttenuator());
 
 	    attenuator *= targetPlayer.getListenAttenuator() *
 		sourcePlayer.getTalkAttenuator();
@@ -718,6 +720,8 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	    if (privateMixParameters[3] <= ZERO_VOLUME) {
 		privateMixParameters[3] = 0;
+	    } else {
+	        privateMixParameters[3] = round(privateMixParameters[3]);
 	    }
 
 	    backingManager.setPrivateMix(targetCallId, fromCallId,
@@ -1071,6 +1075,8 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	if (privateMixParameters[3] <= ZERO_VOLUME) {
 	    privateMixParameters[3] = 0;
+	} else {
+	    privateMixParameters[3] = round(privateMixParameters[3]);
 	}
 
 	logger.finest("pmx for " + p1.callId + ": "

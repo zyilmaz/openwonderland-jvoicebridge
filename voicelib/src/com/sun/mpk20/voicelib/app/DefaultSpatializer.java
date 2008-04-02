@@ -465,6 +465,15 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 	}
     }
 
+    public Object clone() {
+	DefaultSpatializer d = new DefaultSpatializer();
+
+	d.setFalloffFunction((FalloffFunction) falloffFunction.clone());
+	d.setAttenuator(attenuator);
+
+	return d;
+    }
+
     public String toString() {
 	return "DefaultSpatializer:  "
 	    + " max volume " + getMaximumVolume()
