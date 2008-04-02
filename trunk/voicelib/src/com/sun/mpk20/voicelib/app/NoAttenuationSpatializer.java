@@ -41,4 +41,8 @@ public class NoAttenuationSpatializer extends DefaultSpatializer
 	return 1.0;
     }
 
+    public Object clone() {
+	return new NoAttenuationSpatializer();
+    }
+
 }

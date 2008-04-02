@@ -75,4 +75,12 @@ public class FullVolumeSpatializer implements Spatializer, Serializable {
 	return attenuator;
     }
 
+    public Object clone() {
+	FullVolumeSpatializer f = new FullVolumeSpatializer();
+
+	f.fullVolumeRadius = fullVolumeRadius;
+	f.attenuator = attenuator;
+	return f;
+    }
+
 }

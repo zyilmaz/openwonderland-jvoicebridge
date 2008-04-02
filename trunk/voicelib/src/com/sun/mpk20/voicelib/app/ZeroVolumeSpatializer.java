@@ -55,4 +55,8 @@ public class ZeroVolumeSpatializer implements Spatializer, Serializable {
 	return 0;
     }
 
+    public Object clone() {
+	return new  ZeroVolumeSpatializer();
+    }
+
 }

@@ -46,4 +46,6 @@ public interface Spatializer {
 
     public double getAttenuator();
 	
+    public Object clone();
+
 } 

@@ -158,4 +158,6 @@ public abstract class FalloffFunction implements Serializable {
 
     protected abstract double getVolume(double distance);
 
+    public abstract Object clone();
+
 }
