@@ -125,11 +125,14 @@ public class PerfMon extends Frame implements Runnable {
 
     private DataUpdater updater;
 
-    public PerfMon(String s, DataUpdater updater, Point location, int width,
+    private String title;
+
+    public PerfMon(String title, DataUpdater updater, Point location, int width,
 	    int height) {
 
-	super(s);
+	super(title);
 
+	this.title = title;
 	this.updater = updater;
 	this.width = width;
 	this.height = height;
@@ -168,7 +171,11 @@ public class PerfMon extends Frame implements Runnable {
 
 	    pmc.erase();
 		
-	    pmc.addElement(pmc.windowSizeVector, updater.getData());
+	    int data = updater.getData();
+
+	    setTitle(title + " " + data);
+	    
+	    pmc.addElement(pmc.windowSizeVector, data);
 
 	    pmc.paint();
 	}
