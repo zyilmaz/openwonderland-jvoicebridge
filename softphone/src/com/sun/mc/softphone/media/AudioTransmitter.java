@@ -697,6 +697,10 @@ if (false) {
 		}
 
 		try {
+		    if (firstTime || Logger.logLevel >= Logger.LOG_DETAIL) {
+			Logger.println("About to read mic...");
+		    }
+
 		    microphoneData = new byte[microphoneData.length];
 	            microphone.read(microphoneData, 0, microphoneData.length);
 
@@ -716,7 +720,7 @@ if (false) {
 		    break;
 		}
 
-	        if (firstTime && Logger.logLevel >= Logger.LOG_INFO) {
+	        if (firstTime || Logger.logLevel >= Logger.LOG_DETAIL) {
 		    Logger.println("back from reading mic...");
 	        }
 
