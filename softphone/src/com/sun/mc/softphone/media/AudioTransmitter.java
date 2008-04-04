@@ -697,7 +697,7 @@ if (false) {
 		}
 
 		try {
-		    if (firstTime || Logger.logLevel >= Logger.LOG_DETAIL) {
+		    if (firstTime || Logger.logLevel >= Logger.LOG_DETAILINFO) {
 			Logger.println("About to read mic...");
 		    }
 
@@ -720,7 +720,7 @@ if (false) {
 		    break;
 		}
 
-	        if (firstTime || Logger.logLevel >= Logger.LOG_DETAIL) {
+	        if (firstTime || Logger.logLevel >= Logger.LOG_DETAILINFO) {
 		    Logger.println("back from reading mic...");
 	        }
 
