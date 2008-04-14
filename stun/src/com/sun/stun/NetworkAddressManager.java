@@ -48,7 +48,7 @@ import com.sun.stun.StunServer;
 public class NetworkAddressManager {
 
     private static final Logger logger =
-        Logger.getLogger(StunClient.class.getName());
+        Logger.getLogger(NetworkAddressManager.class.getName());
 
     private static InetAddress privateLocalHost;
 
