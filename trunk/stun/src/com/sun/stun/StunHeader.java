@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 public class StunHeader {
 
     private static final Logger logger =
-        Logger.getLogger(StunClient.class.getName());
+        Logger.getLogger(StunHeader.class.getName());
 
     public static final int STUN_HEADER_LENGTH = 20;
 
