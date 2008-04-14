@@ -76,7 +76,7 @@ public class CallInfoUpdater extends Thread implements CallMonitorListener {
 	    text = bc.getCallStatus(callId);
 	} catch (IOException e) {
 	    text = "Unable to get call status for " + callId
-		+ " on bridge " + bc + e.getMessage();
+		+ " on bridge " + bc + " " + e.getMessage();
 	}
 
         jTextArea = new JTextArea(text);
@@ -100,7 +100,8 @@ public class CallInfoUpdater extends Thread implements CallMonitorListener {
 
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 if (callMonitor != null) {
-		    callMonitor.quit();
+		    callMonitor.setVisible(true);
+		    return;
 		}
 
 		try {
@@ -145,6 +146,10 @@ public class CallInfoUpdater extends Thread implements CallMonitorListener {
 
     public void done() {
         done = true;
+
+	if (callMonitor != null) {
+	    callMonitor.quit();
+	}
     }
 
     public void run() {
@@ -163,9 +168,15 @@ public class CallInfoUpdater extends Thread implements CallMonitorListener {
 	    } catch (IOException e) {
 	        logger.info(e.getMessage());
 	        jTextArea.setText("Unable to get call status for " + callId
-		    + " on bridge " + bc + e.getMessage());
+		    + " on bridge " + bc + " " + e.getMessage());
 
-		break;
+		try {
+		    Thread.sleep(5000);
+		} catch (InterruptedException ee) {
+		}
+
+		jFrame.setVisible(false);
+		done();
 	    }
 	}
     }
