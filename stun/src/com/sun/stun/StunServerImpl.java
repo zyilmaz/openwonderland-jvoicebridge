@@ -270,8 +270,9 @@ public class StunServerImpl implements StunServer {
 
 	InetSocketAddress isa = (InetSocketAddress) packet.getSocketAddress();
 
-	logger.fine("Got UDP Stun request for socket " + length + " bytes "
-	    + " from " + isa);
+	logger.fine("Got UDP Stun request on socket " 
+	    + socket.getLocalAddress() + ":" + socket.getLocalPort()
+	    + " length " + length + " bytes " + " from " + isa);
 
 	byte[] response = getStunResponse(isa, request, length);
 
@@ -313,8 +314,10 @@ public class StunServerImpl implements StunServer {
 	try {
 	    responseSocket.send(packet);    
 
-	    logger.warning("Sent STUN Binding Response to " 
-		+ packet.getAddress() + ":" + packet.getPort());
+	    logger.warning("Sent STUN Binding Response from "
+		+ responseSocket.getLocalAddress() + ":" 
+		+ responseSocket.getLocalPort()
+		+ " to " + packet.getAddress() + ":" + packet.getPort());
 	} catch (IOException e) {
 	    logger.warning("Unable to send STUN response! " + e.getMessage());
 	}
