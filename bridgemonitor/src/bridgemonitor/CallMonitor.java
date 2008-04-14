@@ -125,6 +125,12 @@ public class CallMonitor {
 	    (int) location.getY() + height));
     }
 
+    public void setVisible(boolean isVisible) {
+	averageReceiveTimeMonitor.setVisible(isVisible);
+	receivedPacketsMonitor.setVisible(isVisible);
+	jitterMonitor.setVisible(isVisible);
+    }
+
     public void readBridgePerformanceData() {
 	String s = null;
 
@@ -133,16 +139,19 @@ public class CallMonitor {
 
 	    if (s == null) {
 		done();
+		return;
 	    }
 
 	    if (s.indexOf("Invalid callId") >= 0) {
 		System.out.println(s);
 		done();
+		return;
 	    }
 
 	    if (s.indexOf("CallEnded") >= 0) {
 		System.out.println(s);
 		done();
+		return;
 	    }
 
 	    String[] tokens = s.split(":");
@@ -150,6 +159,7 @@ public class CallMonitor {
 	    if (tokens.length != 2) {
 		System.out.println("Missing data:  " + s);
 		done();
+		return;
 	    }
 
 	    String pattern = "PacketsReceived=";
@@ -159,6 +169,7 @@ public class CallMonitor {
 	    if (ix < 0) {
 		System.out.println("Missing " + pattern + " " + s);
 		done();
+		return;
 	    }
 
 	    try {
@@ -168,6 +179,7 @@ public class CallMonitor {
 		System.out.println("Invalid number for received packets:  "
 		    + s);
 		done();
+		return;
 	    }
 		
 	    pattern = "JitterBufferSize=";
@@ -185,25 +197,27 @@ public class CallMonitor {
 	    } catch (NumberFormatException e) {
 		System.out.println("Invalid number for jitter:  " + s);
 		done();
+		return;
 	    }
 	} catch (IOException e) {
 	    System.err.println("can't read socket! " 
 		+ socket + " " + e.getMessage());
 	    done();
+	    return;
 	}
     }
 
     public void quit() {
+	done();
+    }
+
+    private void done() {
         receivedPacketsMonitor.quit();
 
         averageReceiveTimeMonitor.quit();
 
         jitterMonitor.quit();
 
-	done();
-    }
-
-    private void done() {
 	if (listener != null) {
 	    listener.callMonitorDone();
 	}
@@ -241,6 +255,10 @@ public class CallMonitor {
 		location, 330, 110);
 	}
 	
+	public void setVisible(boolean isVisible) {
+	    monitor.setVisible(isVisible);
+	}
+
 	public int getData() {
 	    readBridgePerformanceData();
 
@@ -274,6 +292,10 @@ public class CallMonitor {
 		location, 330, 110);
 	}
 	
+	public void setVisible(boolean isVisible) {
+	    monitor.setVisible(isVisible);
+	}
+
 	public void setPacketsReceived(int packetsReceived) {
 	    this.packetsReceived = packetsReceived;
 	}
@@ -316,6 +338,10 @@ public class CallMonitor {
 		location, 330, 110);
 	}
 	
+	public void setVisible(boolean isVisible) {
+	    monitor.setVisible(isVisible);
+	}
+
 	public int getData() {
 	    return getJitter();
 	}

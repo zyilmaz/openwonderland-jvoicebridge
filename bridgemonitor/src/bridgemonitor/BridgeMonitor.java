@@ -344,6 +344,10 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
     }
 
     private void showBridgeCalls() {
+	if (done) {
+	    return;
+	}
+
         String status;
         
 	try {
@@ -486,6 +490,17 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 	    }
 
 	    done = true;
+
+	    JTable callTable = bsp.getCallTable();
+
+	    if (callTableOwner == this) {
+	        synchronized (callTable) {
+	            DefaultTableModel model = (DefaultTableModel) 
+			callTable.getModel();
+
+	            model.setRowCount(0);
+	        }
+	    }
 
 	    try {
 	  	wait();
