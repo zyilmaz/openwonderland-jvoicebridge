@@ -76,7 +76,7 @@ public class CallInfoUpdater extends Thread implements CallMonitorListener {
 	    text = bc.getCallStatus(callId);
 	} catch (IOException e) {
 	    text = "Unable to get call status for " + callId
-		+ " " + e.getMessage();
+		+ " on bridge " + bc + e.getMessage();
 	}
 
         jTextArea = new JTextArea(text);
@@ -163,7 +163,7 @@ public class CallInfoUpdater extends Thread implements CallMonitorListener {
 	    } catch (IOException e) {
 	        logger.info(e.getMessage());
 	        jTextArea.setText("Unable to get call status for " + callId
-		    + " " + e.getMessage());
+		    + " on bridge " + bc + e.getMessage());
 
 		break;
 	    }
