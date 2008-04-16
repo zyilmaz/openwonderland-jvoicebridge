@@ -237,8 +237,6 @@ import java.util.Vector;
  *
  *	pauseTreatmentToCall      = <callId>
  *
- *	phonePrefix | pp	  = <phone prefix string>
- *
  *	playTreatmentToCall | ptc = <treatment> : <callId>
  *
  *	playTreatmentToConference | pc = <treatment> : <conferenceId>
@@ -1991,9 +1989,8 @@ public class RequestParser {
 
             String[] tokens = value.split(":");
 
-            if (tokens.length != 2) {
-                throw new ParseException("You must specify both "
-                   + " a conference id and a callId", 0);
+            if (tokens.length != 1) {
+                throw new ParseException("You must specify a conference id", 0);
             }
 
 	    CallEvent event = new CallEvent(CallEvent.NUMBER_OF_CALLS);
@@ -3009,7 +3006,7 @@ public class RequestParser {
     	    /*
      	     * This is solely for debugging.  
      	     *
-     	     * Write a line is written to log and send a packet
+     	     * Write a line to log and send a packet
      	     * to the Cisco gateway port 9 (DISCARD port).
      	     *
      	     * These timestamp messages may help identify the place in the log 
@@ -3594,9 +3591,6 @@ public class RequestParser {
 	    "voiceDetectionWhileMuted | vm = true | false [: <callId>]");
 
 	requestHandler.writeToSocket(
-	    "phonePrefix | pp = <phone number prefix string>");
-
-	requestHandler.writeToSocket(
 	    "playTreatmentToCall | ptc = <treatment> [:<callId>]");
 
 	requestHandler.writeToSocket(
@@ -3652,9 +3646,6 @@ public class RequestParser {
 	requestHandler.writeToSocket("rtpTimeout | rt = <seconds> ");
 
         requestHandler.writeToSocket("sendSipUriToProxy = true | false");
-
-	requestHandler.writeToSocket(
-	    "setConferenceCode | scc = <dtmf code>:conferenceId");
 
 	requestHandler.writeToSocket(
 	    "conferenceJoinTreatment | jt = <join treatment>:<conferenceId>");

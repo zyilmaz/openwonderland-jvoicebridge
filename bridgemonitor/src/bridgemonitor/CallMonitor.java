@@ -52,6 +52,8 @@ public class CallMonitor {
 
     private AverageReceiveTimeMonitor averageReceiveTimeMonitor;
 
+    private MissingPacketsMonitor missingPacketsMonitor;
+
     private JitterMonitor jitterMonitor;
 
     public static void main(String[] args) {
@@ -120,14 +122,19 @@ public class CallMonitor {
 	receivedPacketsMonitor = new ReceivedPacketsMonitor(
 	    new Point((int)location.getX(), (int)location.getY() + height));
 
-	jitterMonitor = new JitterMonitor(
+	missingPacketsMonitor = new MissingPacketsMonitor(
 	    new Point((int) location.getX() + 660,
+	    (int) location.getY() + height));
+
+	jitterMonitor = new JitterMonitor(
+	    new Point((int) location.getX() + 990,
 	    (int) location.getY() + height));
     }
 
     public void setVisible(boolean isVisible) {
 	averageReceiveTimeMonitor.setVisible(isVisible);
 	receivedPacketsMonitor.setVisible(isVisible);
+	missingPacketsMonitor.setVisible(isVisible);
 	jitterMonitor.setVisible(isVisible);
     }
 
@@ -156,7 +163,7 @@ public class CallMonitor {
 
 	    String[] tokens = s.split(":");
 
-	    if (tokens.length != 2) {
+	    if (tokens.length != 3) {
 		System.out.println("Missing data:  " + s);
 		done();
 		return;
@@ -182,9 +189,29 @@ public class CallMonitor {
 		return;
 	    }
 		
-	    pattern = "JitterBufferSize=";
+	    pattern = "MissingPackets=";
 
 	    ix = tokens[1].indexOf(pattern);
+
+	    if (ix < 0) {
+		System.out.println("Missing " + pattern + " " + s);
+		done();
+		return;
+	    }
+
+	    try {
+		missingPackets = Integer.parseInt(
+		    tokens[1].substring(ix + pattern.length()));
+	    } catch (NumberFormatException e) {
+		System.out.println("Invalid number for missing packets:  "
+		    + s);
+		done();
+		return;
+	    }
+
+	    pattern = "JitterBufferSize=";
+
+	    ix = tokens[2].indexOf(pattern);
 
 	    if (ix < 0) {
 		System.out.println("Missing " + pattern + " " + s);
@@ -193,7 +220,7 @@ public class CallMonitor {
 
 	    try {
 		jitter = Integer.parseInt(
-		    tokens[1].substring(ix + pattern.length()));
+		    tokens[2].substring(ix + pattern.length()));
 	    } catch (NumberFormatException e) {
 		System.out.println("Invalid number for jitter:  " + s);
 		done();
@@ -216,6 +243,8 @@ public class CallMonitor {
 
         averageReceiveTimeMonitor.quit();
 
+	missingPacketsMonitor.quit();
+
         jitterMonitor.quit();
 
 	if (listener != null) {
@@ -224,11 +253,16 @@ public class CallMonitor {
     }
 
     private int packetsReceived;
+    private int missingPackets;
     private int jitter;
     private long time;
 
     public int getPacketsReceived() {
 	return packetsReceived;
+    }
+
+    public int getMissingPackets() {
+	return missingPackets;
     }
 
     public int getJitter() {
@@ -328,6 +362,39 @@ public class CallMonitor {
 	}
     }
 
+    class MissingPacketsMonitor implements DataUpdater {
+        private PerfMon monitor;
+
+        private int missingPackets;
+
+	public MissingPacketsMonitor(Point location) {
+	    monitor = new PerfMon("Missing Packets", this,
+		location, 330, 110);
+	}
+	
+	public void setVisible(boolean isVisible) {
+	    monitor.setVisible(isVisible);
+	}
+
+	public int getData() {
+	    int m = getMissingPackets();
+
+	    int n = m - missingPackets;
+	
+	    missingPackets = m;
+
+	    return n;
+	}
+
+	public void windowClosed() {
+	    quit();
+	}
+
+	public void quit() {
+	    monitor.stop();
+	}
+    }
+
     class JitterMonitor implements DataUpdater {
         private PerfMon monitor;
 
@@ -354,4 +421,5 @@ public class CallMonitor {
 	    monitor.stop();
 	}
     }
+
 }
