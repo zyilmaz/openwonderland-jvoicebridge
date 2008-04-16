@@ -230,6 +230,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
 	String s = "PacketsReceived=" + packetsReceived;
 	
+	s += ":MissingPackets=" + packet.getOutOfSequencePackets();
+
 	s += ":JitterBufferSize=" + jitterManager.getJitterBufferSize();
 
 	return s;
