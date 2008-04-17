@@ -502,7 +502,7 @@ public class AudioReceiver extends Thread {
 		    rtpReceiverPacket.setMark();
 		}
 
-		if (received == 0 || Logger.logLevel >= Logger.LOG_DETAIL) {
+		if (received == 0 || Logger.logLevel >= Logger.LOG_DETAILINFO) {
 		    Logger.println("Received packet from " + isa 
 		        + ", sequence number " 
 		        + rtpReceiverPacket.getRtpSequenceNumber() 
@@ -895,6 +895,10 @@ public class AudioReceiver extends Thread {
 		}
 
                 if (speakerData == null) {
+		    if (Logger.logLevel >= Logger.LOG_DETAILINFO) {
+			Logger.println("speaker data is null, nothing to write.");
+		    }
+
 		    recordSilence(1);
 		    continue;
                 }
@@ -925,7 +929,7 @@ public class AudioReceiver extends Thread {
                 }
 	    }
 
-	    if (Logger.logLevel >= Logger.LOG_MOREDETAIL) {
+	    if (Logger.logLevel >= Logger.LOG_DETAILINFO) {
 	        Logger.println("Got packet " 
 		    + rtpReceiverPacket.getRtpSequenceNumber());
 	    }
@@ -1290,6 +1294,10 @@ public class AudioReceiver extends Thread {
             return;
 	}
                 
+	if (Logger.logLevel >= Logger.LOG_DETAILINFO) {
+	    Logger.println("writing to speaker:  " + writeSize);
+	}
+
 	try {
 	    speaker.write(speakerData, offset, writeSize);
 	} catch (IOException e) {
@@ -1337,7 +1345,7 @@ public class AudioReceiver extends Thread {
 	 * to us.
 	 */
         if (!fromAddress.equals(expectedAddress)) {
-            if ((rejected % 100) == 0 || Logger.logLevel >= Logger.LOG_DETAIL) {
+            if ((rejected % 100) == 0 || Logger.logLevel >= Logger.LOG_DETAILINFO) {
                 Logger.println("Dropping.  Expected "
                     + isa.getAddress().getHostAddress() + ":" + isa.getPort()
                     + " got " + from.getAddress().getHostAddress()

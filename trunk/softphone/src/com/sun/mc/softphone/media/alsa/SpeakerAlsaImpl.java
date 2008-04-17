@@ -197,6 +197,10 @@ public class SpeakerAlsaImpl implements Speaker {
 	int len = 0;
 
 	try {
+	    if (Logger.logLevel >= Logger.LOG_DETAILINFO) {
+		Logger.println("ALSA writing to speaker:  " + length);
+	    }
+
             len = audioDriver.writeSpeaker(data, 0, length);
         } catch (IOException e) {
 	    /*
@@ -204,6 +208,10 @@ public class SpeakerAlsaImpl implements Speaker {
 	     * Let's reinitialize and try again.
 	     */
 	    try {
+		if (Logger.logLevel >= Logger.LOG_DETAILINFO) {
+		    Logger.println("ALSA error writing speaker:  " + e.getMessage());
+		}
+
 	        audioDriver.initializeSpeaker(sampleRate, channels, bufferSize);
 	        flush();
 	        audioDriver.writeSpeaker(data, 0, length);
