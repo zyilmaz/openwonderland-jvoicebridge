@@ -800,25 +800,7 @@ public class SipCommunicator extends Thread implements
 		}}, 10000);
 	    }
 
-            Logger.println("Stack trace: ");
-            Map st = Thread.getAllStackTraces();
-            for (Iterator i = st.entrySet().iterator(); i.hasNext();) {
-                Map.Entry me = (Map.Entry) i.next();
-                Thread t = (Thread) me.getKey();
-                Logger.println("");
-                Logger.println("Thread " + t.getName());
-                    
-                StackTraceElement[] ste = (StackTraceElement[]) me.getValue();
-                for (int c = 0; c < ste.length; c++) {
-                    StringBuffer outBuf = new StringBuffer("    ");
-                    outBuf.append(ste[c].getClassName() + ".");
-                    outBuf.append(ste[c].getMethodName() + "(");
-                    outBuf.append(ste[c].getFileName() + ":");
-                    outBuf.append(ste[c].getLineNumber() + ")");
-                    
-                    Logger.println(outBuf.toString());
-                }
-            }
+	    stackTrace();
                 
 	    copyLogFileToDeskTop();
             return;
@@ -872,6 +854,31 @@ public class SipCommunicator extends Thread implements
 	Logger.println("Unrecognized command:  " + command);
     }
     
+    public static void stackTrace() {
+        Logger.println("Stack trace: ");
+
+        Map st = Thread.getAllStackTraces();
+
+	for (Iterator i = st.entrySet().iterator(); i.hasNext();) {
+	    Map.Entry me = (Map.Entry) i.next();
+	    Thread t = (Thread) me.getKey();
+	    Logger.println("");
+	    Logger.println("Thread " + t.getName());
+
+	    StackTraceElement[] ste = (StackTraceElement[]) me.getValue();
+
+	    for (int c = 0; c < ste.length; c++) {
+		StringBuffer outBuf = new StringBuffer("    ");
+		outBuf.append(ste[c].getClassName() + ".");
+		outBuf.append(ste[c].getMethodName() + "(");
+		outBuf.append(ste[c].getFileName() + ":");
+		outBuf.append(ste[c].getLineNumber() + ")");
+
+		Logger.println(outBuf.toString());
+	    }
+	}
+    }
+
     /*
      * Copy the log file to the desktop so it's easy for the user to find.
      */
