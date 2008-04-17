@@ -6,10 +6,9 @@
         <fileset dir="${run.dir}" includes="*.jar"/>
     </path>
   
-    <!-- default property values.  Can be overridden on the command line -->
-    <property name="bridge.sip.port" value="5060"/>
-    <property name="bridge.hostname" value="localhost"/>
-    
+    <property file="my.run.properties"/>
+    <property file="run.properties"/>
+
     <target name="run-bridge" depends="shutdown-bridge"
             description="Run Conference Bridge">
         <java classname="com.sun.voip.server.Bridge" failonerror="true" fork="true">
