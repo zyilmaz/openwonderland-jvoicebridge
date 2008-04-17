@@ -298,7 +298,7 @@ public class JitterManager {
 		elapsed > maxJitterBufferSize * RtpPacket.PACKET_PERIOD) {
 
 	    if (packetList.size() > 0) {
-	        if (Logger.logLevel >= Logger.LOG_MOREINFO || 
+	        if (Logger.logLevel >= Logger.LOG_DETAILINFO || 
 			Logger.logLevel == -19) {
 
 		    Logger.println(id 
@@ -565,7 +565,7 @@ public class JitterManager {
 	while (true) {
 	    jo = (JitterObject) packetList.removeFirst();
 
-	    if (Logger.logLevel >= Logger.LOG_MOREDETAIL) {
+	    if (Logger.logLevel >= Logger.LOG_DETAILINFO) {
 	        Logger.println(id + ":  getting " 
 		    + (firstSequence & 0xffff) + " jitterObject:  " + jo);
 	        Logger.println("");

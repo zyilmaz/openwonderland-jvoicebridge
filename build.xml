@@ -53,6 +53,7 @@
 	<copy todir="tmp/voicebridge">
 	   <fileset file="${bridge.dir}/build/lib/bridge_connector.jar"/>
 	   <fileset file="${bridge.dir}/build/lib/bridge.jar"/>
+	   <fileset file="${bridge.dir}/run.properties"/>
 	   <fileset file="${bridge.dir}/run.xml"/>
 	   <fileset file="${bridge.dir}/lib/codecLib_dtmf.jar"/>
 	   <fileset file="${bridge.dir}/lib/codecLibwrapper_dtmf.jar"/>
@@ -127,6 +128,7 @@
                 <include name="*.jar"/>
             </fileset>
             <fileset dir="${bridge.dir}">
+                <include name="run.properties"/>
                 <include name="run.xml"/>
             </fileset>
         </copy>
