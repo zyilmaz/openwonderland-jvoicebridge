@@ -62,6 +62,7 @@ package com.sun.mc.softphone.gui;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.JMenuItem;
+import com.sun.mc.softphone.SipCommunicator;
 import com.sun.mc.softphone.common.Utils;
 import com.sun.mc.softphone.Version;
 import java.awt.event.KeyEvent;
@@ -92,6 +93,7 @@ class MenuBar extends JMenuBar {
         settingsMenu.setMnemonic('S');
         helpMenu.setMnemonic('H');
         helpMenu.add(new JMenuItem( new AboutAction()));
+        helpMenu.add(new JMenuItem( new StackTraceAction()));
         add(callMenu);
         add(settingsMenu);
         add(helpMenu);
@@ -126,6 +128,16 @@ class MenuBar extends JMenuBar {
 		 SwingConstants.TRAILING), 
 		 "Sun Softphone (powered by SIP Communicator)",
                  JOptionPane.PLAIN_MESSAGE);
+        }
+    }
+
+    private class StackTraceAction extends AbstractAction {
+        public StackTraceAction() {
+            super("StackTrace");
+	}
+    
+        public void actionPerformed(ActionEvent evt) {
+	    SipCommunicator.stackTrace();
         }
     }
 
