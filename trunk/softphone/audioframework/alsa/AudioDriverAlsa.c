@@ -492,7 +492,7 @@ int recovering;
 int write_speaker(snd_pcm_t *handle, jshort *data, int frames) {
     if (recovering) {
 	fprintf(stderr, "dropping data during recovery!\n");
-	//return 0;
+	return 0;
     }
 
     pthread_mutex_lock(speaker_mutex);
