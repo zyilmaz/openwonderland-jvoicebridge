@@ -1323,7 +1323,19 @@ public class SipCommunicator extends Thread implements
                 "Entering handleDialRequest(UserCallInitiationEvent)");
 
             String callee = (String) evt.getSource();
-	    dial(null, null, callee);
+
+	    String conferenceId = null;
+
+	    int ix;
+
+	    if ((ix = callee.indexOf(" c=")) > 0) {
+		conferenceId = callee.substring(ix + 3);
+		callee = callee.substring(0, ix);
+
+		Logger.println("conferenceId '" + conferenceId + "' callee " + callee);
+	    }
+
+	    dial(conferenceId, null, callee);
         } finally {
             console.logExit();
         }
@@ -1345,7 +1357,6 @@ public class SipCommunicator extends Thread implements
 		} else {
 		    conferenceId = 
 			Utils.getPreference("com.sun.mc.softphone.LAST_CONFERENCE");
-
 		    if (conferenceId != null) {
 		        sdpData += "a=conferenceId:" + conferenceId + "\r\n";
 		    }
