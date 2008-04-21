@@ -226,7 +226,8 @@ public class StunClient extends Thread {
 	    + StunHeader.TLV_LENGTH + StunHeader.MAPPED_ADDRESS_LENGTH];
 
 	buf[1] = (byte) StunHeader.BINDING_REQUEST;
-	buf[3] = (byte) StunHeader.MAPPED_ADDRESS_LENGTH;
+	buf[3] = (byte) StunHeader.TLV_LENGTH + 
+	    StunHeader.MAPPED_ADDRESS_LENGTH;
 	
 	long time = System.currentTimeMillis();
 
