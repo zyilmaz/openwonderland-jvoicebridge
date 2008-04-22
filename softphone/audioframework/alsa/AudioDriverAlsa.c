@@ -473,7 +473,7 @@ async_callback(snd_async_handler_t *ahandler)
 
     int used_frames = speaker_buffer_frames - avail_frames;
 
-    if (used_frames >  2 * period_frames) {
+    if (used_frames >= period_frames) {
         return;
     }
 
