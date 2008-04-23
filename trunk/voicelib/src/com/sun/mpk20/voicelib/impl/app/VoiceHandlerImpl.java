@@ -375,7 +375,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
     /* Maps callId to treatment information */
     private static ConcurrentHashMap<String, TreatmentInfo> treatmentInfo =
-	new ConcurrentHashMap<String, TreatmentInfo>();;
+	new ConcurrentHashMap<String, TreatmentInfo>();
 
     class TreatmentInfo {
 	public String treatment;

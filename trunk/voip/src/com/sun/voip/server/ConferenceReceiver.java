@@ -199,13 +199,8 @@ public class ConferenceReceiver extends Thread {
 
 		MemberReceiver memberReceiver;
 
-		/*
-	 	 * Use this buffer to receive the packet if the member hasn't
-		 * finished initializing.  Any buffer will do so it doesn't
-		 * matter that this get changed for every successful receive.
-		 */
-                byte[] data = new byte[100];
-                ByteBuffer byteBuffer = ByteBuffer.wrap(data);
+		byte[] data;
+		ByteBuffer byteBuffer;
 
                 while (it.hasNext()) {
 		    try {
@@ -228,6 +223,9 @@ public class ConferenceReceiver extends Thread {
 			            + " address " 
 			            + memberReceiver.getReceiveAddress());
 		            }
+
+                	    data = new byte[100];
+                	    byteBuffer = ByteBuffer.wrap(data);
 
 			    InetSocketAddress isa = (InetSocketAddress)
 				datagramChannel.receive(byteBuffer);

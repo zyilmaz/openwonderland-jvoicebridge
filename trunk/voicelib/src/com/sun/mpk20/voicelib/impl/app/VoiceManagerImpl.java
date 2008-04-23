@@ -181,11 +181,12 @@ public class VoiceManagerImpl implements VoiceManager {
 	    p.setPublicSpatializer(spatializer);
 	}
 
-	logger.info("Creating player for " + p);
-
 	if (players.put(callId, p) != null) {
 	    logger.info("Player for " + callId + " already existed");
 	}
+
+	logger.info("Created player for " + p + " number of players "
+	    + players.size());
     }
 
     public void createPlayer(String callId, double x, double y, double z,
