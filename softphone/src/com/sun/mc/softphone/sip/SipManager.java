@@ -241,8 +241,8 @@ public class SipManager
 
 	System.setProperty("javax.sip.STACK_NAME", stackName);
 
-	Logger.forcePrintln("Stack name is " + stackName + " IP_ADDRESS "
-	    + System.getProperty("javax.sip.IP_ADDRESS"));
+	//Logger.forcePrintln("Stack name is " + stackName + " IP_ADDRESS "
+	//    + System.getProperty("javax.sip.IP_ADDRESS"));
 
 	initRegistrarAddress();
 
@@ -413,7 +413,7 @@ public class SipManager
             try {
                 sipStack = sipFactory.createSipStack(System.getProperties());
 
-	        Logger.forcePrintln("SipStack is " + sipStack);
+	        //Logger.forcePrintln("SipStack is " + sipStack);
             }
             catch (PeerUnavailableException ex) {
                 console.error("Could not could not create SipStack!", ex);

@@ -312,7 +312,9 @@ if (false) {
 	    speakerSampleRate = (int) DEFAULT_SAMPLE_RATE;
 	}
 	
-	Logger.println("Speaker sample rate:  " + speakerSampleRate);
+	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	    Logger.println("Speaker sample rate:  " + speakerSampleRate);
+	}
 
         int speakerChannels = 
 	    Utils.getIntPreference("com.sun.mc.softphone.media.CHANNELS");

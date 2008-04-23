@@ -446,7 +446,10 @@ public class AudioReceiver extends Thread {
                 try {
                     rtpSocket.setSoTimeout(0);
                 } catch (SocketException e) {
-                    Logger.println("Can't set socket timeout!");
+                    Logger.println("Can't set socket timeout! "
+			+ e.getMessage());
+		    done();
+		    break;
                 }
             }
 
@@ -927,11 +930,6 @@ public class AudioReceiver extends Thread {
                 } catch (NumberFormatException e) {
                     Logger.println("Can't set log level to " + logLevel);
                 }
-	    }
-
-	    if (Logger.logLevel >= Logger.LOG_DETAILINFO) {
-	        Logger.println("Got packet " 
-		    + rtpReceiverPacket.getRtpSequenceNumber());
 	    }
 
 	    writeSpeaker(speakerData, 0, speakerData.length);

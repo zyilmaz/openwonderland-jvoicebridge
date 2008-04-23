@@ -249,6 +249,10 @@ public class RtpSocket {
      * @param timeout millisecond timeout value
      */
     public void setSoTimeout(int timeout) throws SocketException {
+        if (rtpDatagramSocket == null) {
+	    throw new SocketException("rtpDatagramSocket is null");
+	}
+
 	rtpDatagramSocket.setSoTimeout(timeout);
     }
 
