@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
  * Mediate connections between the client and the voice
  * bridge.
  */
-public class VoiceBridgeConnection extends Thread {
+public class VoiceBridgeConnection implements Runnable {
     /** bridge properties */
     private final String bridgeHost;
     private final int bridgePort;
@@ -98,7 +98,7 @@ public class VoiceBridgeConnection extends Thread {
 		+ bridgeHost + ":" + bridgePort + " " + e.getMessage());
 	}
 
-	start();
+	new Thread(this).start();
     }
 
     /**
