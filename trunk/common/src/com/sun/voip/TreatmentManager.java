@@ -349,15 +349,22 @@ public class TreatmentManager implements MixDataSource {
 	}
 
 	synchronized (treatments) {
+            if (path.substring(0, 1).equals(File.separator) ||
+		   path.startsWith("http://")) {
+
+                AudioSource as = FileAudioSource.getAudioSource(path);
+
+		if (as == null) {
+		    throw new IOException("Invalid treatment: " + path);
+		}
+
+		treatments.add(as);
+		return;
+	    }
+
 	    for (int i = 0; i < soundPath.length; i++) {
 	
-                String s;
-
-                if (path.substring(0, 1).equals(File.separator)) {
-                    s = path;
-                } else {
-                    s = soundPath[i] + File.separator + path;
-                }
+                String s = soundPath[i] + File.separator + path;
 
                 AudioSource as = FileAudioSource.getAudioSource(s);
 
@@ -367,9 +374,7 @@ public class TreatmentManager implements MixDataSource {
 		}
 	    }
 
-	    if (treatments.size() == 0) {
-		throw new IOException("Invalid treatment: " + path);
-	    }
+	    throw new IOException("Invalid treatment: " + path);
 	}
     }
 
