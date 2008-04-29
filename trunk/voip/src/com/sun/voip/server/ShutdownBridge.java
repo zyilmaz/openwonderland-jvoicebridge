@@ -56,6 +56,8 @@ public class ShutdownBridge {
 	    "com.sun.voip.server.BRIDGE_SERVER_PORT", 6666).intValue();
 
 	try {
+	    Logger.println("Connecting to " + serverName + ":" + serverPort);
+
 	    Socket socket = new Socket(serverName, serverPort);
 
 	    String request = new String("SHUTDOWN\n\n");

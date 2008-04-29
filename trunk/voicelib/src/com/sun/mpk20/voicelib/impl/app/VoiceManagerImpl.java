@@ -434,7 +434,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    logger.finer("Call Established:  Player already exists");
 	}
 
-	setPrivateMixes(findPlayer(callId));
+	setPrivateMixes();
     }
 
     public void newInputTreatment(String callId, String treatment) 

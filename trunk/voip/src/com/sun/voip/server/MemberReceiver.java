@@ -550,6 +550,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 		    inputTreatment.addTreatmentDoneListener(this);
 	        } catch (IOException e) {
 	            Logger.println(cp + " Unable to restart input treatment");
+	    	    callHandler.cancelRequest(
+			"unable to restart input treatment!");
 	        }
 	    }
 	}
