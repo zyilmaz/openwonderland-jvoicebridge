@@ -575,7 +575,7 @@ class RequestHandler extends Thread implements CallEventListener {
 	     * Check for that here.
 	     * XXX
 	     */
-	    if (phoneNumber.indexOf("@") < 0) {
+	    if (phoneNumber.length() < 5) {
 		return null;
 	    }
 
