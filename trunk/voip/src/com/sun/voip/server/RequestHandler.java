@@ -989,7 +989,7 @@ class RequestHandler extends Thread implements CallEventListener {
     private ArrayList<String> dataToWrite = new ArrayList();
     private SocketWriter socketWriter;
 
-    private static final int MAX_DATA_TO_WRITE_SIZE = 200;
+    private static final int MAX_DATA_TO_WRITE_SIZE = 1000;
 
     class SocketWriter extends Thread {
 	public SocketWriter() {
