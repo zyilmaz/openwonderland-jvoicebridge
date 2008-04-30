@@ -163,7 +163,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	     * places a call from outside the client.
 	     */
 	    conferenceId = System.getProperty(
-	        "com.sun.sgs.impl.app.voice", DEFAULT_CONFERENCE);
+	        "com.sun.sgs.impl.app.voice.DEFAULT_CONFERENCE", DEFAULT_CONFERENCE);
 
 	    voiceManager.monitorConference(conferenceId);
 	} catch (IOException e) {
