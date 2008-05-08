@@ -1855,6 +1855,11 @@ public class SipCommunicator extends Thread implements
 
 		    synchronized (mediaManager) {
                         mediaManager.start();
+			mute(this.mute);
+
+			if (guiManager != null) {
+            		    guiManager.muted(mediaManager.isMuted());
+			}
 		    }
                 } catch (IOException ex) {
                     console.showError(
