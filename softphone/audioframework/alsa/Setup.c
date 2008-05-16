@@ -206,7 +206,7 @@ set_speaker_swparams(snd_pcm_t *handle, int channels, int bufferSize)
 
     /* start the transfer when the second buffer is written
     ret = snd_pcm_sw_params_set_start_threshold(handle, swparams, 
-	3 * period_frames);
+	1 * period_frames);
     if (ret < 0) {
         fprintf(stderr, 
 	    "Unable to set start threshold mode for playback: %s\n", 
@@ -215,14 +215,14 @@ set_speaker_swparams(snd_pcm_t *handle, int channels, int bufferSize)
     }
 
     /* Notify asynchronously when data can be written */
-    ret = snd_pcm_sw_params_set_avail_min(handle, swparams, 
-	get_period_frames(handle));
+//    ret = snd_pcm_sw_params_set_avail_min(handle, swparams, 
+//	get_period_frames(handle));
 
-    if (ret < 0) {
-        fprintf(stderr, "Unable to set avail min for playback: %s\n", 
-	    snd_strerror(ret));
-        return ret;
-    }
+//    if (ret < 0) {
+//        fprintf(stderr, "Unable to set avail min for playback: %s\n", 
+//	    snd_strerror(ret));
+//        return ret;
+//    }
 
     /* align all transfers to 1 sample */
     ret = snd_pcm_sw_params_set_xfer_align(handle, swparams, 1);
@@ -297,7 +297,7 @@ get_buffer_frames(snd_pcm_t *handle)
 
     int ret = snd_pcm_get_params(handle, &buffer_frames, &period_frames);
     if (ret < 0) {
-        fprintf(stderr, "Unable to set buffer frames %d for playback: %s\n",
+        fprintf(stderr, "Unable to get buffer frames %d for playback: %s\n",
             buffer_frames, snd_strerror(ret));
         return ret;
     }

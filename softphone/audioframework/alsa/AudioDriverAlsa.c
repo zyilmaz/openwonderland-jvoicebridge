@@ -477,8 +477,8 @@ async_callback(snd_async_handler_t *ahandler)
         return;
     }
 
-    fprintf(stderr, "Used frames %d, buf frames %d, writing silence!\n",
-    	used_frames, speaker_buffer_frames);
+    fprintf(stderr, "Used frames %d, buf frames %d, writing silence frames %d!\n",
+    	used_frames, speaker_buffer_frames, silence_frames);
 
     //if (used_frames == 0) {
     //	fprintf(stderr, "Used frames is zero!\n");
@@ -518,9 +518,6 @@ int write_speaker(snd_pcm_t *handle, jshort *data, int frames) {
     }
 
     pthread_mutex_unlock(speaker_mutex);
-
-    //fprintf(stderr, "callback:  wrote %d bytes of silence\n", 
-    //    silence_frames * 2 * speaker_channels);
 
     return ret;
 }
