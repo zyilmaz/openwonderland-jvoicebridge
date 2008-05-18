@@ -316,16 +316,9 @@ public class Bridge {
 		}
             }
             
-	    if (localHostAddress.equals("127.0.0.1")) {
-		Logger.println("WARNING:  THE BRIDGE'S IP ADDRESS IS 127.0.0.1. "
-		    + " THE BRIDGE WILL ONLY WORK LOCALLY!");
-	    }
-
-	    if (localHostAddress.equals("127.0.1.1")) {
-		Logger.println(
-		    "WARNING:  The local host address 127.0.1.1 appears to be invalid");
-		Logger.println(
-		    "WARNING:  There may be a bad entry for local host in /etc/hosts.");
+	    if (localHostAddress.startsWith("127.")) {
+		Logger.println("WARNING:  THE BRIDGE'S IP ADDRESS IS " 
+		    + localHostAddress + " THE BRIDGE WILL ONLY WORK LOCALLY!");
 	    }
 
             privateHost = InetAddress.getByName(localHostAddress).getHostAddress();
