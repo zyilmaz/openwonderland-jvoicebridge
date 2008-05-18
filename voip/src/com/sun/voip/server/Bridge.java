@@ -321,6 +321,13 @@ public class Bridge {
 		    + " THE BRIDGE WILL ONLY WORK LOCALLY!");
 	    }
 
+	    if (localHostAddress.equals("127.0.1.1")) {
+		Logger.println(
+		    "WARNING:  The local host address 127.0.1.1 appears to be invalid");
+		Logger.println(
+		    "WARNING:  There may be a bad entry for local host in /etc/hosts.");
+	    }
+
             privateHost = InetAddress.getByName(localHostAddress).getHostAddress();
         } catch (UnknownHostException e) {
 	    Logger.error("Unable to determine local IP Address:  "
