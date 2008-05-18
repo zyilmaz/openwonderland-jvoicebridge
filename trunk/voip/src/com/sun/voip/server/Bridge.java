@@ -376,7 +376,7 @@ public class Bridge {
 		+ e.getMessage());
 	}
 
-	if (publicHost.equals("127.0.0.1") ||
+	if (publicHost.startsWith("127.") ||
 	        publicHost.equalsIgnoreCase("localhost")) {
 
 	    /*
@@ -425,7 +425,7 @@ public class Bridge {
 		if (localhostSecurity == true) {
 		    if (ia.isSiteLocalAddress() == false &&
 			    host.equalsIgnoreCase("localhost") == false &&
-			    host.equals("127.0.0.1") == false &&
+			    host.startsWith("127.") == false &&
 			    ia.getHostAddress().equals(privateHost) == false) {
 
 			String s = "Connection from " + ia 

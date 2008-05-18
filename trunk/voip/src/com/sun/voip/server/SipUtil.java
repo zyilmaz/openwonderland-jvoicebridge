@@ -492,18 +492,20 @@ if (false) {
 	    voipGateway = voipGateways.get(0);
 	}
 
-	if (Bridge.getPrivateHost().equals("127.0.0.1") && 
+	if (Bridge.getPrivateHost().startsWith("127.") && 
 	    voipGateway.equals("127.0.0.1") == false) {
 
-	    throw new SipException("The bridge's ip address is 127.0.0.1.  "
-		+ "It is not possible to initiate a call to " + voipGateway);
+	    throw new SipException("The bridge's ip address is "
+		+ Bridge.getPrivateHost()
+		+ ". It is not possible to initiate a call to " + voipGateway);
 	}
 
-	if (Bridge.getPrivateHost().equals("127.0.0.1") == false && 
-	    voipGateway.equals("127.0.0.1") == true) {
+	if (Bridge.getPrivateHost().startsWith("127.") == false && 
+	    voipGateway.startsWith("127.") == true) {
 
-	    throw new SipException("The bridge's ip address must be 127.0.0.1 "
-		+ "in order to issue a call to " + voipGateway);
+	    throw new SipException("The bridge's ip address must be "
+		+ Bridge.getPrivateHost() 
+		+ " in order to issue a call to " + voipGateway);
 	}
 
 	Logger.writeFile("Call " + cp + " voip gateway / proxy " + voipGateway
