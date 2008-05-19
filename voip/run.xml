@@ -28,7 +28,7 @@
             <jvmarg value="-Dcom.sun.voip.server.LAST_RTP_PORT=${voicebridge.last.rtp.port}"/>
             <jvmarg value="-Djavax.sip.IP_ADDRESS=${voicebridge.local.hostAddress}"/>
             <jvmarg value="-Dcom.sun.voip.server.BRIDGE_STATUS_LISTENERS=${voicebridge.status.listeners}"/>
-            <jvmarg value="-Dcom.sun.voip.server.VoIPGateways=129.148.75.22,10.1.224.22,10.6.4.192"/>
+            <jvmarg value="-Dcom.sun.voip.server.VoIPGateways=129.148.75.22,10.6.4.192"/>
             <jvmarg value="-Dcom.sun.voip.server.SIPProxy=129.148.75.104"/>
             <jvmarg value="-Dcom.sun.voip.server.OUTSIDE_LINE_PREFIX=${voicebridge.outside.line.prefix}"/>
             <jvmarg value="-ms200m"/>
