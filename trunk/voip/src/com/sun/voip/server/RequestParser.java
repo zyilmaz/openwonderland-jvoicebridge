@@ -3260,7 +3260,7 @@ public class RequestParser {
 	requestHandler.writeToSocket("enablePSTNCalls			= "
 	    + CallHandler.enablePSTNCalls());
 
- 	requestHandler.writeToSocket("firstRtpPortNumber		= "
+ 	requestHandler.writeToSocket("firstRtpPort			= "
 	    + ConferenceMember.getFirstRtpPort());
 
 	requestHandler.writeToSocket("forwardDtmfKeys			= "
@@ -3284,7 +3284,7 @@ public class RequestParser {
 	requestHandler.writeToSocket("joinConfirmationKey		= "
 	    + MemberReceiver.getJoinConfirmationKey());
 
- 	requestHandler.writeToSocket("lastRtpPortNumber		= "
+ 	requestHandler.writeToSocket("lastRtpPort			= "
 	    + ConferenceMember.getLastRtpPort());
 
 	requestHandler.writeToSocket("localhostSecurity		= "
