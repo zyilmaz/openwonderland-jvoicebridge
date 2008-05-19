@@ -19,6 +19,8 @@
 			Specifies an integer value for the data port.
 			This is useful if you are behind a firewall and 
 			have to open up ports.  Default is dynamic port number.
+			If this is set to -1, an attempt will me made to use
+			the same audio port as the remote is using.
                 ]]></description>
             </property>
             <property name="com.sun.mc.softphone.media.SWAP_SPEAKER_CHANNELS">

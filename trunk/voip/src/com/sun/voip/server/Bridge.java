@@ -318,7 +318,7 @@ public class Bridge {
             
 	    if (localHostAddress.startsWith("127.")) {
 		Logger.println("WARNING:  THE BRIDGE'S IP ADDRESS IS " 
-		    + localHostAddress + " THE BRIDGE WILL ONLY WORK LOCALLY!");
+		    + localHostAddress + ".  THE BRIDGE WILL ONLY WORK LOCALLY!");
 	    }
 
             privateHost = InetAddress.getByName(localHostAddress).getHostAddress();

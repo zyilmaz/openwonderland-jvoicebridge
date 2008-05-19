@@ -402,8 +402,12 @@ if (false) {
 
 	    int audioPort = 0;
 
-	    if (s != null && !s.equals("")) {
+	    if (s != null && s.length() > 0) {
 		audioPort = Integer.parseInt(s);
+
+		if (audioPort == -1) {
+		    audioPort = 0;
+		}
 	    }
 
 	    if (audioPort == 0) {
@@ -1061,6 +1065,17 @@ if (false) {
     }
 
     public synchronized String generateSdp(boolean answer) throws IOException {
+        String s = Utils.getPreference("com.sun.mc.softphone.media.AUDIO_PORT");
+
+	if (s.equals("-1")) {
+	    /*
+	     * Try to use the same port as the remote.
+	     */
+	    lastAudioPort = remoteSdpInfo.getRemotePort();
+
+	    initialize();
+	}
+
 	InetSocketAddress isa = new InetSocketAddress(
 	    rtpSocket.getDatagramSocket().getLocalAddress(),
 	    rtpSocket.getDatagramSocket().getLocalPort());
@@ -1217,8 +1232,12 @@ if (false) {
 
                 int audioPort = 0;
 
-                if (s != null && !s.equals("")) {
+                if (s != null && s.length() > 0) {
                     audioPort = Integer.parseInt(s);
+
+		    if (audioPort == -1) {
+			audioPort = 0;
+		    } 
                 }
 
                 if (Logger.logLevel >= Logger.LOG_MOREINFO) {
