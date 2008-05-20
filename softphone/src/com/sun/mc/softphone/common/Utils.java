@@ -214,7 +214,7 @@ public class Utils {
 
 	initPreference("com.sun.mc.softphone.sip.REGISTRAR_UDP_PORT", "5060");
 	initPreference("com.sun.mc.softphone.sip.REGISTRAR_TRANSPORT", "udp");
-	initPreference("com.sun.mc.softphone.sip.WAIT_UNREGISTGRATION_FOR", "3600");
+	initPreference("com.sun.mc.softphone.sip.WAIT_UNREGISTGRATION_FOR", "15");
 	
         initPreference("com.sun.mc.softphone.sip.PREFERRED_LOCAL_PORT", "5070");
 
