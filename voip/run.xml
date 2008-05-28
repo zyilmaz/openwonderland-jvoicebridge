@@ -31,6 +31,7 @@
             <jvmarg value="-Dcom.sun.voip.server.VoIPGateways=129.148.75.22,10.6.4.192"/>
             <jvmarg value="-Dcom.sun.voip.server.SIPProxy=129.148.75.104"/>
             <jvmarg value="-Dcom.sun.voip.server.OUTSIDE_LINE_PREFIX=${voicebridge.outside.line.prefix}"/>
+            <jvmarg value="-Dcom.sun.voip.server.LONG_DISTANCE_PREFIX=${voicebridge.long.distance.prefix}"/>
             <jvmarg value="-ms200m"/>
             <jvmarg value="-mx200m"/>
 	    <jvmarg value="-XX:NewSize=5m"/>

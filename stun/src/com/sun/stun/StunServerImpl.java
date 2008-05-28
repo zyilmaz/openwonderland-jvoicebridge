@@ -314,10 +314,33 @@ public class StunServerImpl implements StunServer {
 	try {
 	    responseSocket.send(packet);    
 
+	    String s = "";
+
+	    if (request.length >= StunHeader.STUN_HEADER_LENGTH 
+	            + StunHeader.TLV_LENGTH + StunHeader.MAPPED_ADDRESS_LENGTH) {
+
+		int port = (int) (((request[StunHeader.STUN_HEADER_LENGTH  
+                    + StunHeader.TLV_LENGTH + 2] << 8) & 0xff00) |
+		    (request[StunHeader.STUN_HEADER_LENGTH
+                    + StunHeader.TLV_LENGTH + 3] & 0xff));
+
+		String privateAddress = " private address "
+		    + (int) (request[StunHeader.STUN_HEADER_LENGTH  
+                    + StunHeader.TLV_LENGTH + 4] & 0xff) + "."
+		    + (int) (request[StunHeader.STUN_HEADER_LENGTH
+                    + StunHeader.TLV_LENGTH + 5] & 0xff) + "."
+		    + (int) (request[StunHeader.STUN_HEADER_LENGTH
+                    + StunHeader.TLV_LENGTH + 6] & 0xff) + "."
+		    + (int) (request[StunHeader.STUN_HEADER_LENGTH
+                    + StunHeader.TLV_LENGTH + 7] & 0xff);
+
+		s = privateAddress + ":" + port;
+  	    } 
+
 	    logger.warning("Sent STUN Binding Response from "
 		+ responseSocket.getLocalAddress() + ":" 
 		+ responseSocket.getLocalPort()
-		+ " to " + packet.getAddress() + ":" + packet.getPort());
+		+ " to " + packet.getAddress() + ":" + packet.getPort() + s);
 	} catch (IOException e) {
 	    logger.warning("Unable to send STUN response! " + e.getMessage());
 	}
@@ -391,6 +414,10 @@ public class StunServerImpl implements StunServer {
 
 	response[0] = 1;	// set Binding Response
 	
+	response[3] = (byte) 
+	    StunHeader.TLV_LENGTH + StunHeader.MAPPED_ADDRESS_LENGTH +
+	    StunHeader.TLV_LENGTH + StunHeader.CHANGED_ADDRESS_LENGTH;
+
 	response[StunHeader.STUN_HEADER_LENGTH + 1] = 
 	    StunHeader.MAPPED_ADDRESS;	// type
 
@@ -414,22 +441,22 @@ public class StunServerImpl implements StunServer {
  	response[StunHeader.STUN_HEADER_LENGTH + 10] = sourceAddress[2];
  	response[StunHeader.STUN_HEADER_LENGTH + 11] = sourceAddress[3];
 
- 	response[StunHeader.STUN_HEADER_LENGTH + 12] = 
+ 	response[StunHeader.STUN_HEADER_LENGTH + 13] = 
 	    StunHeader.CHANGED_ADDRESS;
 
- 	response[StunHeader.STUN_HEADER_LENGTH + 13] = 
+ 	response[StunHeader.STUN_HEADER_LENGTH + 15] = 
 	    StunHeader.CHANGED_ADDRESS_LENGTH;
 	
- 	response[StunHeader.STUN_HEADER_LENGTH + 15] = 1;  // address family
+ 	response[StunHeader.STUN_HEADER_LENGTH + 17] = 1;  // address family
 
- 	response[StunHeader.STUN_HEADER_LENGTH + 16] = (byte) (sourcePort >> 8);
- 	response[StunHeader.STUN_HEADER_LENGTH + 17] = (byte) 
+ 	response[StunHeader.STUN_HEADER_LENGTH + 18] = (byte) (sourcePort >> 8);
+ 	response[StunHeader.STUN_HEADER_LENGTH + 19] = (byte) 
 	    (sourcePort & 0xff);
 
- 	response[StunHeader.STUN_HEADER_LENGTH + 18] = sourceAddress[0];
- 	response[StunHeader.STUN_HEADER_LENGTH + 19] = sourceAddress[1];
- 	response[StunHeader.STUN_HEADER_LENGTH + 20] = sourceAddress[2];
- 	response[StunHeader.STUN_HEADER_LENGTH + 21] = sourceAddress[3];
+ 	response[StunHeader.STUN_HEADER_LENGTH + 20] = sourceAddress[0];
+ 	response[StunHeader.STUN_HEADER_LENGTH + 21] = sourceAddress[1];
+ 	response[StunHeader.STUN_HEADER_LENGTH + 22] = sourceAddress[2];
+ 	response[StunHeader.STUN_HEADER_LENGTH + 23] = sourceAddress[3];
 
 	return response;
     }

@@ -264,15 +264,21 @@ public class Bridge {
 		+ e.getMessage());
 	}
 
+        String longDistancePrefix = System.getProperty(
+           "com.sun.voip.server.LONG_DISTANCE_PREFIX");
+
+        if (longDistancePrefix != null) {
+            RequestHandler.setLongDistancePrefix(longDistancePrefix);
+            Logger.println("Outside line prefix set to '" + longDistancePrefix + "'");
+        } 
+
         String outsideLinePrefix = System.getProperty(
            "com.sun.voip.server.OUTSIDE_LINE_PREFIX");
 
         if (outsideLinePrefix != null) {
             RequestHandler.setOutsideLinePrefix(outsideLinePrefix);
             Logger.println("Outside line prefix set to '" + outsideLinePrefix + "'");
-        } else {
-            Logger.println("Outside line prefix defaults to '" + outsideLinePrefix + "'");
-        }
+        } 
 
 	String s = System.getProperty("com.sun.voip.server.BRIDGE_STATUS_LISTENERS");
 
