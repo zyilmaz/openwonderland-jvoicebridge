@@ -276,6 +276,20 @@ public class Utils {
 	    setPreference("javax.sip.OUTBOUND_PROXY_ADDRESS", outboundProxy);
 	}
 
+	String stunClientTimeout = getPreference("com.sun.mc.stun.CLIENT_TIMEOUT");
+
+	if (stunClientTimeout != null) {
+	    Logger.println("setting com.sun.stun.CLIENT_TIMEOUT to " + stunClientTimeout);
+	    System.setProperty("com.sun.stun.CLIENT_TIMEOUT", stunClientTimeout);
+	}
+
+	String stunClientRetries = getPreference("com.sun.mc.stun.CLIENT_RETRIES");
+
+	if (stunClientRetries != null) {
+	    Logger.println("setting com.sun.stun.CLIENT_RETRIES to " + stunClientRetries);
+	    System.setProperty("com.sun.stun.CLIENT_RETRIES", stunClientRetries);
+	}
+
         if (console.isDebugEnabled()) {
             console.debug("outboundProxy=" + outboundProxy);
         }

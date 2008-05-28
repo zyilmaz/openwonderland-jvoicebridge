@@ -182,6 +182,20 @@
 			that you will need to change this.
                 ]]></description>
             </property>
+            <property name="com.sun.mc.stun.CLIENT_TIMEOUT">
+                <labelname>STUN Client Timeout</labelname>
+                <description><![CDATA[
+			This is the number of milliseconds to wait before retrying a
+			STUN request.  Default is 3000 seconds.
+                ]]></description>
+            </property>
+            <property name="com.sun.mc.stun.CLIENT_RETRIES">
+                <labelname>STUN Client retries</labelname>
+                <description><![CDATA[
+			This is the number of times to retry a STUN request.
+			Default is 5 retries.
+                ]]></description>
+            </property>
 	</network>
 	<speexEncoding>
             <property name="com.sun.mc.softphone.media.SPEEX_ENABLED">

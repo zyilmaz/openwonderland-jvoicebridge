@@ -63,7 +63,12 @@ public class StunClient extends Thread {
 
     private boolean done;
 
-    static {
+    /*
+     * Communicate with the stunServer using UDP
+     */
+    public StunClient(InetSocketAddress stunServer,
+	    DatagramSocket datagramSocket) throws IOException {
+
 	String s = System.getProperty("com.sun.stun.CLIENT_TIMEOUT");
 
 	if (s != null && s.length() > 0) {
@@ -85,13 +90,6 @@ public class StunClient extends Thread {
 		    + s + ".  Defaulting to " + RETRIES);
 	    }
 	}
-    }
-
-    /*
-     * Communicate with the stunServer using UDP
-     */
-    public StunClient(InetSocketAddress stunServer,
-	    DatagramSocket datagramSocket) throws IOException {
 
 	this.stunServer = stunServer;
 	this.datagramSocket = datagramSocket;
