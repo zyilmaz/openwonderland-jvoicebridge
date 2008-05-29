@@ -404,7 +404,11 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
                 String[] callDetails = items[1].split(" ");
                 int cdLen = callDetails.length;
 
-                String aQualityTmp = callDetails[1];
+                String aQualityTmp = " : :";
+
+		if (callDetails.length >= 2) {
+		    aQualityTmp = callDetails[1];
+		}
 
 		System.out.println("aQualityTmp " + aQualityTmp);
 
@@ -418,7 +422,7 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
                         
                         // reset fName
                         fName = "";
-                        for(int n = 0;n < cdLen - 1; n++) {
+                        for(int n = 0; n < cdLen - 1; n++) {
                             // if the audio filename has a space in it, build the name string using the array elts
                             // in between 0 and cdLen - 2 
                             fName = fName + callDetails[n] + " ";
