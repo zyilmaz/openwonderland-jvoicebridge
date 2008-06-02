@@ -1064,7 +1064,7 @@ public class CallParticipant {
         // decide whether to migrate or just call
 	if (phoneNumber != null) {
             if (migrateCall) {
-                request += "migrate=" + phoneNumber + "\r\n";
+                request += "migrate=" + callId + ":" + phoneNumber + "\r\n";
             } else {
                 request += "phoneNumber=" + phoneNumber + "\r\n";
 	    }
