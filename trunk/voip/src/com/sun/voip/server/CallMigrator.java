@@ -70,6 +70,7 @@ public class CallMigrator extends Thread {
 	    return;
 	}
 		
+if (false) {
 	if (previousCall.isCallEstablished() == false) {
 	    Logger.println(
 		"Call migrator can't migrate call which is not established");
@@ -79,6 +80,7 @@ public class CallMigrator extends Thread {
 
 	    return;
 	}
+}
 
 	CallParticipant previousCp = previousCall.getCallParticipant();
 

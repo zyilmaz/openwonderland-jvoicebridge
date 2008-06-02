@@ -205,7 +205,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	cp.setPhoneNumber(sipUrl);
 
-	String name = "Anonymous";
+	String name = callId;
 
         int end;
 
@@ -255,7 +255,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
         cp.setVoiceDetection(true);
 	cp.setDtmfDetection(true);
-	cp.setVoiceDetectionWhileMuted(true);
+	//cp.setVoiceDetectionWhileMuted(true);
 	cp.setHandleSessionProgress(true);
 
 	return cp;
