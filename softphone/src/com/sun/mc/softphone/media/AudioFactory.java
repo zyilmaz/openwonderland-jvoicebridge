@@ -82,6 +82,8 @@ public class AudioFactory {
 		Logger.println("Unable to load Mac Core Audio "
 		    + "native library: " + e.getMessage());
 		Logger.println("THE SOFTPHONE WILL NOT WORK PROPERLY!");
+
+		e.printStackTrace();
 	    }
 	} else if (Utils.isLinux()) {
 	    try {

@@ -73,7 +73,15 @@ public class NativeLibUtil {
         fos.close();
         
         // load the temporary file as a library
-        System.load(f.getAbsolutePath());
+	String path = f.getAbsolutePath();
+
+	//System.out.println("Trying to load " + path + " writable " + f.canWrite()
+	//    + " length " + f.length() + " exists " + f.exists());
+
+	//System.out.println("class path " + System.getProperty("java.class.path"));
+	//System.out.println("library path " + System.getProperty("java.library.path"));
+
+        System.load(path);
     }
     
 }

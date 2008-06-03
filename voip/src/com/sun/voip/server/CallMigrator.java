@@ -191,7 +191,9 @@ if (false) {
 
 	        newCall.suppressStatus = false;
 	    }
-	    newCall.getMember().migrate(previousCall.getMember());
+	    if (previousCall.isCallEstablished() == true) {
+	        newCall.getMember().migrate(previousCall.getMember());
+	    }
 	}
 
 
