@@ -615,7 +615,7 @@ jobject getAudioDevice(AudioDeviceID adid, bool input, JNIEnv* env)
     jmethodID mid = env->GetMethodID(adc, "<init>", "()V");
     if (adc == 0 || mid == 0) {
         printf("Didn't get class or method: adc %i, mid %i\n", 
-            (int)adc, (int)mid);
+            adc, mid);
     }
     
     /* get the field ids */
