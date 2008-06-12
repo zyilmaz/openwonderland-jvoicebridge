@@ -82,7 +82,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
     private final static String DEFAULT_CONFERENCE = "Test:PCM/16000/2";
 
     private final static String AUDIO_DIR =
-            "com.sun.mpk20.gdcdemo.server.AUDIO_DIR";
+	    "com.sun.sgs.impl.app.voice.AUDIO_DIR";
 
     private final static String DEFAULT_AUDIO_DIR = ".";
 
@@ -90,8 +90,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
         Logger.getLogger(VoiceHandlerImpl.class.getName());
 
     // the audio directory
-    private static String audioDir = 
-            System.getProperty(AUDIO_DIR, DEFAULT_AUDIO_DIR);
+    private static String audioDir; 
     
     private static final String SCALE = 
 	"org.jdesktop.lg3d.wonderland.darkstar.server.VoiceHandler.SCALE";
@@ -99,6 +98,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
     private static double scale = 100.;
 
     private String conferenceId;
+
+    private String callAnsweredTreatment;
 
     static {
 	String s = System.getProperty(SCALE);
@@ -155,6 +156,19 @@ public class VoiceHandlerImpl implements VoiceHandler,
             }
         }
 
+	audioDir = System.getProperty(AUDIO_DIR);
+
+	if (audioDir == null || audioDir.length() == 0) {
+	    audioDir = DEFAULT_AUDIO_DIR;
+	}
+
+	callAnsweredTreatment = System.getProperty(
+	        "com.sun.sgs.impl.app.voice.CALL_ANSWERED_TREATMENT");
+
+	if (callAnsweredTreatment == null || callAnsweredTreatment.length() == 0) {
+	    callAnsweredTreatment = "dialtojoin.au";
+	}
+
 	try {
 	    /*
 	     * XXX We just do this so the voiceService can have a 
@@ -163,7 +177,11 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	     * places a call from outside the client.
 	     */
 	    conferenceId = System.getProperty(
-	        "com.sun.sgs.impl.app.voice.DEFAULT_CONFERENCE", DEFAULT_CONFERENCE);
+	        "com.sun.sgs.impl.app.voice.DEFAULT_CONFERENCE");
+
+	    if (conferenceId == null || conferenceId.length() == 0) {
+		conferenceId = DEFAULT_CONFERENCE;
+	    }
 
 	    voiceManager.monitorConference(conferenceId);
 	} catch (IOException e) {
@@ -197,9 +215,11 @@ public class VoiceHandlerImpl implements VoiceHandler,
      * The callId must be unique.  For wonderland, the userId is guaranteed to
      * be unique and is used as the callId for the softphone call.
      */
-    public String setupCall(String callId, String sipUrl, String bridge) {
+    public String setupCall(String callId, String sipUrl, String bridge,
+	    boolean confirmAnswered) {
+
 	logger.info("setupCall:  callId " + callId + " Url: " + sipUrl
-	    + " Bridge: " + bridge);
+	    + " Bridge: " + bridge + " confirmAnswered " + confirmAnswered);
 
 	CallParticipant cp = getCallParticipant(callId);
 
@@ -219,7 +239,16 @@ public class VoiceHandlerImpl implements VoiceHandler,
             if ((start = sipUrl.indexOf(pattern)) >= 0) {
                 name = sipUrl.substring(start + pattern.length(), end);
             }
-        }
+        } else {
+	    /*
+	     * We can't require 1 to be pressed for all phone calls!
+	     * For example, we may dial out to an automated conference call.
+	     */
+	    if (confirmAnswered) {
+	        cp.setJoinConfirmationTimeout(90);
+	        cp.setCallAnsweredTreatment(callAnsweredTreatment);
+	    }
+	}
 
 	cp.setName(name);
 
@@ -666,6 +695,8 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	CallParticipant cp = getCallParticipant(callId);
 
 	cp.setPhoneNumber(phoneNumber);
+	cp.setJoinConfirmationTimeout(90);
+	cp.setCallAnsweredTreatment(callAnsweredTreatment);
 
 	VoiceManager voiceManager = AppContext.getManager(VoiceManager.class);
 

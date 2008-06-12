@@ -172,16 +172,18 @@ if (false) {
 
 		    previousCp.setConferenceLeaveTreatment(previousLeaveTreatment);
 		    previousCp.setCallEndTreatment(previousEndTreatment);
+		    CallEvent callEvent = new CallEvent(CallEvent.STATE_CHANGED);
+
+		    callEvent.setCallState(new CallState(CallState.ENDED));
+
+		    callEvent.setInfo("Migration failed: " + reason);
+
+		    newCall.suppressStatus = false;
+		    newCall.sendCallEventNotification(callEvent);
+
 		    previousCall.suppressStatus = false;
 
 		    if (!previousCall.isCallEstablished()) {
-			CallEvent callEvent = 
-			    new CallEvent(CallEvent.STATE_CHANGED);
-
-			callEvent.setCallState(new CallState(CallState.ENDED));
-
-			callEvent.setInfo("Migration failed: " + reason);
-
 	 	        previousCall.sendCallEventNotification(callEvent);
 		    }
 
@@ -191,11 +193,15 @@ if (false) {
 
 	        newCall.suppressStatus = false;
 	    }
+
 	    if (previousCall.isCallEstablished() == true) {
+		Logger.println("migrate mix descriptors for " + previousCall);
 	        newCall.getMember().migrate(previousCall.getMember());
+	    } else {
+		Logger.println("migrate:  previous call is not established " 
+		    + previousCall);
 	    }
 	}
-
 
 	Logger.println("Call " + previousCp
 	    + " migrated to " + cp.getPhoneNumber());
@@ -238,29 +244,14 @@ if (false) {
 	OutgoingCallHandler callHandler = new OutgoingCallHandler(requestHandler, cp);
 
 	synchronized(this) {
-	    callHandler.suppressStatus = true;
-
 	    callHandler.start();		// call new party
 
 	    /*
 	     * Wait for call to be established
 	     */
 	    if (callHandler.waitForCallToBeEstablished() == false) {
-		String reason = callHandler.getReasonCallEnded();
-
-		Logger.println("Migration failed:  " + reason);
-
-		CallEvent callEvent = new CallEvent(CallEvent.STATE_CHANGED);
-
-		callEvent.setCallState(new CallState(CallState.ENDED));
-
-		callEvent.setInfo("Migration failed: " + reason);
-
-	 	callHandler.sendCallEventNotification(callEvent);
 	        return;
 	    }
-
-	    callHandler.suppressStatus = false;
 	}
 
 	cp.setMigrateCall(false);	// call is no longer migrating

@@ -120,7 +120,7 @@ public abstract class FileAudioSource implements AudioSource {
 	    in = new BufferedInputStream(in, 16*1024);
 
 	    if (Logger.logLevel >= Logger.LOG_MOREINFO) {
-		Logger.println("Successfully opened as stream");
+		Logger.println("Successfully opened as stream '" + path + "'");
 	    }
 	} else {
             // no luck, try the file system

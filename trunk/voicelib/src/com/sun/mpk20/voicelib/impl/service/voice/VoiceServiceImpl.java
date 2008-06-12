@@ -340,6 +340,9 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	try {
 	    bridgeManager.getBridgeConnection(callId);
 	} catch (IOException e) {
+	    logger.info("can't find connection for " + callId
+		+ e.getMessage());
+
 	    return;	// nothing to do
 	}
 

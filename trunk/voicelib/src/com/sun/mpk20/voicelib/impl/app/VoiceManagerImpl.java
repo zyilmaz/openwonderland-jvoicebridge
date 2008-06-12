@@ -45,6 +45,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
 import com.sun.voip.CallParticipant;
 
@@ -98,30 +99,62 @@ public class VoiceManagerImpl implements VoiceManager {
         this.backingManager = backingManager;
 
 	livePlayerSpatializer = new DefaultSpatializer();
-	livePlayerSpatializer.setMaximumVolume(LIVE_PLAYER_MAXIMUM_VOLUME);
+	livePlayerSpatializer.setMaximumVolume(
+	    getPreference("LIVE_PLAYER_MAXIMUM_VOLUME", LIVE_PLAYER_MAXIMUM_VOLUME));
+
 	livePlayerSpatializer.setZeroVolumeRadius(
-	    LIVE_PLAYER_ZERO_VOLUME_RADIUS);
+	    getPreference("LIVE_PLAYER_ZERO_VOLUME_RADIUS", LIVE_PLAYER_ZERO_VOLUME_RADIUS));
+
 	livePlayerSpatializer.setFullVolumeRadius(
-	    LIVE_PLAYER_FULL_VOLUME_RADIUS);
-	livePlayerSpatializer.setFalloff(LIVE_PLAYER_FALLOFF);
+	    getPreference("LIVE_PLAYER_FULL_VOLUME_RADIUS", LIVE_PLAYER_FULL_VOLUME_RADIUS));
+
+	livePlayerSpatializer.setFalloff(
+	    getPreference("LIVE_PLAYER_FALLOFF", LIVE_PLAYER_FALLOFF));
 
 	stationarySpatializer = new DefaultSpatializer();
 	stationarySpatializer.setMaximumVolume(
-	    STATIONARY_MAXIMUM_VOLUME);
+	    getPreference("STATIONARY_MAXIMUM_VOLUME", STATIONARY_MAXIMUM_VOLUME));
 	stationarySpatializer.setZeroVolumeRadius(
-	    STATIONARY_ZERO_VOLUME_RADIUS);
+	    getPreference("STATIONARY_ZERO_VOLUME_RADIUS", STATIONARY_ZERO_VOLUME_RADIUS));
 	stationarySpatializer.setFullVolumeRadius(
-	    STATIONARY_FULL_VOLUME_RADIUS);
+	    getPreference("STATIONARY_FULL_VOLUME_RADIUS", STATIONARY_FULL_VOLUME_RADIUS));
 	stationarySpatializer.setFalloff(
-	    STATIONARY_FALLOFF);
+	    getPreference("STATIONARY_FALLOFF", STATIONARY_FALLOFF));
 
   	outworlderSpatializer = new DefaultSpatializer();
-	outworlderSpatializer.setMaximumVolume(OUTWORLDER_MAXIMUM_VOLUME);
+	outworlderSpatializer.setMaximumVolume(
+	    getPreference("OUTWORLDER_MAXIMUM_VOLUME", OUTWORLDER_MAXIMUM_VOLUME));
 	outworlderSpatializer.setZeroVolumeRadius(
-	    OUTWORLDER_ZERO_VOLUME_RADIUS);
+	    getPreference("OUTWORLDER_ZERO_VOLUME_RADIUS", OUTWORLDER_ZERO_VOLUME_RADIUS));
 	outworlderSpatializer.setFullVolumeRadius(
-	    OUTWORLDER_FULL_VOLUME_RADIUS);
-	outworlderSpatializer.setFalloff(OUTWORLDER_FALLOFF);
+	    getPreference("OUTWORLDER_FULL_VOLUME_RADIUS", OUTWORLDER_FULL_VOLUME_RADIUS));
+	outworlderSpatializer.setFalloff(
+	    getPreference("OUTWORLDER_FALLOFF", OUTWORLDER_FALLOFF));
+    }
+
+    private String VOICEMANAGER_PREFIX = "COM.SUN.MPK20.VOICELIB.IMPL.APP.VOICEMANAGERIMPL.";
+
+    private double getPreference(String preference, double defaultValue) {
+        Preferences prefs = Preferences.userNodeForPackage(VoiceManagerImpl.class);
+
+	String s = prefs.get(VOICEMANAGER_PREFIX + preference, null);
+
+	if (s == null) {
+	    return defaultValue;
+	}
+
+	try {
+	    return Double.parseDouble(s);    
+	} catch (NumberFormatException e) {
+	    logger.warning("Invalid value '" + s + "' for " + preference
+		+ ".   Using " + defaultValue);
+	    return defaultValue;
+	}
+    }
+
+    private void setPreference(String preference, double value) {
+        Preferences prefs = Preferences.userNodeForPackage(VoiceManagerImpl.class);
+	prefs.put(VOICEMANAGER_PREFIX + preference, String.valueOf(value));
     }
 
     public void monitorConference(String conferenceId) throws IOException {
@@ -1149,27 +1182,57 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	livePlayerSpatializer.setMaximumVolume(
 	    parameters.liveMaxVolume);
+	setPreference("LIVE_PLAYER_MAXIMUM_VOLUME", 
+	    parameters.liveMaxVolume);
+
 	livePlayerSpatializer.setZeroVolumeRadius(
 	    parameters.liveZeroVolRadius);
+	setPreference("LIVE_PLAYER_ZERO_VOLUME_RADIUS", 
+	    parameters.liveZeroVolRadius);
+
 	livePlayerSpatializer.setFullVolumeRadius(
 	    parameters.liveFullVolRadius);
+	setPreference("LIVE_PLAYER_FULL_VOLUME_RADIUS", 
+	    parameters.liveFullVolRadius);
+
 	livePlayerSpatializer.setFalloff(parameters.liveFalloff);
+	setPreference("LIVE_PLAYER_FALLOFF", parameters.liveFalloff);
 
 	stationarySpatializer.setMaximumVolume(
 	    parameters.stationaryMaxVolume);
+	setPreference("STATIONARY_MAXIMUM_VOLUME", 
+	    parameters.stationaryMaxVolume);
+
 	stationarySpatializer.setZeroVolumeRadius(
 	    parameters.stationaryZeroVolRadius);
+	setPreference("STATIONARY_ZERO_VOLUME_RADIUS", 
+	    parameters.stationaryZeroVolRadius);
+
 	stationarySpatializer.setFullVolumeRadius(
 	    parameters.stationaryFullVolRadius);
+	setPreference("STATIONARY_FULL_VOLUME_RADIUS", 
+	    parameters.stationaryFullVolRadius);
+
 	stationarySpatializer.setFalloff(parameters.stationaryFalloff);
+	setPreference("STATIONARY_FALLOFF", parameters.stationaryFalloff);
 
 	outworlderSpatializer.setMaximumVolume(
 	    parameters.outworlderMaxVolume);
+	setPreference("OUTWORLDER_MAXIMUM_VOLUME", 
+	    parameters.outworlderMaxVolume);
+
 	outworlderSpatializer.setZeroVolumeRadius(
 	    parameters.outworlderZeroVolRadius);
+	setPreference("OUTWORLDER_ZERO_VOLUME_RADIUS", 
+	    parameters.outworlderZeroVolRadius);
+
 	outworlderSpatializer.setFullVolumeRadius(
 	    parameters.outworlderFullVolRadius);
+	setPreference("OUTWORLDER_FULL_VOLUME_RADIUS", 
+	    parameters.outworlderFullVolRadius);
+
 	outworlderSpatializer.setFalloff(parameters.outworlderFalloff);
+	setPreference("OUTWORLDER_FALLOFF", parameters.outworlderFalloff);
 
 	/*
 	 * Reset all private mixes

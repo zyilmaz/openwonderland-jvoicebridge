@@ -38,7 +38,8 @@ public interface VoiceHandler {
     /*
      * Initiate a call on a specific bridge.
      */
-    public String setupCall(String callId, String sipUrl, String bridge);
+    public String setupCall(String callId, String sipUrl, String bridge,
+	boolean confirmAnswered);
 
     public void createPlayer(String callId, double x, double y, double z,
 	double orientation, boolean isOutworlder);
