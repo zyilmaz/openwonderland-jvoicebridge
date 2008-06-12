@@ -484,9 +484,7 @@ if (false) {
 	    ArrayList<String> voipGateways = SipServer.getVoIPGateways();
 
 	    if (voipGateways.size() == 0) {
-		throw new SipException(
-		    "There is no voip Gateway to use for the call:  "
-		    + cp);
+		throw new SipException("No voip Gateway! " + cp);
 	    }
 
 	    voipGateway = voipGateways.get(0);

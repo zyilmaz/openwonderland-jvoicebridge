@@ -477,8 +477,8 @@ async_callback(snd_async_handler_t *ahandler)
         return;
     }
 
-    fprintf(stderr, "Used frames %d, buf frames %d, writing silence frames %d!\n",
-    	used_frames, speaker_buffer_frames, silence_frames);
+    //fprintf(stderr, "Used frames %d, buf frames %d, writing silence frames %d!\n",
+    //	used_frames, speaker_buffer_frames, silence_frames);
 
     //if (used_frames == 0) {
     //	fprintf(stderr, "Used frames is zero!\n");

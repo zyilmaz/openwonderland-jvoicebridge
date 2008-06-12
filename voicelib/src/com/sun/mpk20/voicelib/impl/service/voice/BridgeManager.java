@@ -451,6 +451,8 @@ public class BridgeManager extends Thread
     public void migrateCall(CallParticipant cp) throws IOException {
 	BridgeConnection bc = getBridgeConnection(cp.getCallId(), true);
 
+	putCallConnection(cp.getCallId(), new CallInfo(cp, bc));
+
 	bc.migrateCall(cp);
     }
 

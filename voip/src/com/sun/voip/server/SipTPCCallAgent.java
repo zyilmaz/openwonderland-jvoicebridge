@@ -123,9 +123,9 @@ public class SipTPCCallAgent extends CallSetupAgent implements SipListener {
             clientTransaction = sipUtil.sendInvite(cp, isa);
 
 	    if (clientTransaction == null) {
-                Logger.error("Error inviting:  " + cp);
-		setState(CallState.ENDED, "Reason='Error inviting party'");
-		throw new IOException("Error inviting:  " + cp);
+                Logger.error("Error placing call:  " + cp);
+		setState(CallState.ENDED, "Reason='Error placing call'");
+		throw new IOException("Error placing call:  " + cp);
 	    }
 
             CallIdHeader callIdHeader = (CallIdHeader)
@@ -136,25 +136,25 @@ public class SipTPCCallAgent extends CallSetupAgent implements SipListener {
             sipServerCallback = SipServer.getSipServerCallback();
 	    sipServerCallback.addSipListener(sipCallId, this);
 	} catch (java.text.ParseException e) {
-            Logger.println("Call " + cp + " Error inviting " + cp +":  " 
+            Logger.println("Call " + cp + " Error placing call " + cp +":  " 
 		+  e.getMessage());
-	    setState(CallState.ENDED, "Reason='Error inviting " + cp + " " 
+	    setState(CallState.ENDED, "Reason='Error placing call " + cp + " " 
 		+ e.getMessage() + "'");
-	    throw new IOException("Error inviting " + cp + " " 
+	    throw new IOException("Error placing call " + cp + " " 
 		+ e.getMessage());
 	} catch (InvalidArgumentException e) {
-            Logger.println("Call " + cp + " Error inviting " + cp +":  " 
+            Logger.println("Call " + cp + " Error placing call " + cp +":  " 
 		+  e.getMessage());
-	    setState(CallState.ENDED, "Reason='Error inviting " + cp + " " 
+	    setState(CallState.ENDED, "Reason='Error placing call " + cp + " " 
 		+ e.getMessage() + "'");
-	    throw new IOException("Error inviting " + cp + " " 
+	    throw new IOException("Error placing call " + cp + " " 
 		+ e.getMessage());
 	} catch (SipException e) {
-            Logger.println("Call " + cp + " Error inviting " + cp +":  " 
+            Logger.println("Call " + cp + " Error placing call " + cp +":  " 
 		+  e.getMessage());
-	    setState(CallState.ENDED, "Reason='Error inviting " + cp + " " 
+	    setState(CallState.ENDED, "Reason='Error placing call " + cp + " " 
 		+ e.getMessage() + "'");
-	    throw new IOException("Error inviting " + cp + " " 
+	    throw new IOException("Error placing call " + cp + " " 
 		+ e.getMessage());
 	}
     }
@@ -560,6 +560,11 @@ public class SipTPCCallAgent extends CallSetupAgent implements SipListener {
 		ackSent = true;
 	    }
 
+	    if (callAnswered) {
+		Logger.writeFile("Call " + cp + " done processing OK");
+		return;
+	    }
+
 	    /*
 	     * Remember the IP and port of where to send data to
 	     * the CallParticipant.
@@ -585,11 +590,6 @@ public class SipTPCCallAgent extends CallSetupAgent implements SipListener {
             setEndpointAddress(isa, mediaInfo.getPayload(), 
 	        sdpInfo.getTransmitMediaInfo().getPayload(),
 	        sdpInfo.getTelephoneEventPayload());
-
-	    if (callAnswered) {
-		Logger.writeFile("Call " + cp + " done processing OK");
-		return;
-	    }
 
 	    /*
 	     * The CallParticipant has answered.
