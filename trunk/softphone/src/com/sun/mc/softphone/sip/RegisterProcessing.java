@@ -175,6 +175,14 @@ class RegisterProcessing
             Address address = fromHeader.getAddress();
             sipManCallback.fireUnregistered("Request timeout for: " +
                                             address.toString());
+
+	    Console.showErrorUI("Softphone Error", 
+		"Unable to register.  The softphone will not work!", 
+		"The softphone was unable to register with the server.\n"
+		+ "This could be a network problem such as being unable\n"
+		+ "to send and receive UDP packets through a firewall,\n"
+		+ "or perhaps the server is not running.\n"
+		+ "What follows is the SIP REGISTER request.\n\n\n" + request);
         }
         finally {
             console.logExit();
