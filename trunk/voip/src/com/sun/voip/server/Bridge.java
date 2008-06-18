@@ -57,7 +57,7 @@ import com.sun.stun.StunServerImpl;
  *
  * For details on the command syntax see RequestParser.java
  */
-public class Bridge {
+public class Bridge extends Thread {
 
     private static String privateHost;
     private static int privateControlPort = 6666;
@@ -280,24 +280,11 @@ public class Bridge {
             Logger.println("Outside line prefix set to '" + outsideLinePrefix + "'");
         } 
 
-	String s = System.getProperty("com.sun.voip.server.BRIDGE_STATUS_LISTENERS");
-
-	if (s == null || s.length() == 0) {
-            Logger.println("There are no listeners to notify "
-		+ "that this bridge came online");
-        } else {
-	    String[] listeners = s.split(",");
-
-	    for (int i = 0; i < listeners.length; i++) {
-		new BridgeStatusNotifier(listeners[i]);
-	    }
-	}
-
 	Logger.println("");
 	Logger.println("The Bridge is initialized and Ready");
 	Logger.println("");
 
-        startSocketServer();
+        start();
     }
     
     public static void initAddresses() throws IOException {
@@ -411,9 +398,23 @@ public class Bridge {
      * create a socket, listen for connections, start dialing...
      * @param properties Properties used by the SIP Stack
      */ 
-    private void startSocketServer() {
+    public void run() {
 	try {
 	    ServerSocket serverSocket = new ServerSocket(privateControlPort);
+
+	    String s = System.getProperty("com.sun.voip.server.BRIDGE_STATUS_LISTENERS");
+
+	    if (s == null || s.length() == 0) {
+
+                Logger.println("There are no listeners to notify "
+		    + "that this bridge came online");
+            } else {
+	        String[] listeners = s.split(",");
+
+	        for (int i = 0; i < listeners.length; i++) {
+		    new BridgeStatusNotifier(listeners[i]);
+	        }
+	    }
 
 	    while (true) {
 		Socket socket = serverSocket.accept(); // wait for a connection
@@ -434,7 +435,7 @@ public class Bridge {
 			    host.startsWith("127.") == false &&
 			    ia.getHostAddress().equals(privateHost) == false) {
 
-			String s = "Connection from " + ia 
+			s = "Connection from " + ia 
 			    + " rejected:  must connect from "
 			    + "site local address\n";
 

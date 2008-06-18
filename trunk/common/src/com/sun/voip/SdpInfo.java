@@ -37,6 +37,7 @@ public class SdpInfo {
     private String callId;
     private String conferenceId;
     private boolean isDistributedBridge;
+    private int synchronizationSource;
 
     private Vector supportedMedia;
     private MediaInfo mediaInfo;
@@ -168,6 +169,15 @@ public class SdpInfo {
 
     public boolean preferredMediaSpecified() {
 	return preferredMediaSpecified;
+    }
+
+    public void setSynchronizationSource(int synchronizationSource) {
+	Logger.println("Setting sync to " + synchronizationSource);
+	this.synchronizationSource = synchronizationSource;
+    }
+
+    public int getSynchronizationSource() {
+	return synchronizationSource;
     }
 
     public boolean isSupported(MediaInfo mediaInfo) {

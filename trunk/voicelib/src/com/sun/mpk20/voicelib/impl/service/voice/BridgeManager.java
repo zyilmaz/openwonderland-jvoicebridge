@@ -875,7 +875,16 @@ public class BridgeManager extends Thread
 			 * Don't we have to notify all the voice services?
 			 * XXX
 			 */
-	                connect(bridgeAddress);
+			try {
+	                    connect(bridgeAddress);
+			} catch (IOException e) {
+			    /*
+			     * We weren't able to connect.  Got back and wait for
+			     * next online message.  The bridge might not yet
+			     * be ready for connections, even though it said it was up.
+			     */
+			    logger.info(e.getMessage());
+			}
 	            } else {
 		        logger.info("Unexpected data:  " + bridgeAddress);
 	            }

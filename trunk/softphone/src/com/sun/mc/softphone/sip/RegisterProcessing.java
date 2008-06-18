@@ -103,6 +103,8 @@ class RegisterProcessing
 
     void processOK(ClientTransaction clientTransaction, Response response)
     {
+	okToShowDialogBox = true;
+
         try {
             console.logEntry();
             isRegistered = true;
@@ -165,29 +167,65 @@ class RegisterProcessing
         }
     }
 
+    private boolean okToShowDialogBox = true;
+
     void processTimeout(Transaction transaction, Request request)
     {
         try {
             console.logEntry();
-            isRegistered = true;
             FromHeader fromHeader =
                 ( (FromHeader) request.getHeader(FromHeader.NAME));
             Address address = fromHeader.getAddress();
             sipManCallback.fireUnregistered("Request timeout for: " +
                                             address.toString());
 
-	    Console.showErrorUI("Softphone Error", 
-		"Unable to register.  The softphone will not work!", 
+            isRegistered = true;
+
+	    if (okToShowDialogBox == false) {
+		return;
+	    }
+
+	    okToShowDialogBox = false;
+
+	    Logger.println(
 		"The softphone was unable to register with the server.\n"
+		+ "The softphone will not work!"
 		+ "This could be a network problem such as being unable\n"
 		+ "to send and receive UDP packets through a firewall,\n"
 		+ "or perhaps the server is not running.\n"
 		+ "What follows is the SIP REGISTER request.\n\n\n" + request);
+
+	    new ErrorMessage("Softphone Error!",
+		"The softphone was unable to register with the server.\n"
+		+ "The softphone will not work!",
+		"This could be a network problem such as being unable\n"
+		+ "to send and receive UDP packets through a firewall,\n"
+		+ "or perhaps the server is not running.\n"
+		+ "Below is the SIP REGISTER request\n\n\n" + request);
         }
         finally {
             console.logExit();
         }
 
+    }
+
+    class ErrorMessage implements Runnable {
+
+	String title;
+	String message;
+	String details;
+
+	public ErrorMessage(String title, String message, String details) {
+	    this.title = title;
+	    this.message = message;
+	    this.details = details;
+
+	    java.awt.EventQueue.invokeLater(this);
+	}
+
+	public void run() {
+	    Console.showErrorUI(title, message, details);
+	}
     }
 
     void processNotImplemented(ClientTransaction transaction, Response response)

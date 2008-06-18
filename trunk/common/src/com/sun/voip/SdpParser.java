@@ -302,6 +302,28 @@ public class SdpParser {
             sdpInfo.setDistributedBridge();
 	} 
 
+	t = "a=syncSrc:";
+
+	if ((ix = sdpData.indexOf(t)) >= 0) {
+	    String syncSrc = sdpData.substring(ix + t.length());
+
+	    finish = syncSrc.indexOf("\n");
+
+	    if (finish > 0) {
+		syncSrc = syncSrc.substring(0, finish).trim();
+	    } else {
+		syncSrc = syncSrc.substring(0).trim();
+	    }
+
+	    Logger.println("Got SYNC SRC:  " + syncSrc);
+
+	    try {
+		sdpInfo.setSynchronizationSource(Integer.parseInt(syncSrc));
+	    } catch (NumberFormatException e) {
+		Logger.println("Invalid synchronization source:  " + syncSrc);
+	    }
+	}
+
 	return sdpInfo;
     }
 
