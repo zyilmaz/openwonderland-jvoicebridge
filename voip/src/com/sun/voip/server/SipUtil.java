@@ -66,6 +66,9 @@ public class SipUtil {
 
     private static boolean initialized = false;
 
+    private static int synchronizationSource;
+    private static Object synchronizationSourceLock = new Object();
+
     private SdpManager sdpManager;
 
     public SipUtil() {
@@ -291,6 +294,19 @@ if (false) {
 	}
 
 	sdp += "a=transmitMediaInfoOk\r\n";
+
+	synchronized (synchronizationSourceLock) {
+	    synchronizationSource++;
+
+	    if (synchronizationSource == 0) {
+		synchronizationSource++;
+	    }
+
+	    /*
+	     * Don't do this yet.  More work is needed for the next release.
+	     */
+	    //sdp += "a=syncSrc:" + synchronizationSource + "\r\n";
+	}
 
 	return sdp;
     }

@@ -1046,7 +1046,15 @@ public class ConferenceMember implements TreatmentDoneListener,
     private void removePrivateMix(ConferenceMember member) {
 	synchronized (mixMap) {
 	    synchronized (mixManager) {
+		if (Logger.logLevel >= Logger.LOG_INFO) {
+		    Logger.println(cp + " removing private mix for " + member.getMemberReceiver());
+		}
+
             	mixManager.removeMix(member.getMemberReceiver());
+	    }
+
+	    if (Logger.logLevel >= Logger.LOG_INFO) {
+	        Logger.println(member + " removing private mix for " + getMemberReceiver());
 	    }
 
             member.removePrivateMixForMe(this);
@@ -1554,6 +1562,11 @@ public class ConferenceMember implements TreatmentDoneListener,
     public void migrate(ConferenceMember oldMember) {
         synchronized (conferenceManager) {
 	    /*
+	     * If old member was muted, make new member be muted.
+	     */
+	    getMemberReceiver().setMuted(oldMember.getCallParticipant().isMuted());
+
+	    /*
 	     * copy private mixes old call has to current call
 	     */
 	    copyOldPrivateMixes(oldMember);
@@ -1603,7 +1616,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 		    continue;	// it's a descriptor for oldMember (mix minus)
 	        }
 
-	        if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	        if (Logger.logLevel >= Logger.LOG_INFO) {
 	            Logger.println("pre-migrate member " + oldMember 
 		        + " has pm for " + mr);
 
@@ -1615,7 +1628,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 	            applyPrivateMix(mr.getMember(), md.getSpatialValues());
 		}
 
-	        if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	        if (Logger.logLevel >= Logger.LOG_INFO) {
 	            Logger.println("Call " + cp + " Set private mix for " 
 		        + mr + " to " + md);
 		}
@@ -1641,7 +1654,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 		/*
 		 * Remove private mix oldMember has
 		 */
-	        if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	        if (Logger.logLevel >= Logger.LOG_INFO) {
 		    Logger.println(oldMember + " removing pm for " + mr.getMember());
 		}
 		oldMember.removePrivateMix(mr.getMember());
@@ -1656,13 +1669,16 @@ public class ConferenceMember implements TreatmentDoneListener,
     private void updateOtherPrivateMixes(ConferenceMember oldMember) {
 	ArrayList privateMixesForMe = oldMember.getPrivateMixesForMe();
 
-	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	if (Logger.logLevel >= Logger.LOG_INFO) {
 	    Logger.println(oldMember + " private mixes for me " + 
 	        oldMember.getPrivateMixesForMe().size());
 	}
 
-	for (int i = 0; i < privateMixesForMe.size(); i++) {
-	    ConferenceMember m = (ConferenceMember) privateMixesForMe.get(i);
+	ConferenceMember[] pmArrayForMe = (ConferenceMember[]) 
+	     privateMixesForMe.toArray(new ConferenceMember[0]);
+
+	for (int i = 0; i < pmArrayForMe.length; i++) {
+	    ConferenceMember m = pmArrayForMe[i];
 
 	    MixManager mixManager = m.getMixManager();
 
@@ -1670,28 +1686,30 @@ public class ConferenceMember implements TreatmentDoneListener,
 	        MixDescriptor[] mixDescriptors = (MixDescriptor[])
 		    mixManager.getMixDescriptors().toArray(new MixDescriptor[0]);
 
-                if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+                if (Logger.logLevel >= Logger.LOG_INFO) {
                     Logger.println("member with pm " + m
                         + " descriptors before...");
                     mixManager.showDescriptors();
                 }
 
                 for (int j = 0; j < mixDescriptors.length; j++) {
-                    MixDescriptor md = mixDescriptors[i];
+                    MixDescriptor md = mixDescriptors[j];
 
 		    if (md.isPrivateMix() == false) {
+			Logger.println(this + " Skipping md for " + md);
 			continue; 	// not a private mix
 		    }
 
 	            MemberReceiver mr = (MemberReceiver) md.getMixDataSource();
 
 		    if (mr.getMember() != oldMember) {
+			Logger.println(this + " md " + md + " not an md for old member " + mr);
 			continue;	// not a pm for old Member.
 		    }
 
-                    if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+                    if (Logger.logLevel >= Logger.LOG_INFO) {
 		        Logger.println("setting pm for " + m 
-			    + " to new member " + this);
+			    + " to new member " + this.getMemberReceiver());
 		    }
 
 		    /*
@@ -1706,7 +1724,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 		        m.applyPrivateMix(this, md.getSpatialValues());
 		    }
 
-                    if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+                    if (Logger.logLevel >= Logger.LOG_INFO) {
 	                Logger.println("member with pm " + m 
 			    + " descriptors after...");
 	                mixManager.showDescriptors();

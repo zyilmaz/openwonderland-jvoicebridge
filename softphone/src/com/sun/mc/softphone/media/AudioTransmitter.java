@@ -283,6 +283,12 @@ if (false) {
         rtpSenderPacket.setRtpPayload(mediaPayload);
         rtpSenderPacket.setMark();
 
+	int synchronizationSource = sdpInfo.getSynchronizationSource();
+
+	if (synchronizationSource != 0) {
+	    rtpSenderPacket.setSynchronizationSource(synchronizationSource);
+	}
+
 	rtpSenderData = rtpSenderPacket.getData();
 
 	remoteIsa = new InetSocketAddress(sdpInfo.getRemoteHost(), 
