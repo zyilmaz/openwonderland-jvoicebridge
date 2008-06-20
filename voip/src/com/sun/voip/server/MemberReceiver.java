@@ -514,8 +514,13 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
     public void treatmentDoneNotification(TreatmentManager treatmentManager) {
         synchronized (conferenceManager) {
             if (Logger.logLevel >= Logger.LOG_MOREINFO) {
-                Logger.println( "Input Treatment done " 
+                Logger.println("Input Treatment done " 
 		    + treatmentManager.getId());
+	    }
+
+	    if (callHandler == null) {
+		Logger.println("Call " + cp + " treatment done but no call handler.");
+		return;
 	    }
 
             CallEvent callEvent = new CallEvent(CallEvent.TREATMENT_DONE);
