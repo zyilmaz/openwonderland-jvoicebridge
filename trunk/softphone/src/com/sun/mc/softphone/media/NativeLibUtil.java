@@ -54,6 +54,8 @@ public class NativeLibUtil {
         // load the data from the jar file
         InputStream in = clazz.getResourceAsStream("native/" + name);
         
+	System.err.println("native name is native/" + name);
+
         // create a temporary file
         String suffix = null;
         int dotIdx = name.lastIndexOf('.');
