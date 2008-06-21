@@ -55,9 +55,9 @@ public class BridgeManager extends Thread
     private static final Logger logger = Logger.getLogger(
 	    BridgeManager.class.getName());
 
-    private static final int BRIDGE_ONLINE_WATCHER_PORT = 6668;
+    private static final int BRIDGE_LISTENER_PORT = 6668;
 
-    private int bridgeOnlineWatcherPort = BRIDGE_ONLINE_WATCHER_PORT;
+    private int bridgeListenerPort = BRIDGE_LISTENER_PORT;
 
     private ArrayList<BridgeConnection> bridgeConnections =
         new ArrayList<BridgeConnection>();
@@ -80,14 +80,14 @@ public class BridgeManager extends Thread
 	reconnector = new Reconnector(this);
 
 	String s = System.getProperty(
-	    "com.sun.voip.server.BRIDGE_ONLINE_WATCHER_PORT");
+	    "com.sun.sgs.impl.service.voice.BRIDGE_LISTENER_PORT");
 
 	if (s != null) {
 	    try {
-		bridgeOnlineWatcherPort = Integer.parseInt(s);
+		bridgeListenerPort = Integer.parseInt(s);
 	    } catch (NumberFormatException e) {
 		logger.info("Invalid bridge online watcher port: " + s
-		    + ".  Defaulting to " + bridgeOnlineWatcherPort);
+		    + ".  Defaulting to " + bridgeListenerPort);
 	    }
 	}
 
@@ -691,7 +691,7 @@ public class BridgeManager extends Thread
 	ServerSocket serverSocket;
 
 	try {
-	    serverSocket = new ServerSocket(bridgeOnlineWatcherPort);
+	    serverSocket = new ServerSocket(bridgeListenerPort);
 	} catch (IOException e) {
 	    logger.info("Unable to create server socket:  " 
 		+ e.getMessage());
