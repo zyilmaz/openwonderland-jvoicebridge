@@ -195,7 +195,7 @@ class RegisterProcessing
 		+ "or perhaps the server is not running.\n"
 		+ "What follows is the SIP REGISTER request.\n\n\n" + request);
 
-	    new ErrorMessage("Softphone Error!",
+	    Console.showErrorUI("Softphone Error!",
 		"The softphone was unable to register with the server.\n"
 		+ "The softphone will not work!",
 		"This could be a network problem such as being unable\n"
@@ -207,25 +207,6 @@ class RegisterProcessing
             console.logExit();
         }
 
-    }
-
-    class ErrorMessage implements Runnable {
-
-	String title;
-	String message;
-	String details;
-
-	public ErrorMessage(String title, String message, String details) {
-	    this.title = title;
-	    this.message = message;
-	    this.details = details;
-
-	    java.awt.EventQueue.invokeLater(this);
-	}
-
-	public void run() {
-	    Console.showErrorUI(title, message, details);
-	}
     }
 
     void processNotImplemented(ClientTransaction transaction, Response response)

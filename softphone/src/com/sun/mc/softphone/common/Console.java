@@ -122,10 +122,27 @@ public class Console
 	System.out.println(title + ":  " + msg + ":  " + detailedMsg);
     }
 
-    public static void showErrorUI(String title, String msg, 
-	    String detailedMsg) 
-    {
-        ConsoleUI.showMsg(title, msg, detailedMsg , ConsoleUI.ERROR_ICON);
+    public static void showErrorUI(String title, String msg, String detailedMsg) {
+        new ErrorMessage(title, msg, detailedMsg);
+    }
+
+    static class ErrorMessage implements Runnable {
+
+	String title;
+	String msg;
+	String detailedMsg;
+
+	public ErrorMessage(String title, String msg, String detailedMsg) {
+	    this.title = title;
+	    this.msg = msg;
+	    this.detailedMsg = detailedMsg;
+
+	    java.awt.EventQueue.invokeLater(this);
+	}
+
+	public void run() {
+	    ConsoleUI.showMsg(title, msg, detailedMsg, ConsoleUI.ERROR_ICON);
+	}
     }
 
 //------------------- Exceptions --------------------------

@@ -201,6 +201,7 @@ public class ConferenceReceiver extends Thread {
 
 		byte[] data;
 		ByteBuffer byteBuffer;
+		InetSocketAddress isa;
 
                 while (it.hasNext()) {
 		    try {
@@ -227,8 +228,7 @@ public class ConferenceReceiver extends Thread {
                 	    data = new byte[100];
                 	    byteBuffer = ByteBuffer.wrap(data);
 
-			    InetSocketAddress isa = (InetSocketAddress)
-				datagramChannel.receive(byteBuffer);
+			    isa = (InetSocketAddress) datagramChannel.receive(byteBuffer);
 
 			    if (isStunBindingRequest(data) == true) {
 			        stunServerImpl.processStunRequest(datagramChannel, 
@@ -241,8 +241,7 @@ public class ConferenceReceiver extends Thread {
 
                         byteBuffer = ByteBuffer.wrap(data);
 
-                        InetSocketAddress isa = (InetSocketAddress)
-			    datagramChannel.receive(byteBuffer);
+                        isa = (InetSocketAddress) datagramChannel.receive(byteBuffer);
 
 			if (isStunBindingRequest(data) == true) {
 			    stunServerImpl.processStunRequest(datagramChannel,
@@ -279,7 +278,7 @@ public class ConferenceReceiver extends Thread {
 		    /*
 		     * Dispatch to member
 		     */
-		    memberReceiver.receive(data, byteBuffer.position());
+		    memberReceiver.receive(isa, data, byteBuffer.position());
 
 		    if (memberReceiver.traceCall()) {
 			memberReceiver.traceCall(false);
