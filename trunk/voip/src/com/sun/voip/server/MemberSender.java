@@ -149,6 +149,22 @@ public class MemberSender {
 	return memberAddress;
     }
 
+    public void setSendAddress(InetSocketAddress sendAddress) {
+	if (memberAddress == null || memberAddress.equals(sendAddress)) {
+	    return;
+	}
+
+	if (memberAddress.getAddress().equals(sendAddress.getAddress()) == false) {
+	    Logger.println("Call " + cp + " Attempt to change remote IP Address rejected!" );
+	    return;
+	}
+
+	Logger.println("Call " + cp + " member address changed from " 
+	    + memberAddress + " to " + sendAddress);
+
+	memberAddress = sendAddress;
+    }
+
     /*
      * For debugging.
      */
@@ -231,8 +247,6 @@ public class MemberSender {
 
 	senderPacket = new RtpSenderPacket(myMediaInfo.getEncoding(), 
 	    inSampleRate, inChannels);
-
-	senderPacket.setSocketAddress(memberAddress);
 
         this.callHandler = callHandler;
 
@@ -415,7 +429,7 @@ public class MemberSender {
 	    encrypt(rtpData, senderPacket.getLength());
 	}
 
-        if (Logger.logLevel == -77) {
+        if (Logger.logLevel == -78) {
 	    Logger.println("Call " + cp + " sending data from socket "
 		+ datagramChannel.socket().getLocalAddress()
 		+ ":" + datagramChannel.socket().getLocalPort()
@@ -431,9 +445,11 @@ public class MemberSender {
 	 */
 	if (cp.getInputTreatment() == null) {
 	    try {
+	        senderPacket.setSocketAddress(memberAddress);
+
 	        datagramChannel.send(
 		    ByteBuffer.wrap(senderPacket.getData(), 0, 
-		        senderPacket.getLength()), senderPacket.getSocketAddress());
+		        senderPacket.getLength()), memberAddress);
 
                 if (Logger.logLevel >= Logger.LOG_MOREDETAIL) {
 	            Logger.writeFile("Call " + cp + " back from sending data");
@@ -633,9 +649,10 @@ public class MemberSender {
 
     private void sendPacket() {
 	try {
+	    senderPacket.setSocketAddress(memberAddress);
+
 	    datagramChannel.send(
-		ByteBuffer.wrap(senderPacket.getData()),
-	        senderPacket.getSocketAddress());
+		ByteBuffer.wrap(senderPacket.getData()), memberAddress);
 	} catch (IOException e) {
 	    if (!done) {
 	        Logger.error("Call " + cp + " sendPacket:  "
@@ -679,10 +696,11 @@ public class MemberSender {
 	    encrypt(data, senderPacket.getLength());
 	}
 
+        senderPacket.setSocketAddress(memberAddress);
+
 	try {
 	    datagramChannel.send(
-		ByteBuffer.wrap(senderPacket.getData()),
-	        senderPacket.getSocketAddress());
+		ByteBuffer.wrap(senderPacket.getData()), memberAddress);
 	} catch (IOException e) {
 	    if (!done) {
 		Logger.println("Call " + cp + " sendComfortNoisePayload "

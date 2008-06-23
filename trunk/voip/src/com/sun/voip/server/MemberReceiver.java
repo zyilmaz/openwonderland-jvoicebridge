@@ -440,11 +440,9 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 		        cp.getInputTreatment());
 		}
 
-	        inputTreatment = new TreatmentManager(absolutePath,
+	        new InputTreatment(this, absolutePath,
 		    0, conferenceMediaInfo.getSampleRate(),
 		    conferenceMediaInfo.getChannels());
-
-		inputTreatment.addTreatmentDoneListener(this);
 	    } catch (IOException e) {
 	        e.printStackTrace();
 
@@ -512,10 +510,13 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
     }
 
     public void treatmentDoneNotification(TreatmentManager treatmentManager) {
+	treatmentDoneNotification(treatmentManager.getId());
+    }
+
+    public void treatmentDoneNotification(String treatment) {
         synchronized (conferenceManager) {
             if (Logger.logLevel >= Logger.LOG_MOREINFO) {
-                Logger.println("Input Treatment done " 
-		    + treatmentManager.getId());
+                Logger.println("Input Treatment done " + treatment);
 	    }
 
 	    if (callHandler == null) {
@@ -524,7 +525,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	    }
 
             CallEvent callEvent = new CallEvent(CallEvent.TREATMENT_DONE);
-            callEvent.setTreatmentId(treatmentManager.getId());
+            callEvent.setTreatmentId(treatment);
             callHandler.sendCallEventNotification(callEvent);
         }
     }
@@ -555,17 +556,55 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 			    cp.getRecordDirectory(), cp.getInputTreatment());
 		    }
 
-	            inputTreatment = new TreatmentManager(
-			absolutePath, 0, 
+	            new InputTreatment(this, absolutePath, 0, 
 			conferenceMediaInfo.getSampleRate(),
                         conferenceMediaInfo.getChannels());
-
-		    inputTreatment.addTreatmentDoneListener(this);
 	        } catch (IOException e) {
 	            Logger.println(cp + " Unable to restart input treatment");
 	    	    callHandler.cancelRequest(
 			"unable to restart input treatment!");
 	        }
+	    }
+	}
+    }
+
+    class InputTreatment extends Thread {
+
+	TreatmentDoneListener treatmentDoneListener;
+	private String treatment;
+	private int repeatCount;
+	private int sampleRate;
+	private int channels;
+
+	public InputTreatment(TreatmentDoneListener treatmentDoneListener, String treatment, 
+		int repeatCount, int sampleRate, int channels) {
+
+	    this.treatmentDoneListener = treatmentDoneListener;
+            this.treatment = treatment;
+            this.repeatCount = repeatCount;
+            this.sampleRate = sampleRate;
+            this.channels = channels;
+
+	    start();
+ 	}
+
+        public void run() {
+	    try {
+	        TreatmentManager treatmentManager = new TreatmentManager(
+		    treatment, repeatCount, sampleRate, channels);
+
+		treatmentManager.addTreatmentDoneListener(treatmentDoneListener);
+
+		if (whisperGroup != null) {
+		    synchronized (whisperGroup) {
+		        inputTreatment = treatmentManager;
+		    }
+		} else {
+		    inputTreatment = treatmentManager;
+		}
+	    } catch (IOException e) {
+		Logger.println("Bad input treatment:  " + treatment + e.getMessage());
+		treatmentDoneNotification(treatment);
 	    }
 	}
     }
@@ -782,7 +821,11 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	}
     }
 
-    public void receive(byte[] receivedData, int length) {
+    public void receive(InetSocketAddress fromAddress, byte[] receivedData, 
+	    int length) {
+
+	member.getMemberSender().setSendAddress(fromAddress);
+
 	/*
 	 * receivedData has a 12 byte RTP header at the beginning
 	 * and length includes the RTP header.

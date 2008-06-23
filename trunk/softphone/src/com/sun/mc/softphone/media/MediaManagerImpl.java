@@ -1088,6 +1088,19 @@ if (false) {
 	} catch (IOException e) {
 	    Logger.println("generateSdp couldn't get public address "
 		+ e.getMessage());
+
+	    if (sipManager.isRegistrarStunServer()) {
+		Console.showErrorUI("Softphone Error!",
+		   "The softphone couldn't get the public address for "
+		   + rtpSocket.getDatagramSocket().getLocalAddress() + ":"
+		   + rtpSocket.getDatagramSocket().getLocalPort() + "\n"
+		   + "The softphone will not work!",
+		   "No response from STUN server "
+		   + remoteSdpInfo.getRemoteHost() + ":"
+		   + remoteSdpInfo.getRemotePort() + "\n\n"
+		   +  "This could be a network problem such as being unable\n"
+                   + "to send and receive UDP packets through a firewall\n");
+	    }
 	}
 
 	while (remoteSdpInfo == null) {

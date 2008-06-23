@@ -216,7 +216,7 @@ public class SunSpatialAudio implements SpatialAudio {
 		 * There are no adjustments to be made.  Just return
 		 * the current contribution.
 		 */
-		if (Logger.logLevel == -77) {
+		if (Logger.logLevel == -88) {
 		    Util.dump("Current contribution", currentContribution, 0, 
 			16);
 		}
@@ -225,7 +225,7 @@ public class SunSpatialAudio implements SpatialAudio {
 		
 	    newContribution = new int[packetLength];
 
-	    if (Logger.logLevel == -77) {
+	    if (Logger.logLevel == -88) {
 		Logger.println("need to make new contribution");
 	    }
 		
@@ -236,7 +236,7 @@ public class SunSpatialAudio implements SpatialAudio {
 		    copyLength);
 	    }
 	} else {
-	    if (Logger.logLevel == -77) {
+	    if (Logger.logLevel == -88) {
 		Logger.println("do leftRight " + delayLength);
 	    }
 
@@ -245,7 +245,7 @@ public class SunSpatialAudio implements SpatialAudio {
 	}
 
         if (frontBack < 0) {
-            if (Logger.logLevel == -77) {
+            if (Logger.logLevel == -88) {
 		Logger.println("do frontBack " + echoDelay);
 	    }
 
