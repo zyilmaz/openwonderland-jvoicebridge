@@ -1105,7 +1105,13 @@ public class AudioReceiver extends Thread {
 
 	silencePackets += nPackets;
 
-	byte[] data = new byte[nPackets * speakerWriteSize];
+	int writeSize = speakerWriteSize;
+
+	if (recordRtp) {
+	    writeSize += RtpPacket.HEADER_SIZE;
+	} 
+
+	byte[] data = new byte[nPackets * writeSize];
 
         try {
             recorder.write(data, 0, data.length);
