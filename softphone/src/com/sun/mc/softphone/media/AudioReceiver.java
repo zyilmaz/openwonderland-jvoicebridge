@@ -1105,20 +1105,15 @@ public class AudioReceiver extends Thread {
 
 	silencePackets += nPackets;
 
-	int writeSize = speakerWriteSize;
+	byte[] data;
 
 	if (recordRtp) {
-	    writeSize += RtpPacket.HEADER_SIZE;
-	} 
-
-	byte[] data = new byte[nPackets * writeSize];
-
-        try {
-            recorder.write(data, 0, data.length);
-	    dataRecorded += data.length;
-        } catch (IOException e) {
-            Logger.println("Unable to record silence " + e.getMessage());
-        }
+	    data = new byte[nPackets * (speakerWriteSize + RtpPacket.HEADER_SIZE)];
+	    recordPacket(data, data.length);
+	} else {
+	    data = new byte[nPackets * speakerWriteSize];
+	    recordAudio(data);
+	}
     }
 
     private int badPackets;
