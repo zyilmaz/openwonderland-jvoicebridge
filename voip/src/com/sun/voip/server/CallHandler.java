@@ -1029,6 +1029,10 @@ public abstract class CallHandler extends Thread {
 		+ callId);
         }
 
+	if (callHandler.isCallEstablished() == false) {
+	    throw new IOException("Call is not ESTABLISHED:  " + callId);
+	}
+
 	callHandler.playTreatmentToCall(treatment, treatmentDoneListener);
     }
 
