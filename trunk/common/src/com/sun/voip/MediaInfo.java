@@ -112,7 +112,7 @@ if (false) {
             (byte)121, RtpPacket.SPEEX_ENCODING, 8000, 2, false));
 
         supportedMedia.add(new MediaInfo(
-            (byte)122, RtpPacket.SPEEX_ENCODING, 16000, 2, false));
+            (byte)122, RtpPacket.SPEEX_ENCODING, 16000, 1, false));
 
         supportedMedia.add(new MediaInfo(
             (byte)123, RtpPacket.SPEEX_ENCODING, 16000, 2, false));
