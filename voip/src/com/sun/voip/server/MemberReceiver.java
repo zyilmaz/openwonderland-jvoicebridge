@@ -603,7 +603,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 		    inputTreatment = treatmentManager;
 		}
 	    } catch (IOException e) {
-		Logger.println("Bad input treatment:  " + treatment + e.getMessage());
+		Logger.println("Bad input treatment:  " + treatment 
+		    + " " + e.getMessage());
 		treatmentDoneNotification(treatment);
 	    }
 	}

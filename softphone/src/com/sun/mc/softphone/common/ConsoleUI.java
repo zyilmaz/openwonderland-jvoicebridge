@@ -161,7 +161,7 @@ class ConsoleUI
             detailsScroll.setPreferredSize(
                 new Dimension( (int) detailsTextArea.getPreferredSize().
                               getWidth(),
-                              220));
+                              320));
             detailsScroll.setVisible(true);
         }
         pack();

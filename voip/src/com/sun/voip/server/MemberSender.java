@@ -155,7 +155,10 @@ public class MemberSender {
 	}
 
 	if (memberAddress.getAddress().equals(sendAddress.getAddress()) == false) {
-	    Logger.println("Call " + cp + " Attempt to change remote IP Address rejected!" );
+	    Logger.println("Call " + cp 
+		+ " Attempt to change remote IP Address "
+		+ memberAddress.getAddress() + " to "
+		+ sendAddress.getAddress() + " rejected!");
 	    return;
 	}
 
