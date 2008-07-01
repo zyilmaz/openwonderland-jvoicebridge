@@ -611,9 +611,9 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
         public void run() {
 	    if (whisperGroup != null) {
-		    synchronized (whisperGroup) {
-		        inputTreatment = treatmentManager;
-		    }
+		synchronized (whisperGroup) {
+		    inputTreatment = treatmentManager;
+		}
 	    } else {
 		inputTreatment = treatmentManager;
 	    }
