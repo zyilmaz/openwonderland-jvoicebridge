@@ -79,6 +79,9 @@ public class LinearDataAudioSource implements AudioSource {
 	linearOffset = 0;
     }
 
+    public void done() {
+    }
+
     public int getSampleRate() {
         return sampleRate;
     }

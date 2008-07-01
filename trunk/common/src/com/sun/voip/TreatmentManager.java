@@ -43,7 +43,7 @@ public class TreatmentManager implements MixDataSource {
     /*
      * This ArrayList contains one byte[] element per audio file.
      */
-    private ArrayList treatments = new ArrayList();
+    private ArrayList<AudioSource> treatments = new ArrayList();
 
     private ArrayList treatmentDoneListeners = new ArrayList();
 
@@ -280,8 +280,7 @@ public class TreatmentManager implements MixDataSource {
 	        return null;
 	    }
 
-	    AudioSource audioSource = (AudioSource) 
-		treatments.get(treatmentIndex);
+	    AudioSource audioSource = treatments.get(treatmentIndex);
 
 	    if (sampleRateConverter != null) {
 	        return audioSource;
@@ -327,6 +326,10 @@ public class TreatmentManager implements MixDataSource {
 	}
 
 	isStopped = true;
+
+	for (AudioSource audioSource : treatments) {
+	    audioSource.done();
+	}
 
 	synchronized (treatments) {
 	    treatments.clear();
