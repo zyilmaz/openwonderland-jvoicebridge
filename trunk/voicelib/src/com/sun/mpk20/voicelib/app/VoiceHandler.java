@@ -36,6 +36,11 @@ public interface VoiceHandler {
     public String getVoiceBridge();
 
     /*
+     * Get a unique call Id.
+     */
+    public String getCallId(String callId);
+
+    /*
      * Initiate a call on a specific bridge.
      */
     public String setupCall(String callId, String sipUrl, String bridge,

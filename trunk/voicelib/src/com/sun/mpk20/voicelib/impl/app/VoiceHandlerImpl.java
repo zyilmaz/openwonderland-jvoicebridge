@@ -211,6 +211,12 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	return vb;
     }
 
+    public String getCallId(String callId) {
+	String[] tokens = conferenceId.split(":");
+
+	return callId + "_" + tokens[0];
+    }
+
     /*
      * The callId must be unique.  For wonderland, the userId is guaranteed to
      * be unique and is used as the callId for the softphone call.
