@@ -97,6 +97,9 @@ public class SineWaveAudioSource implements AudioSource {
 	timeRemaining = duration;
     }
 
+    public void done() {
+    }
+
     public int getSampleRate() {
         return sampleRate;
     }

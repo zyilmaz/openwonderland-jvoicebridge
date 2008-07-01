@@ -568,8 +568,11 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	}
     }
 
+    private InputTreatment iTreatment;
+
     class InputTreatment extends Thread {
 
+	TreatmentManager treatmentManager;
 	TreatmentDoneListener treatmentDoneListener;
 	private String treatment;
 	private int repeatCount;
@@ -577,7 +580,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	private int channels;
 
 	public InputTreatment(TreatmentDoneListener treatmentDoneListener, String treatment, 
-		int repeatCount, int sampleRate, int channels) {
+		int repeatCount, int sampleRate, int channels) throws IOException {
 
 	    this.treatmentDoneListener = treatmentDoneListener;
             this.treatment = treatment;
@@ -585,27 +588,34 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
             this.sampleRate = sampleRate;
             this.channels = channels;
 
+	    if (iTreatment != null) {
+		Logger.println("Stopping previous input treatment");
+		iTreatment.done();
+	    }
+
+	    treatmentManager = new TreatmentManager(
+		treatment, repeatCount, sampleRate, channels);
+
+	    treatmentManager.addTreatmentDoneListener(treatmentDoneListener);
+
+	    iTreatment = this;
+
 	    start();
  	}
 
+	public void done() {
+	    treatmentManager.removeTreatmentDoneListener(treatmentDoneListener);
+	    Logger.println("Calling stoptreatment for " + treatmentManager);
+	    treatmentManager.stopTreatment();
+	}
+
         public void run() {
-	    try {
-	        TreatmentManager treatmentManager = new TreatmentManager(
-		    treatment, repeatCount, sampleRate, channels);
-
-		treatmentManager.addTreatmentDoneListener(treatmentDoneListener);
-
-		if (whisperGroup != null) {
+	    if (whisperGroup != null) {
 		    synchronized (whisperGroup) {
 		        inputTreatment = treatmentManager;
 		    }
-		} else {
-		    inputTreatment = treatmentManager;
-		}
-	    } catch (IOException e) {
-		Logger.println("Bad input treatment:  " + treatment 
-		    + " " + e.getMessage());
-		treatmentDoneNotification(treatment);
+	    } else {
+		inputTreatment = treatmentManager;
 	    }
 	}
     }

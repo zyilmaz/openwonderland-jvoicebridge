@@ -39,6 +39,8 @@ public interface AudioSource {
 
     public void rewind() throws IOException;
 
+    public void done();
+
     public int getSampleRate();
 
     public int getChannels();
