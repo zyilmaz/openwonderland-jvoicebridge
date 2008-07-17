@@ -236,7 +236,6 @@ public class DotAuAudioSource extends FileAudioSource {
 	        in.close();
 	    } catch (IOException e) {
 	    }
-	    in = null;
 	}
     }
 

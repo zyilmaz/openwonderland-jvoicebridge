@@ -292,7 +292,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	s += "\n";
 
         s += "\tSeconds since last Rtcp report " 
-	    + rtcpReceiver.secondsSinceLastReport() + "\n";
+	    + rtcpReceiver.secondsSinceLastReport(member.getRtcpAddress()) + "\n";
+
 	s += "\tMilliseconds since last packet received "
 	    + (System.currentTimeMillis() - timeCurrentPacketReceived + "\n");
 	s += "\tMedia packets received " + mediaPacketsReceived + "\n";
@@ -358,6 +359,13 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
 	int outSampleRate = conferenceMediaInfo.getSampleRate();
 	int outChannels = conferenceMediaInfo.getChannels();
+
+	if (cp.getPhoneNumber().indexOf("@") >= 0) {
+	    ConferenceReceiver conferenceReceiver = 
+	        conferenceManager.getConferenceReceiver();
+
+	    conferenceManager.getConferenceReceiver().addMember(this);
+	}
 
 	/*
 	 * For input treatments, the treatment manager does the resampling.
@@ -643,6 +651,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	}
     }
 
+    private boolean datagramChannelRegistered;
+
     public SelectionKey register(Selector selector) throws IOException {
 	try {
 	    selectionKey = 
@@ -655,6 +665,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	    throw new IOException("register exception!  " + e.getMessage());
 	}
 
+	datagramChannelRegistered = true;
 	selectionKey.attach(this);
 	return selectionKey;
     }   
@@ -665,84 +676,45 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	    selectionKey = null;
 	}
     }
-	
     public int getLinearBufferSize() {
 	return RtpPacket.HEADER_SIZE + packet.getDataSize();
     }
-
-    private int noDataCount = 0;
-
-    private boolean callCancelled;
 
     /*
      * Reset detectors if no packets are received.
      * Cancel call if no RTP or RTCP packets are received.
      */
+    private int noDataCount;
+
     public boolean checkPacketsReceived() {
 	if (callCancelled) {
 	    return false;
 	}
 
-        if (RtpSocket.getRtpTimeout() != 0 &&
-		(cp.getPhoneNumber() == null ||
-		cp.getPhoneNumber().indexOf("6666@") < 0) &&
-		rtcpReceiver.secondsSinceLastReport() >=
-		RtpSocket.getRtpTimeout() &&
-		lastMediaPacketsReceived == mediaPacketsReceived) {
-
-	    /*
-	     * Only do this for sip calls.  For some reason, other calls
-	     * are getting timed out if this "if" is removed.
-	     */
-	    if (cp.isDistributedBridge() == false && 
-		    cp.getPhoneNumber().indexOf("sip:") >= 0) {
-
-                //if (Logger.logLevel >= Logger.LOG_INFO) {
-                    Logger.println("Call " + cp
-                        + " time since last report "
-                        + rtcpReceiver.secondsSinceLastReport()
-                        + " mediaPacketsReceived " + mediaPacketsReceived
-                        + " lastMediaPacketsReceived "
-                        + lastMediaPacketsReceived);
-                //}
-
-	        /*
-                 * We have not received an RTP or RTCP packet in quite some
-                 * time.  Assume the call is dead.
-		 *
-		 * XXX There is a gateway (10.6.4.61) 
-		 * which doesn't send RTCP packets.
-		 * For now, we'll only timeout calls with "sip:" in
-		 * the phone number.
-                 */
-                Logger.println("Call " + cp
-                    + ":  Timeout, cancelling the call...");
-                callHandler.cancelRequest("call timeout, no keepalive received");
-	        callCancelled = true;
-                return false;
-	    }
+	if (callIsDead()) {
+	    return false;
 	}
-
-	int last = lastMediaPacketsReceived;
-
-	lastMediaPacketsReceived = mediaPacketsReceived;
-
-	if (last != mediaPacketsReceived) {
-	    noDataCount = 0;
-	    return true;
-	}
-
-	noDataCount++;
 
         /*
-         * 10 packets should be enough for the speech detector
+         * 3 packets should be enough for the speech detector
          * and dtmf detector to know someone isn't speaking.
-	 * After we've given the detector 60 silence pakcets,
+	 * After we've given the detector 60 ms of silence pakcets,
 	 * we don't need to send it any more packets.
          */
+        int last = lastMediaPacketsReceived;
+
+        lastMediaPacketsReceived = mediaPacketsReceived;
+
+        if (last != mediaPacketsReceived) {
+            noDataCount = 0;
+            return true;
+        }
+
+        noDataCount++;
+
         if (noDataCount != 3) {
              return true;
-	}
+        }
 
 	/*
 	 * Reset previous samples in sampleRateConverter
@@ -772,6 +744,64 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 		processDtmfKeys(dtmfKeys);
 	    }
 	}
+
+	return true;
+    }
+
+    private boolean callCancelled;
+
+    private boolean callIsDead() {
+	if (RtpSocket.getRtpTimeout() == 0) {
+	    return false;	// no timeout
+	}
+
+	String phoneNumber = cp.getPhoneNumber();
+
+	if (phoneNumber != null && phoneNumber.indexOf("6666@") >= 0) {
+	    return false;  // don't timeout calls to the bridge.
+	}
+
+	/*
+	 * Only do this for sip calls.  For some reason, other calls
+	 * are getting timed out if this "if" is removed.
+	 */
+	if (cp.isDistributedBridge() == true || phoneNumber.indexOf("sip:") < 0) {
+	    return false;
+	}
+
+	long rtpElapsed;
+
+	if (timeCurrentPacketReceived == 0) {
+	    rtpElapsed = 0;
+	} else {
+	    rtpElapsed = (System.currentTimeMillis() - timeCurrentPacketReceived) / 1000;
+	}
+
+	long rtcpElapsed = rtcpReceiver.secondsSinceLastReport(member.getRtcpAddress());
+
+	if (rtcpElapsed < RtpSocket.getRtpTimeout() || rtpElapsed < RtpSocket.getRtpTimeout()) {
+	    return false;
+	}
+
+	//if (Logger.logLevel >= Logger.LOG_INFO) {
+            Logger.println("Call " + cp
+                + " time since last RTCP report " + rtcpElapsed
+		+ " time since last RTP packet received " + rtpElapsed);
+        //}
+
+	/*
+         * We have not received an RTP or RTCP packet in quite some
+         * time.  Assume the call is dead.
+	 *
+	 * XXX There is a gateway (10.6.4.61) 
+	 * which doesn't send RTCP packets.
+	 * For now, we'll only timeout calls with "sip:" in
+	 * the phone number.
+         */
+        Logger.println("Call " + cp
+            + ":  Timeout, cancelling the call...");
+        callHandler.cancelRequest("call timeout, no keepalive received");
+	callCancelled = true;
 
 	return true;
     }
@@ -1683,7 +1713,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
 	readyToReceiveData = false;
 
-	if (datagramChannel != null) {
+	if (datagramChannelRegistered && datagramChannel != null) {
 	    try {
 	        datagramChannel.close();
 		datagramChannel = null;

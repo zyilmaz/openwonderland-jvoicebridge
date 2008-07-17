@@ -25,6 +25,10 @@ package com.sun.voip;
 
 import java.io.IOException;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+
 import java.util.Vector;
 
 import java.text.ParseException;
@@ -302,25 +306,35 @@ public class SdpParser {
             sdpInfo.setDistributedBridge();
 	} 
 
-	t = "a=syncSrc:";
+	t = "a=rtcpAddress:";
 
 	if ((ix = sdpData.indexOf(t)) >= 0) {
-	    String syncSrc = sdpData.substring(ix + t.length());
+	    s = sdpData.substring(ix + t.length());
 
-	    finish = syncSrc.indexOf("\n");
+            finish = s.indexOf("\n");
 
-	    if (finish > 0) {
-		syncSrc = syncSrc.substring(0, finish).trim();
+            if (finish > 0) {
+		s = s.substring(0, finish).trim();
 	    } else {
-		syncSrc = syncSrc.substring(0).trim();
+		s = s.substring(0).trim();
 	    }
 
-	    Logger.println("Got SYNC SRC:  " + syncSrc);
+	    String[] tokens = s.split(":");
 
+	    if (tokens.length != 2) {
+	        throw new ParseException("Invalid rtcp address in sdp "
+                    + " sdpData " + sdpData, 0);
+	    }
+	    
 	    try {
-		sdpInfo.setSynchronizationSource(Integer.parseInt(syncSrc));
+		sdpInfo.setRtcpAddress(new InetSocketAddress(
+		    InetAddress.getByName(tokens[0]), Integer.parseInt(tokens[1])));
+	    } catch (UnknownHostException e) {
+	        throw new ParseException("Invalid rtcp host address in sdp "
+                    + " sdpData " + sdpData, 0);
 	    } catch (NumberFormatException e) {
-		Logger.println("Invalid synchronization source:  " + syncSrc);
+	        throw new ParseException("Invalid rtcp port in sdp "
+                    + " sdpData " + sdpData, 0);
 	    }
 	}
 

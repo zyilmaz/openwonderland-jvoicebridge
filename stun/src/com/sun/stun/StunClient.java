@@ -94,6 +94,7 @@ public class StunClient extends Thread {
 	this.stunServer = stunServer;
 	this.datagramSocket = datagramSocket;
 
+	logger.fine("starting stun client to " + stunServer);
 	start();
     }
 
@@ -124,6 +125,8 @@ public class StunClient extends Thread {
 		try {
 		    wait();
 		} catch (InterruptedException e) {
+		    throw new IOException(
+			"Failed to retrieve mapped address:  Interruped");
 		}
 	    }
 	}
@@ -178,6 +181,7 @@ public class StunClient extends Thread {
 
 	for (int i = 0; i < retries; i++) {
 	    try {
+		logger.fine("Sending stun request " + i);
 	        sendStunRequest();
 
 	        waitForReply();
@@ -252,7 +256,7 @@ public class StunClient extends Thread {
 	    DatagramPacket packet = new DatagramPacket(buf, buf.length,
 	        stunServer.getAddress(), stunServer.getPort());
 
-   	    logger.finer("local addr " + datagramSocket.getLocalAddress()
+   	    logger.fine("local addr " + datagramSocket.getLocalAddress()
  	        + " local port " + datagramSocket.getLocalPort());
 	    datagramSocket.send(packet);
 	} else {

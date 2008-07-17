@@ -28,10 +28,11 @@
             <jvmarg value="-Dcom.sun.voip.server.LAST_RTP_PORT=${voicebridge.last.rtp.port}"/>
             <jvmarg value="-Djavax.sip.IP_ADDRESS=${voicebridge.local.hostAddress}"/>
             <jvmarg value="-Dcom.sun.voip.server.BRIDGE_STATUS_LISTENERS=${voicebridge.status.listeners}"/>
-            <jvmarg value="-Dcom.sun.voip.server.VoIPGateways={voicebridge.sip.gateways}"/>
+            <jvmarg value="-Dcom.sun.voip.server.VoIPGateways=${voicebridge.sip.gateways}"/>
             <jvmarg value="-Dcom.sun.voip.server.SIPProxy=${voicebridge.sip.proxy}"/>
             <jvmarg value="-Dcom.sun.voip.server.OUTSIDE_LINE_PREFIX=${voicebridge.outside.line.prefix}"/>
             <jvmarg value="-Dcom.sun.voip.server.LONG_DISTANCE_PREFIX=${voicebridge.long.distance.prefix}"/>
+            <jvmarg value="-Dcom.sun.voip.server.LONE_RECEIVER_PORT=${voicebridge.lone.receiver.port}"/>
             <jvmarg value="-ms200m"/>
             <jvmarg value="-mx200m"/>
 	    <jvmarg value="-XX:NewSize=5m"/>

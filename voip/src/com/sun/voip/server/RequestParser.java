@@ -204,6 +204,8 @@ import java.util.Vector;
  *
  *	logLevel | l              = [0 - 10]
  *
+ *	loneReceiverPort | lrp    = <int>
+ *
  *      longDistancePrefix        = <String>
  *
  *	loud =			  = <int>
@@ -1744,6 +1746,14 @@ public class RequestParser {
                 StunClient.setLogLevel(Level.FINEST);
                 StunServerImpl.setLogLevel(Level.INFO);
             }
+
+	    return true;
+	} catch (ParameterException e) {
+	}
+
+	try {
+	    ConferenceManager.setLoneReceiverPort(
+		getIntegerValue("loneReceiverPort", "lrp", request));
 
 	    return true;
 	} catch (ParameterException e) {
@@ -3292,6 +3302,9 @@ public class RequestParser {
 
 	requestHandler.writeToSocket("logLevel			= "
 	    + Logger.logLevel);
+
+	requestHandler.writeToSocket("loneReceiverPort		= "
+	    + ConferenceManager.loneReceiverPort());
 
 	requestHandler.writeToSocket("longDistancePrefix		= "
 	    + requestHandler.getLongDistancePrefix());

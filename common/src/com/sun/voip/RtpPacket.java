@@ -153,6 +153,11 @@ public class RtpPacket {
     protected int sampleRate;
     protected int channels;
 
+    public RtpPacket(byte[] buffer) {
+	this.buffer = buffer;
+	bufferSize = buffer.length;
+    }
+
     public RtpPacket(int encoding, int sampleRate, int channels) {
 	this(encoding, sampleRate, channels,
 	    HEADER_SIZE + getDataSize(encoding, sampleRate, channels));
@@ -180,6 +185,10 @@ public class RtpPacket {
 
     public int getDataSize() {
 	return getDataSize(encoding, sampleRate, channels);
+    }
+  
+    public static int getMaxDataSize() {
+	return getDataSize(PCM_ENCODING, MAX_SAMPLE_RATE, 2);
     }
 
     public static int getDataSize(int encoding, int sampleRate, int channels) {

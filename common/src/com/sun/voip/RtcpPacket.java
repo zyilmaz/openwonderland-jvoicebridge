@@ -79,6 +79,20 @@ public class RtcpPacket {
 	return rtcpData;
     }
 
+    public int getSynchronizationSource() {
+        return ((rtcpData[4] << 24) & 0xff000000) | 
+	   ((rtcpData[5] << 16) & 0x00ff0000) | 
+	   ((rtcpData[6] << 8)  & 0x0000ff00) | 
+	   (rtcpData[7] & 0xff);
+    }
+
+    public void setSynchronizationSource(int synchronizationSource) {
+        rtcpData[4] = (byte) ((synchronizationSource >> 24) & 0xff);
+        rtcpData[5] = (byte) ((synchronizationSource >> 16) & 0xff);
+        rtcpData[6] = (byte) ((synchronizationSource >> 8) & 0xff);
+        rtcpData[7] = (byte) (synchronizationSource & 0xff);
+    }
+
     public DatagramPacket getDatagramPacket() {
 	return packet;
     }

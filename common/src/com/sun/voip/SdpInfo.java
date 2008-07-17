@@ -24,7 +24,11 @@
 package com.sun.voip;
 
 import java.io.IOException;
+
+import java.net.InetSocketAddress;
+
 import java.util.Vector;
+
 
 public class SdpInfo {
 
@@ -38,6 +42,7 @@ public class SdpInfo {
     private String conferenceId;
     private boolean isDistributedBridge;
     private int synchronizationSource;
+    private InetSocketAddress rtcpAddress;
 
     private Vector supportedMedia;
     private MediaInfo mediaInfo;
@@ -114,6 +119,14 @@ public class SdpInfo {
 
     public boolean isDistributedBridge() {
 	return isDistributedBridge;
+    }
+
+    public void setRtcpAddress(InetSocketAddress rtcpAddress) {
+	this.rtcpAddress = rtcpAddress;
+    }
+
+    public InetSocketAddress getRtcpAddress() {
+	return rtcpAddress;
     }
 
     public void setMediaInfo(MediaInfo mediaInfo) {

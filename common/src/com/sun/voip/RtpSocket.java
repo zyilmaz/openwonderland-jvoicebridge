@@ -104,7 +104,7 @@ public class RtpSocket {
 
                 try {
                     rtcpDatagramSocket = new DatagramSocket(
-			rtpDatagramSocket.getLocalPort() + 1);
+			rtpDatagramSocket.getLocalPort() + 1, ia);
 
 		    if (Logger.logLevel >= Logger.LOG_MOREINFO) {
                         Logger.println(
@@ -173,11 +173,13 @@ public class RtpSocket {
 
 	    throw e;
 	}
+    }
 
+    public void startRtcpReceiver() {
 	/*
 	 * Start the RTCP receiver
 	 */
-	rtcpReceiver = new RtcpReceiver(rtcpDatagramSocket);
+	rtcpReceiver = new RtcpReceiver(rtcpDatagramSocket, true);
     }
 
     /**
@@ -326,6 +328,10 @@ public class RtpSocket {
 	RtpSocket.rtpTimeout = rtpTimeout;
     }
 
+    public DatagramSocket getRtcpDatagramSocket() {
+	return rtcpDatagramSocket;
+    }
+	
     /**
      * Close the RTP socket, stop the RtcpReceiver and close the RTCP socket.
      */
