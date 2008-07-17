@@ -66,9 +66,6 @@ public class SipUtil {
 
     private static boolean initialized = false;
 
-    private static int synchronizationSource;
-    private static Object synchronizationSourceLock = new Object();
-
     private SdpManager sdpManager;
 
     public SipUtil() {
@@ -112,14 +109,15 @@ public class SipUtil {
 
 	String s = System.getProperty("com.sun.voip.server.PUBLIC_IP_ADDRESS");
 
-	if (s != null) {
+	if (s != null && s.length() > 0) {
 	    try {
 	        ourPublicIpAddress = InetAddress.getByName(s).getHostAddress();
-		Logger.println("Bridge public address:    " + ourPublicIpAddress);
 	    } catch (UnknownHostException e) {
 		Logger.println("Invalid public IP address, using " + ourIpAddress);
 	    }
 	}
+
+	Logger.println("Bridge public address:    " + ourPublicIpAddress);
 
 	ourPublicSipPort = ourSipPort;
 
@@ -128,11 +126,12 @@ public class SipUtil {
 	if (s != null) {
 	    try {
 		ourSipPort = Integer.parseInt(s);
-		Logger.println("Bridge public SIP port is " + ourSipPort);
 	    } catch (NumberFormatException e) {
 		Logger.println("Invalid public SIP Port, using " + ourSipPort);
 	    }
   	}
+
+	Logger.println("Bridge public SIP port:   " + ourSipPort);
 
 	supportedMedia.add(new MediaInfo(
             (byte)0, RtpPacket.PCMU_ENCODING, 8000, 1, false));
@@ -221,13 +220,14 @@ if (false) {
 	initialized = true;
     }
         
-    public ClientTransaction sendInvite(CallParticipant cp,
-            InetSocketAddress isa) throws ParseException, 
-	    InvalidArgumentException, SipException {
+    public ClientTransaction sendInvite(CallParticipant cp, InetSocketAddress isa)
+	    throws InvalidArgumentException, SipException, ParseException {
 
 	if (Bridge.getPublicHost().equals(isa.getAddress()) == false) {
 	    isa = new InetSocketAddress(Bridge.getPublicHost(), isa.getPort());
 	}
+	
+	String callee = cp.getPhoneNumber();
 
 	String sdp = generateSdp(cp, isa);
 
@@ -235,12 +235,11 @@ if (false) {
 
         try {
             String server;
-	    String callee = cp.getPhoneNumber();
 
             int ix;
 
             if ((ix = callee.indexOf("@")) < 0) {
-                Logger.println("generateSdp can't translate address "
+                Logger.writeFile("sendInvite can't translate address "
                     + "because callee doesn't have host in it:  " + callee);
             } else {
                 server = callee.substring(ix + 1);
@@ -250,7 +249,7 @@ if (false) {
 			(ix = server.indexOf("\r")) < 0 &&
 			(ix = server.indexOf("\n")) < 0 &&
 			(ix = server.indexOf(" ")) < 0) {
-                    Logger.println("generateSdp can't translate address "
+                    Logger.writeFile("sendInvite can't translate address "
                         + "because callee doesn't have host in it:  " + callee);
                 } else {
 		    server = server.substring(0, ix);
@@ -260,6 +259,7 @@ if (false) {
             }
         } catch (Exception e) {
             Logger.println("sendInvite exception:  " + e.getMessage());
+	    throw new SipException("sendInvite exception:  " + e.getMessage());
         }
 
         return sendInvite(cp, sdp);
@@ -294,19 +294,6 @@ if (false) {
 	}
 
 	sdp += "a=transmitMediaInfoOk\r\n";
-
-	synchronized (synchronizationSourceLock) {
-	    synchronizationSource++;
-
-	    if (synchronizationSource == 0) {
-		synchronizationSource++;
-	    }
-
-	    /*
-	     * Don't do this yet.  More work is needed for the next release.
-	     */
-	    //sdp += "a=syncSrc:" + synchronizationSource + "\r\n";
-	}
 
 	return sdp;
     }
@@ -378,8 +365,6 @@ if (false) {
 
 	String voipGateway = cp.getVoIPGateway();
 
-	boolean isPSTNCall = true;
-
 	if (toNumber.length() <= 4) {
 	    /*
 	     * XXX Special case for <= 4 digit phone numbers
@@ -442,8 +427,6 @@ if (false) {
 
             	    Logger.println("Call " + cp + " Sending INVITE directly to " 
 			+ inetAddress + ":" + toSipPort);
-
-		    isPSTNCall = false;
                 } catch (UnknownHostException e) {
 		    /*
 		     * Let proxy handle it
@@ -469,7 +452,7 @@ if (false) {
 	    }
 	}
 
-	if (isPSTNCall && CallHandler.enablePSTNCalls() == false) {
+	if (toNumber.indexOf("@") < 0 && CallHandler.enablePSTNCalls() == false) {
 	    throw new SipException("PSTN calls are not allowed:  " + cp);
 	}
 
@@ -616,7 +599,7 @@ if (false) {
 
 	invite.addHeader(contactHeader);
 
-	if(sdp != null){
+	if (sdp != null) {
             contentTypeHeader = 
 		headerFactory.createContentTypeHeader("application", "sdp");
 

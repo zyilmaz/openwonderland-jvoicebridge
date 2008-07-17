@@ -27,6 +27,7 @@
 	<pathelement location="${lib.dir}/cmutimelex.jar"/>
 	<pathelement location="${lib.dir}/cmu_us_kal.jar"/>
 	<pathelement location="${lib.dir}/en_us.jar"/>
+        <fileset dir="${stun.build.lib.dir}" includes="*.jar"/>
     </path>
     
     <target name="init">

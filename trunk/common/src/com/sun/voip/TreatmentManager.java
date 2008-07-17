@@ -344,6 +344,14 @@ public class TreatmentManager implements MixDataSource {
 	        listener.treatmentDoneNotification(this);
 	    }
 	}
+
+	if (audioSource != null) {
+	    try {
+		audioSource.rewind();
+	    } catch (Exception e) {
+		Logger.println("Exception calling audioSource.done() " + e.getMessage());
+	    }
+	}
     }
 
     private void addTreatment(String path) throws IOException {

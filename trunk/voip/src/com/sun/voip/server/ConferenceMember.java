@@ -94,6 +94,9 @@ public class ConferenceMember implements TreatmentDoneListener,
 
     private DatagramChannel datagramChannel;
     private RtcpReceiver rtcpReceiver;
+    private static RtcpReceiver loneRtcpReceiver;
+
+    InetSocketAddress rtcpAddress;
 
     private static long startTime;
     private static int applyCount;
@@ -213,6 +216,24 @@ public class ConferenceMember implements TreatmentDoneListener,
     }
 
     private void initializeChannel() throws IOException {
+	datagramChannel = conferenceManager.getConferenceReceiver().getChannel(cp);
+
+	if (datagramChannel != null) {
+	    synchronized (datagramChannel) {
+	        if (loneRtcpReceiver == null) {
+		    int rtcpPort = datagramChannel.socket().getLocalPort() + 1;
+
+		    Logger.println("Starting lone RtcpReceiver on port "
+			+ rtcpPort);
+
+                    loneRtcpReceiver = new RtcpReceiver(
+	        	new DatagramSocket(rtcpPort), true);
+		}
+	        rtcpReceiver = loneRtcpReceiver;
+	    }
+	    return;
+	}
+
 	/*
 	 * We are trying to find a pair of sockets with consecutive port nums.
 	 * The first socket must have an even port.
@@ -239,7 +260,10 @@ public class ConferenceMember implements TreatmentDoneListener,
 
 		socket.setSoTimeout(0);
 
-	        InetSocketAddress isa = new InetSocketAddress(nextRtpPort);
+		InetSocketAddress bridgeAddress = Bridge.getLocalBridgeAddress();
+
+	        InetSocketAddress isa = 
+		    new InetSocketAddress(bridgeAddress.getAddress(), nextRtpPort);
 
 		if (nextRtpPort > 0) {
 		    nextRtpPort += 2;
@@ -275,7 +299,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 			+ (localPort + 1));
 
         	    rtcpReceiver = new RtcpReceiver(
-			new DatagramSocket(localPort + 1));
+			new DatagramSocket(localPort + 1), false);
 		    break;
 		} catch (SocketException e) {
 		    /*
@@ -406,9 +430,17 @@ public class ConferenceMember implements TreatmentDoneListener,
      */
     public void initialize(CallHandler callHandler, 
 	    InetSocketAddress memberAddress, byte mediaPayload,
-	    byte receivePayload, byte telephoneEventPayload) {
+	    byte receivePayload, byte telephoneEventPayload,
+	    InetSocketAddress rtcpAddress) {
 
         this.callHandler = callHandler;
+
+	if (rtcpAddress != null) {
+	    this.rtcpAddress = rtcpAddress;
+	} else {
+	    rtcpAddress = new InetSocketAddress(memberAddress.getAddress(),
+		memberAddress.getPort());
+	}
 
 	Logger.writeFile("Call " + cp 
 	    + " Initializing sender with member address " + memberAddress);
@@ -563,7 +595,7 @@ public class ConferenceMember implements TreatmentDoneListener,
                 initialize(callHandler, memberSender.getSendAddress(), 
 	            memberSender.getMediaInfo().getPayload(), 
 	            memberReceiver.getMediaInfo().getPayload(), 
-		    (byte) memberReceiver.getTelephoneEventPayload());
+		    (byte) memberReceiver.getTelephoneEventPayload(), rtcpAddress);
 	    }
 	}
 	conferenceManager.joinDistributedConference(this);
@@ -591,6 +623,10 @@ public class ConferenceMember implements TreatmentDoneListener,
 
     public MemberReceiver getMemberReceiver() {
 	return memberReceiver;
+    }
+
+    public InetSocketAddress getRtcpAddress() {
+	return rtcpAddress;
     }
 
     /*
@@ -1242,7 +1278,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 	memberSender.end();
 	memberReceiver.end();
 
-	if (rtcpReceiver != null) {
+	if (rtcpReceiver != null && rtcpReceiver != loneRtcpReceiver) {
 	    rtcpReceiver.end();
 	}
 

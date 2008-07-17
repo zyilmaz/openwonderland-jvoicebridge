@@ -63,6 +63,7 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
@@ -1061,6 +1062,7 @@ if (false) {
 	    Logger.println("generateSdp:  Our sdp:  " + ourSdp);
 	}
 
+	rtpSocket.startRtcpReceiver();
 	return ourSdp;
     }
 
@@ -1074,6 +1076,23 @@ if (false) {
 	    lastAudioPort = remoteSdpInfo.getRemotePort();
 
 	    initialize();
+	}
+
+	while (remoteSdpInfo == null) {
+	    /*
+	     * XXX This is a bug.  We should have the remote SDP.
+	     * Try sleeping in case this is a timing problem.
+	     */
+	    Logger.println("Remote sdp is null, sleeping...");
+
+	    try {
+		Thread.sleep(1000);
+	    } catch (InterruptedException e) {
+	    }
+
+	    if (remoteSdpInfo == null) {
+	        Logger.println("Remote sdp is still null...");
+	    }
 	}
 
 	InetSocketAddress isa = new InetSocketAddress(
@@ -1103,23 +1122,6 @@ if (false) {
 	    }
 	}
 
-	while (remoteSdpInfo == null) {
-	    /*
-	     * XXX This is a bug.  We should have the remote SDP.
-	     * Try sleeping in case this is a timing problem.
-	     */
-	    Logger.println("Remote sdp is null, sleeping...");
-
-	    try {
-		Thread.sleep(1000);
-	    } catch (InterruptedException e) {
-	    }
-
-	    if (remoteSdpInfo == null) {
-	        Logger.println("Remote sdp is still null...");
-	    }
-	}
-
 	Logger.println("generateSdp:  Our isa " + isa);
 
 	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
@@ -1129,12 +1131,41 @@ if (false) {
 	String ourSdp = sdpManager.generateSdp(sipCommunicator.getUserName(), isa, 
 	    remoteSdpInfo);
 
+	isa = new InetSocketAddress(remoteSdpInfo.getRemoteHost(), 
+	    remoteSdpInfo.getRemotePort() + 1); 
+
+	String rtcpAddress = getRtcpAddress(isa);
+
+	if (rtcpAddress != null) {
+	    ourSdp += "a=rtcpAddress:" + rtcpAddress + "\r\n";
+	}
+
+	rtpSocket.startRtcpReceiver();
+
 	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
 	    Logger.println("Our sdp:  " + ourSdp);
 	}
 
 	return ourSdp;
     }
+
+    private String getRtcpAddress(InetSocketAddress isa) {
+	try {
+	    InetSocketAddress rtcpAddress = NetworkAddressManager.getPublicAddressFor(
+		isa, rtpSocket.getRtcpDatagramSocket());
+
+	    Logger.println("rtcp address is " + rtcpAddress);
+
+	    return rtcpAddress.getAddress().getHostAddress() + ":" +
+		rtcpAddress.getPort();
+	} catch (IOException e) {
+	    Logger.println("couldn't get rtcp public address "
+		+ e.getMessage());
+	}
+
+        return null;
+    }
+
     private Vector callDoneListeners = new Vector();
 
     public void addCallDoneListener(CallDoneListener listener) {

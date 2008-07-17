@@ -223,13 +223,12 @@ public class SipServer implements SipListener {
 	    Logger.println("");
             Logger.println("Bridge private address:   " 
 	        + properties.getProperty("javax.sip.IP_ADDRESS"));
-            Logger.println("Bridge private port:      " + lp.getPort());
+            Logger.println("Bridge private SIP port:  " + lp.getPort());
 
             /*
 	     * get IPs of the SIP Proxy server
 	     */
-            defaultSipProxy = System.getProperty(
-		"com.sun.voip.server.SIPProxy", "");
+            defaultSipProxy = System.getProperty("com.sun.voip.server.SIPProxy", "");
 
             /* 
 	     * Initialize SipUtil class.  Do this last so that

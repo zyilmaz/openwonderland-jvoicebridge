@@ -23,11 +23,14 @@
 
 package com.sun.voip.server;
 
+import com.sun.voip.CallParticipant;
 import com.sun.voip.Logger;
 import com.sun.voip.RtpPacket;
+import com.sun.voip.RtpSocket;
 
 import java.io.IOException;
 
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 
@@ -37,6 +40,7 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -60,24 +64,124 @@ public class ConferenceReceiver extends Thread {
 
     private boolean done;
 
-    ConferenceReceiver(String conferenceId) throws SocketException {
+    private static int loneReceiverPort = 0;
+
+    private static DatagramChannel loneReceiverChannel;
+
+    private int memberCount = 0;
+
+    ConferenceReceiver(String conferenceId, int loneReceiverPort) throws SocketException {
+	if (loneReceiverPort != 0) {
+	    conferenceId = "TheLoneReceiver";
+	    setName(conferenceId);
+	    new Exception("Foo!").printStackTrace();
+	} else {
+	    setName("Receiver-" + conferenceId);
+	}
+
 	this.conferenceId = conferenceId;
 
+	initLoneReceiverChannel(loneReceiverPort);
+
 	stunServerImpl = new StunServerImpl();
+
+	start();
+    }
+
+    private void initLoneReceiverChannel(int loneReceiverPort) {
+	if (this.loneReceiverPort != loneReceiverPort && loneReceiverChannel != null) {
+	    close();
+	}
+
+	this.loneReceiverPort = loneReceiverPort;
+
+	Logger.println("Init lone channel...");
 
 	try {
 	    selector = Selector.open();
 	} catch (IOException e) {
 	    Logger.println("Conference receiver failed to open selector "
-		+ conferenceId + " " + e.getMessage());
-	    
-	    throw new SocketException(
-		"Conference receiver failed to open selector "
-                + conferenceId + " " + e.getMessage());
+		+ e.getMessage());
+
+	    return;    
 	}
 
-	setName("Receiver-" + conferenceId);
-	start();
+	if (loneReceiverPort == 0) {
+	    return;
+	}
+
+	try {
+	    loneReceiverChannel = DatagramChannel.open();
+	} catch (IOException e) {
+	    Logger.println(
+		"Conference receiver failed to open DatagramChannel "
+		+ " " + e.getMessage());
+
+	    return;
+	}
+
+	try {
+	    loneReceiverChannel.configureBlocking(false);
+	} catch (IOException e) {
+	    Logger.println(
+		"Conference receiver failed to configureBlocking to false "
+		+ e.getMessage());
+	    return;
+	}
+
+        DatagramSocket socket = loneReceiverChannel.socket();
+
+	try {
+            socket.setReceiveBufferSize(RtpSocket.MAX_RECEIVE_BUFFER);
+	} catch (SocketException e) {
+	    Logger.println("ConferenceReceiver failed to set receive buffer size "
+		+ e.getMessage());
+	    return;
+	}
+
+	try {
+            socket.setSoTimeout(0);
+	} catch (SocketException e) {
+	    Logger.println("ConferenceReceiver failed to set timeout "
+		+ e.getMessage());
+	    return;
+	}
+
+	InetSocketAddress bridgeAddress = Bridge.getLocalBridgeAddress();
+
+	InetSocketAddress isa = new InetSocketAddress(bridgeAddress.getAddress(), 
+	    loneReceiverPort);
+
+	try {
+	   socket.bind(isa);
+	} catch (IOException e) {
+	    Logger.println(
+		"Conference receiver unable to bind to " + loneReceiverPort + " "
+		+ e.getMessage());
+	    return;
+	}
+
+	try {
+	    SelectionKey selectionKey = 
+		loneReceiverChannel.register(selector, SelectionKey.OP_READ);
+	} catch (Exception e) {
+	    Logger.println(
+		"Conference receiver unable to register:  " 
+		+ e.getMessage());
+	    return;
+	}
+
+	memberCount++;
+
+	Logger.println("Lone Channel uses port " + loneReceiverPort);
+    }
+
+    public static DatagramChannel getChannel(CallParticipant cp) {
+	if (loneReceiverChannel == null || cp.getPhoneNumber().indexOf("@") < 0) {
+	    return null;
+	}
+
+	return loneReceiverChannel;
     }
 
     /*
@@ -85,13 +189,39 @@ public class ConferenceReceiver extends Thread {
      * members to register to a vector and have the thread below actually
      * do the register.
      */
-    private Vector membersToRegister = new Vector();
+    private Vector<ConferenceMember> membersToRegister = new Vector();
 
-    private Vector membersToUnregister = new Vector();
+    private Vector<ConferenceMember> membersToUnregister = new Vector();
 
-    private int memberCount = 0;
+    private HashMap<InetSocketAddress, MemberReceiver> members = new HashMap();
+
+    /*
+     * Find the MemberReceiver associated with the InetSocketAddress of the sender.
+     * RTP header.
+     */
+    private MemberReceiver findMemberReceiver(InetSocketAddress isa) {
+	synchronized (members) {
+	    return members.get(isa);
+	}
+    }
+
+    public void addMember(MemberReceiver memberReceiver) {
+	synchronized (members) {
+	    Logger.println("addMember " + memberReceiver + " "
+		+ memberReceiver.getMember().getMemberSender().getSendAddress());
+
+	    members.put(memberReceiver.getMember().getMemberSender().getSendAddress(),
+		memberReceiver);
+	}
+    }
 
     public void addMember(ConferenceMember member) throws IOException {
+	CallParticipant cp = member.getCallParticipant();
+
+	if (loneReceiverChannel != null && cp.getPhoneNumber().indexOf("@") >= 0) {
+	    return;
+	}
+
 	synchronized(membersToRegister) {
 	    if (selector == null) {
 		return;
@@ -105,6 +235,16 @@ public class ConferenceReceiver extends Thread {
     }
 
     public void removeMember(ConferenceMember member) {
+	CallParticipant cp = member.getCallParticipant();
+
+	if (loneReceiverChannel != null) {
+	    synchronized (members) {
+	        if (members.remove(member.getMemberSender().getSendAddress()) != null) {
+		    return;
+	        }
+	    }
+	}
+
 	synchronized(membersToRegister) {
 	    if (selector == null) {
 		return;
@@ -164,7 +304,7 @@ public class ConferenceReceiver extends Thread {
     public void run() {
         while (!done) {
             try {
-	        registerMembers();
+		registerMembers();
 
 		/* 
 		 * Wait for packets to arrive
@@ -197,11 +337,10 @@ public class ConferenceReceiver extends Thread {
 
                 Iterator it = selector.selectedKeys().iterator();
 
-		MemberReceiver memberReceiver;
-
-		byte[] data;
-		ByteBuffer byteBuffer;
-		InetSocketAddress isa;
+        	byte[] data = new byte[RtpPacket.getMaxDataSize()];
+		int dataLength;
+    		InetSocketAddress isa;
+    		MemberReceiver memberReceiver;
 
                 while (it.hasNext()) {
 		    try {
@@ -209,48 +348,43 @@ public class ConferenceReceiver extends Thread {
 
                         it.remove();
 
-                        DatagramChannel datagramChannel = 
-			    (DatagramChannel)sk.channel();
+                        DatagramChannel datagramChannel = (DatagramChannel)sk.channel();
 
-		        memberReceiver = (MemberReceiver) sk.attachment();
+	    		ByteBuffer byteBuffer = ByteBuffer.wrap(data);
 
-		        if (!memberReceiver.readyToReceiveData()) {
-		            if (memberReceiver.traceCall() || 
-				    Logger.logLevel == -11) {
+	    		isa = (InetSocketAddress) datagramChannel.receive(byteBuffer);
 
-		 	        Logger.println("receiver not ready, conference "
-			            + conferenceId
-			            + " " + memberReceiver
-			            + " address " 
-			            + memberReceiver.getReceiveAddress());
-		            }
+			dataLength = byteBuffer.position();
 
-                	    data = new byte[100];
-                	    byteBuffer = ByteBuffer.wrap(data);
-
-			    isa = (InetSocketAddress) datagramChannel.receive(byteBuffer);
-
-			    if (isStunBindingRequest(data) == true) {
-			        stunServerImpl.processStunRequest(datagramChannel, 
-				    isa, data);
-			    }
-		            continue;	// member isn't ready to receive yet
-		        }
-
-                        data = new byte[memberReceiver.getLinearBufferSize()];
-
-                        byteBuffer = ByteBuffer.wrap(data);
-
-                        isa = (InetSocketAddress) datagramChannel.receive(byteBuffer);
-
-			if (isStunBindingRequest(data) == true) {
-			    stunServerImpl.processStunRequest(datagramChannel,
-				isa, data);
-
+	    	    	if (isStunBindingRequest(data) == true) {
+			    stunServerImpl.processStunRequest(datagramChannel, isa, data);
 			    continue;
-			}
-		    } catch (NullPointerException e) {
+	    	    	}
 
+                        memberReceiver = (MemberReceiver) sk.attachment();
+
+                        if (memberReceiver == null) {
+			    memberReceiver = findMemberReceiver(isa);
+
+			    if (memberReceiver == null) {
+			        if (Logger.logLevel > Logger.LOG_DETAILINFO) {
+			            Logger.println("ConferenceReceiver couldn't find "
+				        + "member associated with packet! " + isa);
+				}
+			        continue;
+			    }
+			}
+
+		        if (memberReceiver.readyToReceiveData() == false) {
+			    if (memberReceiver.traceCall() || Logger.logLevel == -11) {
+			        Logger.println("receiver not ready, conference "
+				    + conferenceId + " " + memberReceiver
+				    + " address " + memberReceiver.getReceiveAddress());
+	    		    }
+			    continue;
+		        }
+		    } catch (NullPointerException e) {
+			e.printStackTrace();
                 	/*
                  	 * It's possible to get a null pointer exception when
                  	 * end is called.  The way to avoid this non-fatal error
@@ -262,6 +396,7 @@ public class ConferenceReceiver extends Thread {
                             Logger.println(
 				"ConferenceReceiver:  non-fatal NPE.");
                 	}
+			System.exit(1);
 			continue;
             	    }
 
@@ -278,7 +413,7 @@ public class ConferenceReceiver extends Thread {
 		    /*
 		     * Dispatch to member
 		     */
-		    memberReceiver.receive(isa, data, byteBuffer.position());
+		    memberReceiver.receive(isa, data, dataLength);
 
 		    if (memberReceiver.traceCall()) {
 			memberReceiver.traceCall(false);
@@ -348,7 +483,11 @@ public class ConferenceReceiver extends Thread {
 	Logger.writeFile("Conference receiver done " + conferenceId);
 
         done = true;
-	
+
+	close();
+    }
+
+    private void close() {
         synchronized(membersToRegister) {
 	    if (selector != null) {
 	        try {

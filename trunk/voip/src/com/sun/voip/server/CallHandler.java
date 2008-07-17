@@ -216,8 +216,14 @@ public abstract class CallHandler extends Thread {
     public void setEndpointAddress(InetSocketAddress isa, byte mediaPayload,
     	    byte receivePayload, byte telephoneEventPayload) {
 
+	setEndpointAddress(isa, mediaPayload, receivePayload, telephoneEventPayload, null);
+    }
+
+    public void setEndpointAddress(InetSocketAddress isa, byte mediaPayload,
+    	    byte receivePayload, byte telephoneEventPayload, InetSocketAddress rtcpAddress) {
+
     	member.initialize(this, isa, mediaPayload, receivePayload,
-    	    telephoneEventPayload);
+    	    telephoneEventPayload, rtcpAddress);
     }
 
     /*
@@ -259,7 +265,7 @@ public abstract class CallHandler extends Thread {
 	    callEvent.setCallId("CallIdNotInitialized");
 	}
 
-	callEvent.setConferenceId(conferenceManager.getId());
+	callEvent.setConferenceId(cp.getConferenceId());
 
         String callInfo = cp.toString();
 
@@ -1029,9 +1035,9 @@ public abstract class CallHandler extends Thread {
 		+ callId);
         }
 
-	if (callHandler.isCallEstablished() == false) {
-	    throw new IOException("Call is not ESTABLISHED:  " + callId);
-	}
+        if (callHandler.isCallEstablished() == false) {
+            throw new IOException("Call is not ESTABLISHED:  " + callId);
+        }
 
 	callHandler.playTreatmentToCall(treatment, treatmentDoneListener);
     }

@@ -1,6 +1,10 @@
 This directory contains the necessary files to build libMediaFramework.so.
 This library contains the native code for ALSA use by java.
 
+You must have libasound2-dev installed:
+
+sudo apt-get install libasound2-dev.
+
 To build the library:
 
 	- build the softphone

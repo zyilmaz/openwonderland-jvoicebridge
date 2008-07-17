@@ -802,6 +802,10 @@ public class SipCommunicator extends Thread implements
 
 	    stackTrace();
                 
+	    Console.showErrorUI("Audio Problem Logged",
+                "The softphone log file " + Logger.getLogFileName()
+                + " has been copied and placed on the Desktop", "");
+
 	    copyLogFileToDeskTop();
             return;
         }

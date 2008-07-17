@@ -195,8 +195,15 @@ public class CallSetupAgent implements TreatmentDoneListener, Runnable {
 	    byte mediaPayload, byte receivePayload,
 	    byte telephoneEventPayload) {
 
+	setEndpointAddress(isa, mediaPayload, receivePayload, telephoneEventPayload, null);
+    }
+
+    protected void setEndpointAddress(InetSocketAddress isa, 
+	    byte mediaPayload, byte receivePayload,
+	    byte telephoneEventPayload, InetSocketAddress rtcpAddress) {
+
 	callHandler.setEndpointAddress(isa, mediaPayload, receivePayload,
-	    telephoneEventPayload);
+	    telephoneEventPayload, rtcpAddress);
     }
 
     /*

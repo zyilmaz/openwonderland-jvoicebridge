@@ -293,9 +293,11 @@ public class SipTPCCallAgent extends CallSetupAgent implements SipListener {
         InetSocketAddress isa = new InetSocketAddress(
 	    sdpInfo.getRemoteHost(), sdpInfo.getRemotePort());
 
+	InetSocketAddress rtcpAddress = sdpInfo.getRtcpAddress();
+
         setEndpointAddress(isa, mediaInfo.getPayload(), 
 	    sdpInfo.getTransmitMediaInfo().getPayload(),
-	    sdpInfo.getTelephoneEventPayload());
+	    sdpInfo.getTelephoneEventPayload(), rtcpAddress);
 
         isa = callHandler.getReceiveAddress();
 
@@ -587,9 +589,11 @@ public class SipTPCCallAgent extends CallSetupAgent implements SipListener {
             InetSocketAddress isa = new InetSocketAddress(
 	        sdpInfo.getRemoteHost(), sdpInfo.getRemotePort());
 
+	    InetSocketAddress rtcpAddress = sdpInfo.getRtcpAddress();
+
             setEndpointAddress(isa, mediaInfo.getPayload(), 
 	        sdpInfo.getTransmitMediaInfo().getPayload(),
-	        sdpInfo.getTelephoneEventPayload());
+	        sdpInfo.getTelephoneEventPayload(), rtcpAddress);
 
 	    /*
 	     * The CallParticipant has answered.

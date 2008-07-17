@@ -27,19 +27,32 @@ import java.io.IOException;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+
+import java.util.HashMap;
+
+import com.sun.stun.StunServerImpl;
 
 public class RtcpReceiver extends Thread {
     private boolean done;
     private DatagramSocket rtcpSocket;
     private byte[] rtcpData;
 
+    private StunServerImpl stunServerImpl;
+
     /*
      * The rtcpSocket needs to be passed in here because
      * it is obtained the same the the rtpSocket is obtained
      * and ports for the two socket must be an even/odd pair.
      */
-    public RtcpReceiver(DatagramSocket rtcpSocket) {
+    public RtcpReceiver(DatagramSocket rtcpSocket, boolean loneChannel) {
 	this.rtcpSocket = rtcpSocket;
+
+	if (loneChannel) {
+	    timeLastReceivedMap = new HashMap();
+	}
+
+        stunServerImpl = new StunServerImpl();
 
 	setName("RtcpReceiver-" + rtcpSocket.getLocalPort());
 	setPriority(Thread.NORM_PRIORITY);
@@ -51,7 +64,9 @@ public class RtcpReceiver extends Thread {
 	rtcpSocket.close();
     }
 
-    long timeLastReportReceived;
+    private HashMap<String, Long> timeLastReceivedMap;
+
+    private long timeLastReceived;
 
     /*
      * Receive both sender and receiver reports.
@@ -63,18 +78,45 @@ public class RtcpReceiver extends Thread {
 
         while (!done) {
             try {
-                rtcpSocket.receive(packet);              // receive RTCP data
+                rtcpSocket.receive(packet);
 
-		timeLastReportReceived = System.currentTimeMillis();
+		if (Logger.logLevel >= Logger.LOG_INFO) {
+		    Logger.println("Got RTCP Packet from " + packet.getSocketAddress());
+		}
 
 		byte[] data = packet.getData();
 
+		RtcpPacket rtcpPacket = null;
+
+		if (isStunBindingRequest(data) == true) {
+                    stunServerImpl.processStunRequest(rtcpSocket, packet);
+                    continue;
+                }
+
 		if ((data[1] & 0xff) == 200) {
-	            new RtcpSenderPacket(packet).printReport();
+	            rtcpPacket = new RtcpSenderPacket(packet);
+		    ((RtcpSenderPacket)rtcpPacket).printReport();
 		} else if ((data[1] & 0xff) == 201) {
-	    	    new RtcpReceiverPacket(packet).printReport();
+	    	    rtcpPacket = new RtcpReceiverPacket(packet);
+		    ((RtcpReceiverPacket)rtcpPacket).printReport();
 		} else {
 	    	    Util.dump("unknown RTCP packet", data, 0, 16);
+		}
+
+		if (rtcpPacket != null) {
+		    timeLastReceived = System.currentTimeMillis();
+
+		    if (timeLastReceivedMap != null) {
+			if (Logger.logLevel >= Logger.LOG_INFO) {
+			    Logger.println("Updated map for " + packet.getSocketAddress() 
+			        + " " + timeLastReceived);
+			}
+
+		        synchronized (timeLastReceivedMap) {
+			    timeLastReceivedMap.put(packet.getSocketAddress().toString(),
+			        new Long(timeLastReceived));
+		        }
+		    }
 		}
             } catch (Exception e) {
                 if (!done) {
@@ -86,13 +128,49 @@ public class RtcpReceiver extends Thread {
         }
     }
 
-    public long secondsSinceLastReport() {
-	if (timeLastReportReceived == 0) {
-	    timeLastReportReceived = System.currentTimeMillis();
+    private boolean isStunBindingRequest(byte[] data) {
+        /*
+         * If this is an RTP packet, the first byte
+         * must have bit 7 set indicating RTP v2.
+         * If byte 0 is 0 and byte 1 is 1, then we
+         * assume this packet is a STUN Binding request.
+         */
+        return data[0] == 0 && data[1] == 1;
+    }
+
+    public long secondsSinceLastReport(InetSocketAddress isa) {
+	long now = System.currentTimeMillis();
+
+	if (timeLastReceivedMap == null) {
+	    if (timeLastReceived == 0) {
+		timeLastReceived = now;
+	    }
+
+	    long elapsed = now - timeLastReceived;
+
+	    timeLastReceived = now;
+	    return elapsed;
+	}
+
+	Long t;
+
+	synchronized (timeLastReceivedMap) {
+            t = timeLastReceivedMap.get(isa.toString());
+	}
+
+	if (t == null) {
+	    synchronized (timeLastReceivedMap) {
+                if (Logger.logLevel >= Logger.LOG_INFO) {
+		    Logger.println("Putting " + isa);
+		}
+
+	        timeLastReceivedMap.put(isa.toString(), new Long(now));
+	    }
+	    
 	    return 0;
 	}
 
-	return (System.currentTimeMillis() - timeLastReportReceived) / 1000;
+	return (now - t.longValue()) / 1000;
     }
 
 }

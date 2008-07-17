@@ -67,6 +67,9 @@ public class ConferenceManager {
     private static boolean useSingleSender = true;
     private static ConferenceSender loneConferenceSender;
 
+    private static int loneReceiverPort = 0;
+    private static ConferenceReceiver loneConferenceReceiver;
+
     private ConferenceSender   conferenceSender;      // sender thread
     private WGManager	       wgManager;	      // whisper group manager
     private ConferenceReceiver conferenceReceiver;    // receiver thread
@@ -83,6 +86,18 @@ public class ConferenceManager {
     private static 	       DistributedBridge distributedBridge;
 
     private boolean done = false;
+
+    static {
+	String s = System.getProperty("com.sun.voip.server.LONE_RECEIVER_PORT");
+
+	if (s != null && s.length() > 0) {
+	    try {
+		loneReceiverPort = Integer.parseInt(s);
+	    } catch (NumberFormatException e) {
+		Logger.println("Invalid port for lone receiver:  " + s);
+	    }
+	}
+    }
 
     /**
      * Constructor
@@ -116,8 +131,15 @@ public class ConferenceManager {
 	    conferenceSender = new ConferenceSender(this);
 	}
 
-	conferenceReceiver = 
-	    new ConferenceReceiver(conferenceId);  // start receiver 
+	if (loneReceiverPort != 0) {
+	    if (loneConferenceReceiver == null) {
+		loneConferenceReceiver = 
+	    	    new ConferenceReceiver("Singleton", loneReceiverPort);  // start receiver 
+	    }
+	    conferenceReceiver = loneConferenceReceiver;
+	} else {
+	    conferenceReceiver = new ConferenceReceiver(conferenceId, 0);  // start receiver 
+	}
     }
 
     public void setMediaInfo(String mediaPreference) throws ParseException {
@@ -399,7 +421,9 @@ public class ConferenceManager {
 	        conferenceList.remove(this);
 	    }
 
-	    conferenceReceiver.end();
+	    if (conferenceReceiver != loneConferenceReceiver) {
+	        conferenceReceiver.end();
+	    }
 
 	    conferenceSender.printStatistics();
 	}
@@ -514,10 +538,17 @@ public class ConferenceManager {
     	return conferenceSender;
     }
 
+    public ConferenceReceiver getConferenceReceiver() {
+	return conferenceReceiver;
+    }
+
     private void endConferenceSender() {
 	synchronized (this) {
 	    if (conferenceSender != loneConferenceSender) {
 	        conferenceSender.end();
+	    }
+	    if (conferenceReceiver != loneConferenceReceiver) {
+	        conferenceReceiver.end();
 	    }
 	}
     }
@@ -773,6 +804,23 @@ public class ConferenceManager {
 	}
     }
 	
+    public static void setLoneReceiverPort(int loneReceiverPort) 
+	    throws ParseException {
+
+	if (ConferenceManager.loneReceiverPort == loneReceiverPort) {
+	    return;
+	}
+
+	if (totalMembers != 0) {
+	    Logger.println(
+		"Can't change loneReceiverPort while conferences are in progress");
+	    throw new ParseException(
+		"Can't change loneReceiverPort while conferences are in progress", 0);
+	}
+
+	ConferenceManager.loneReceiverPort = loneReceiverPort;
+    }
+
     private void setNewConferenceSender(ConferenceSender conferenceSender) {
         synchronized (this) {
             this.conferenceSender = conferenceSender;
@@ -787,6 +835,10 @@ public class ConferenceManager {
 
     public static boolean useSingleSender() {
 	return useSingleSender;
+    }
+
+    public static int loneReceiverPort() {
+	return loneReceiverPort;
     }
 
     /**
