@@ -139,6 +139,10 @@ public class RtcpReceiver extends Thread {
     }
 
     public long secondsSinceLastReport(InetSocketAddress isa) {
+	if (timeLastReceivedMap != null && isa == null) {
+	    return 0;
+	}
+
 	long now = System.currentTimeMillis();
 
 	if (timeLastReceivedMap == null) {
