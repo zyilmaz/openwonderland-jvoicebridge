@@ -361,6 +361,7 @@ public class TreatmentManager implements MixDataSource {
 
 	synchronized (treatments) {
             if (path.substring(0, 1).equals(File.separator) ||
+		   path.startsWith("/") ||
 		   path.startsWith("http://")) {
 
                 AudioSource as = FileAudioSource.getAudioSource(path);
