@@ -455,7 +455,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	        e.printStackTrace();
 
 		Logger.println("MemberReceiver:  Invalid input treatment " 
-		    + absolutePath);
+		    + absolutePath + ":  " + e.getMessage());
 
 	        callHandler.cancelRequest("Invalid input treatment " 
 		    + absolutePath + ":  " + e.getMessage());
@@ -590,7 +590,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	private int channels;
 
 	public InputTreatment(TreatmentDoneListener treatmentDoneListener, String treatment, 
-		int repeatCount, int sampleRate, int channels) throws IOException {
+		int repeatCount, int sampleRate, int channels) {
 
 	    this.treatmentDoneListener = treatmentDoneListener;
             this.treatment = treatment;
@@ -602,11 +602,6 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 		Logger.println("Stopping previous input treatment");
 		iTreatment.done();
 	    }
-
-	    treatmentManager = new TreatmentManager(
-		treatment, repeatCount, sampleRate, channels);
-
-	    treatmentManager.addTreatmentDoneListener(treatmentDoneListener);
 
 	    iTreatment = this;
 
@@ -620,6 +615,21 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	}
 
         public void run() {
+	    try {
+	        treatmentManager = new TreatmentManager(
+		    treatment, repeatCount, sampleRate, channels);
+	    } catch (IOException e) {
+                Logger.println("MemberReceiver:  Invalid input treatment "
+                    + treatment + ":  " + e.getMessage());
+
+                callHandler.cancelRequest("Invalid input treatment "
+                    + treatment + ":  " + e.getMessage());
+
+		return;
+	    }
+
+	    treatmentManager.addTreatmentDoneListener(treatmentDoneListener);
+
 	    if (whisperGroup != null) {
 		synchronized (whisperGroup) {
 		    inputTreatment = treatmentManager;

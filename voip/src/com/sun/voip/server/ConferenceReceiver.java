@@ -74,7 +74,6 @@ public class ConferenceReceiver extends Thread {
 	if (loneReceiverPort != 0) {
 	    conferenceId = "TheLoneReceiver";
 	    setName(conferenceId);
-	    new Exception("Foo!").printStackTrace();
 	} else {
 	    setName("Receiver-" + conferenceId);
 	}
