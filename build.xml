@@ -46,6 +46,7 @@
 	<mkdir dir="dist"/>
 	<mkdir dir="tmp"/>
 	<mkdir dir="tmp/voicebridge"/>
+	<mkdir dir="tmp/voicebridge/bridgeModules"/>
 	<mkdir dir="tmp/voicebridge/nist-sip"/>
 	<mkdir dir="tmp/voicelib"/>
 	<mkdir dir="tmp/bridgemonitor"/>
@@ -81,6 +82,11 @@
 	   <fileset file="${common.dir}/lib/JainSipRi1.2.jar"/>
 	</copy>
 	
+	<copy todir="tmp/voicebridge/bridgeModules">
+	   <fileset file="${bridge.dir}/modules/MP3AudioSource.jar"/>
+	   <fileset file="${bridge.dir}/modules/jl1.0.jar"/>
+	</copy>
+
 	<copy todir="tmp/voicelib">
             <fileset file="${voicelib.dir}/build/lib/voicelib.jar"/>
 	</copy>

@@ -95,8 +95,6 @@ public class ConferenceReceiver extends Thread {
 
 	this.loneReceiverPort = loneReceiverPort;
 
-	Logger.println("Init lone channel...");
-
 	try {
 	    selector = Selector.open();
 	} catch (IOException e) {
@@ -109,6 +107,8 @@ public class ConferenceReceiver extends Thread {
 	if (loneReceiverPort == 0) {
 	    return;
 	}
+
+	Logger.println("Init lone channel using port " + loneReceiverPort);
 
 	try {
 	    loneReceiverChannel = DatagramChannel.open();

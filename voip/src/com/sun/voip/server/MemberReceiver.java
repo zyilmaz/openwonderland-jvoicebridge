@@ -568,9 +568,11 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 			conferenceMediaInfo.getSampleRate(),
                         conferenceMediaInfo.getChannels());
 	        } catch (IOException e) {
-	            Logger.println(cp + " Unable to restart input treatment");
+	            Logger.println(cp + " Unable to restart input treatment "
+			+ cp.getInputTreatment() + ": " + e.getMessage());
 	    	    callHandler.cancelRequest(
-			"unable to restart input treatment!");
+			"unable to restart input treatment "
+		        + cp.getInputTreatment() + ": " + e.getMessage());
 	        }
 	    }
 	}
