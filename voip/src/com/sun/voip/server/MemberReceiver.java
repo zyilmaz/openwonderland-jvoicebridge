@@ -598,7 +598,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
             this.sampleRate = sampleRate;
             this.channels = channels;
 
-	    if (iTreatment != null) {
+	    if (iTreatment != null && treatmentManager != null) {
 		Logger.println("Stopping previous input treatment");
 		iTreatment.done();
 	    }
