@@ -79,9 +79,14 @@ public abstract class FileAudioSource implements AudioSource {
             Constructor<? extends FileAudioSource> c =
                     clazz.getConstructor(String.class);
             return c.newInstance(path);
-        } catch (Exception ex) {
-	    if (Logger.logLevel >= Logger.LOG_INFO) {
-                Logger.exception("Error instantiating class " + clazz, ex);
+        } catch (Exception e) {
+	    if (e instanceof IOException) {
+	        Logger.println("getAudioSource for " + path + " got IOException: "
+		    + e.getMessage()); 
+	    } else {
+	        if (Logger.logLevel >= Logger.LOG_INFO) {
+                    Logger.exception("Error instantiating class " + clazz, e);
+	        }
 	    }
             return null;
         }
