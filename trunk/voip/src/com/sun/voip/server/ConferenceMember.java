@@ -290,9 +290,12 @@ public class ConferenceMember implements TreatmentDoneListener,
 			/*
 			 * Port is odd, can't use this datagramSocket
 			 */
-			Logger.println("Call " + cp 
-			    + " skipping DatagramSocket with odd port " 
-			    + localPort);
+			if (Logger.logLevel >= Logger.LOG_INFO) {
+			    Logger.println("Call " + cp 
+			        + " skipping DatagramSocket with odd port " 
+			        + localPort);
+			}
+
 			badChannels.add(datagramChannel);
 		        continue;
 		    }
@@ -307,8 +310,10 @@ public class ConferenceMember implements TreatmentDoneListener,
 		    /*
 		     * Couldn't bind, can't use this DatagramSocket.
 		     */
-		    Logger.println("Call " + cp 
-			+ " skipping DatagramSocket " + e.getMessage());
+		    if (Logger.logLevel >= Logger.LOG_INFO) {
+		        Logger.println("Call " + cp 
+			    + " skipping DatagramSocket " + e.getMessage());
+		    }
 		    badChannels.add(datagramChannel);
 		    continue;
 		}
