@@ -252,6 +252,8 @@ public class ConferenceMember implements TreatmentDoneListener,
 	try {
 	    while (true) {
         	datagramChannel = DatagramChannel.open();
+		Logger.println("Opened datagram channel " + datagramChannel);
+
         	datagramChannel.configureBlocking(false);
 
         	DatagramSocket socket = datagramChannel.socket();
@@ -333,6 +335,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 
 	    try {
 	        dc.close();
+		Logger.println("Closed datagram channel " + dc);
 	    } catch (IOException e) {
 		Logger.println("Unable to close channel! " + e.getMessage());
 	    }

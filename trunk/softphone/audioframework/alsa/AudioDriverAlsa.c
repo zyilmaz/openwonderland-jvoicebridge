@@ -186,7 +186,7 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nReadMic(
     frames = snd_pcm_readi(microphone_handle, shortBuffer, frames);
 
     if (frames < 0) {
-	frames = snd_pcm_recover(microphone_handle, frames, 1);
+	frames = snd_pcm_recover(microphone_handle, frames, 0);
 
 	if (frames < 0) {
 	    fprintf(stderr, "nReadMic:  Unable to read mic, error %s.\n", 
@@ -341,7 +341,7 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nSpeakerAvailable(
     avail_frames = snd_pcm_avail_update(speaker_handle);
 
     if (avail_frames < 0) {
-	int ret = snd_pcm_recover(speaker_handle, avail_frames, 1);
+	int ret = snd_pcm_recover(speaker_handle, avail_frames, 0);
 
 	if (ret < 0) {
 	    fprintf(stderr, "speakerAvailable returned %s\n", 

@@ -111,6 +111,7 @@ public class ConferenceReceiver extends Thread {
 
 	try {
 	    loneReceiverChannel = DatagramChannel.open();
+	    Logger.println("Opened lone receiver channel " + loneReceiverChannel);
 	} catch (IOException e) {
 	    Logger.println(
 		"Conference receiver failed to open DatagramChannel "
@@ -497,6 +498,16 @@ public class ConferenceReceiver extends Thread {
 			+ conferenceId + " " + e.getMessage());
 	    	}
 	        selector = null;
+	    }
+	}
+
+	if (loneReceiverChannel != null) {
+	    try {
+		loneReceiverChannel.close();
+		Logger.println("Closed lone receiver channel " + loneReceiverChannel);
+	    } catch (Exception e) {
+		Logger.println("Exception closing lone receiver channel:  " 
+		    + e.getMessage());
 	    }
 	}
     }
