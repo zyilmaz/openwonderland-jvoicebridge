@@ -37,22 +37,30 @@ import com.sun.voip.Logger;
 public class BridgeStatusNotifier extends Thread {
 	InetSocketAddress isa;
 
+    public static int DEFAULT_LISTENER_PORT = 6668;
+
     public BridgeStatusNotifier(String server) {
         String[] tokens = server.split(":");
 
-        if (tokens.length != 2) {
-            Logger.println("Missing server port for listener: " + server);
- 	    return;
+	int port = DEFAULT_LISTENER_PORT;
+
+        if (tokens.length < 2) {
+            Logger.println("Missing server port for listener: " + server
+		+ " defaulting to " + DEFAULT_LISTENER_PORT);
+	} else {
+	    try {
+	        port = Integer.parseInt(tokens[1]);
+	    } catch (NumberFormatException e) {
+	        Logger.println("Invalid server port for listener:  " + server
+		    + " defaulting to " + DEFAULT_LISTENER_PORT);
+	    }
 	}
 
 	try {
-	    int port = Integer.parseInt(tokens[1]);
-
 	    isa = new InetSocketAddress(InetAddress.getByName(tokens[0]), port);
-	} catch (NumberFormatException e) {
-	    Logger.println("Invalid server port for listener:  " + server);
 	} catch (UnknownHostException e) {
-	    Logger.println("Invalid listener host:  " + e.getMessage());
+	    Logger.println("Invalid listener host " + tokens[0] + ":  " 
+		+ e.getMessage());
 	}
 
 	try {
