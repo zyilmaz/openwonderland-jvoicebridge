@@ -252,7 +252,11 @@ public class ConferenceMember implements TreatmentDoneListener,
 	try {
 	    while (true) {
         	datagramChannel = DatagramChannel.open();
-		Logger.println("Opened datagram channel " + datagramChannel);
+
+		if (Logger.logLevel >= Logger.LOG_DETAIL) {
+		    Logger.println("Call " + cp 
+		        + " Opened datagram channel " + datagramChannel);
+		}
 
         	datagramChannel.configureBlocking(false);
 
@@ -325,6 +329,8 @@ public class ConferenceMember implements TreatmentDoneListener,
 		+ " MemberReceiver exception! " + e.getMessage());
 	}
 
+	closeBadChannels(badChannels);
+
 	if (Logger.logLevel >= Logger.LOG_INFO) {
             Logger.println("Call " + cp + " port "
                 + datagramChannel.socket().getLocalPort());
@@ -340,7 +346,10 @@ public class ConferenceMember implements TreatmentDoneListener,
 
 	    try {
 	        dc.close();
-		Logger.println("Closed datagram channel " + dc);
+
+		if (Logger.logLevel >= Logger.LOG_DETAIL) {
+		    Logger.println("Closed datagram channel " + dc);
+		}
 	    } catch (IOException e) {
 		Logger.println("Unable to close channel! " + e.getMessage());
 	    }

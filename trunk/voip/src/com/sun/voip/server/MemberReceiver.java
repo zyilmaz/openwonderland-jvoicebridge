@@ -1728,8 +1728,12 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	if (datagramChannelRegistered && datagramChannel != null) {
 	    try {
 	        datagramChannel.close();
+
+		if (Logger.logLevel >= Logger.DETAIL) {
+		    Logger.println("Call " + cp + " closed datagramChannel " 
+		        + datagramChannel);
+		}
 		datagramChannel = null;
-		Logger.println("Call " + cp + " closed datagramChannel");
 	    } catch (IOException e) {
 	        Logger.println("Call " + cp 
 		    + " exception closing datagram channel " + e.getMessage());
