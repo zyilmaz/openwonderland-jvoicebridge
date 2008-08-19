@@ -1,0 +1,9 @@
+
+jVoiceBridge Connector
+----------------------
+
+The jVoiceBridge connector API provides a convenient API for connecting
+to jVoiceBridge from Java programs.  The API allows you to place calls,
+receive updates when a call's status changes, and manage many aspects of
+the call, including private mixes.  See the included PlaceCall.java for
+a basic example of how to use the bridge to place and monitor a call.

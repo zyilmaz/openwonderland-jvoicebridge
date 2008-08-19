@@ -1,0 +1,18 @@
+
+jVoiceBridge
+------------
+
+The voice bridge is software written in the Java(TM) Programming Language that
+handles Voice over IP (VoIP) audio communication and mixing for tasks such as 
+conference calls, voice chat, speech detection, and audio for 3D virtual 
+environments. The voice bridge supports a range of voice qualities from 
+telephone to CD-quality. In addition, the voice bridge supports stereo audio
+and the ability for each individual connected to the Bridge to have their own
+private voice mix.
+
+To run the voice bridge, use ant with the included run.xml file.  You can run
+the voice bridge with the following command:
+
+# ant -f run.xml
+
+See the run.xml file for options of how to configure the voice bridge.
