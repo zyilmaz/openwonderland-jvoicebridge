@@ -20,16 +20,19 @@
             <jvmarg value="-Dgov.nist.jainsip.stack.enableUDP=${voicebridge.sip.port}"/>
 	    <jvmarg value="-Dcom.sun.voip.server.BRIDGE_LOG=bridge.log"/>
 	    <jvmarg value="-Dcom.sun.voip.server.BRIDGE_LOCATION=BUR"/>
-	    <jvmarg value="-Dcom.sun.voip.server.LOCALHOST_SECURITY=false"/>
-            <jvmarg value="-Dcom.sun.voip.server.Bridge.soundPath=/com/sun/voip/server/sounds:."/>
+	    <jvmarg value="-Dcom.sun.voip.server.LOCALHOST_SECURITY=${voicebridge.localhost.security}"/>
+            <jvmarg value="-Dcom.sun.voip.server.Bridge.soundPath=${voicebridge.sound.path}"/>
             <jvmarg value="-Dcom.sun.voip.server.BRIDGE_CONTROL_PORT=${voicebridge.control.port}"/>
 	    <jvmarg value="-Dcom.sun.voip.server.PUBLIC_IP_ADDRESS=${voicebridge.server.public.address}"/>
+	    <jvmarg value="-Dcom.sun.voip.server.BRIDGE_PUBLIC_CONTROL_PORT=${voicebridge.server.public.control.port}"/>
+            <jvmarg value="-Dcom.sun.voip.server.PUBLIC_SIP_PORT=${voicebridge.server.public.sip.port}"/>
             <jvmarg value="-Dcom.sun.voip.server.FIRST_RTP_PORT=${voicebridge.first.rtp.port}"/>
             <jvmarg value="-Dcom.sun.voip.server.LAST_RTP_PORT=${voicebridge.last.rtp.port}"/>
             <jvmarg value="-Djavax.sip.IP_ADDRESS=${voicebridge.local.hostAddress}"/>
             <jvmarg value="-Dcom.sun.voip.server.BRIDGE_STATUS_LISTENERS=${voicebridge.status.listeners}"/>
             <jvmarg value="-Dcom.sun.voip.server.VoIPGateways=${voicebridge.sip.gateways}"/>
             <jvmarg value="-Dcom.sun.voip.server.SIPProxy=${voicebridge.sip.proxy}"/>
+	    <jvmarg value="-Dcom.sun.voip.server.LOCALHOST_SECURITY=${voicebridge.localhost.security}"/>
             <jvmarg value="-Dcom.sun.voip.server.OUTSIDE_LINE_PREFIX=${voicebridge.outside.line.prefix}"/>
             <jvmarg value="-Dcom.sun.voip.server.LONG_DISTANCE_PREFIX=${voicebridge.long.distance.prefix}"/>
             <jvmarg value="-Dcom.sun.voip.server.LONE_RECEIVER_PORT=${voicebridge.lone.receiver.port}"/>
@@ -79,7 +82,7 @@
     <!-- shut down an existing bridge -->
     <target name="shutdown-bridge" description="Shutdown Conference Bridge">
         <java classname="com.sun.voip.server.ShutdownBridge" failonerror="true" fork="true">
-            <arg value="${bridge.server.name}"/>
+            <arg value="${voicebridge.local.hostAddress}"/>
             <classpath refid="run.classpath"/>
         </java>
     </target>
