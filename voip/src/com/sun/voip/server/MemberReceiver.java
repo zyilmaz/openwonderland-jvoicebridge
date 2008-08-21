@@ -2112,7 +2112,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
                 try {
 		    if (recordingType.equalsIgnoreCase("Rtp")) {
                         m = SdpManager.findMediaInfo(
-                            RtpPacket.PCM_ENCODING, 
+                            myMediaInfo.getEncoding(),
 			    myMediaInfo.getSampleRate(),
                             myMediaInfo.getChannels());
 		    } else {
