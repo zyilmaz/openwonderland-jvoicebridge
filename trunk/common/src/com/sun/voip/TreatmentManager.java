@@ -321,6 +321,10 @@ public class TreatmentManager implements MixDataSource {
     }
 
     public void stopTreatment() {
+	stopTreatment(true);
+    }
+
+    public void stopTreatment(boolean notify) {
 	if (isStopped) {
 	    return;
 	}
@@ -335,6 +339,10 @@ public class TreatmentManager implements MixDataSource {
 	    treatments.clear();
 	}
 
+	if (notify == false) {
+	    return;
+	}
+
 	repeatCount = 0;
 
 	synchronized (treatmentDoneListeners) {
@@ -347,7 +355,7 @@ public class TreatmentManager implements MixDataSource {
 
 	if (audioSource != null) {
 	    try {
-		audioSource.rewind();
+		audioSource.done();
 	    } catch (Exception e) {
 		Logger.println("Exception calling audioSource.done() " + e.getMessage());
 	    }

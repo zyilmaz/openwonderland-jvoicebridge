@@ -451,6 +451,10 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	        new InputTreatment(this, absolutePath,
 		    0, conferenceMediaInfo.getSampleRate(),
 		    conferenceMediaInfo.getChannels());
+
+	        if (Logger.logLevel >= Logger.LOG_INFO) {
+	            Logger.println("New input treatment:  " + absolutePath);
+	        }
 	    } catch (IOException e) {
 	        e.printStackTrace();
 
@@ -460,11 +464,6 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	        callHandler.cancelRequest("Invalid input treatment " 
 		    + absolutePath + ":  " + e.getMessage());
 	        return;
-	    }
-
-	    if (Logger.logLevel >= Logger.LOG_INFO) {
-	        Logger.println("New input treatment:  " 
-		    + inputTreatment.getId());
 	    }
 	}
 
@@ -598,8 +597,9 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
             this.sampleRate = sampleRate;
             this.channels = channels;
 
-	    if (iTreatment != null && treatmentManager != null) {
+	    if (iTreatment != null && iTreatment.getTreatmentManager() != null) {
 		Logger.println("Stopping previous input treatment");
+
 		iTreatment.done();
 	    }
 
@@ -607,6 +607,10 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
 	    start();
  	}
+
+	public TreatmentManager getTreatmentManager() {
+	    return treatmentManager;
+  	}
 
 	public void done() {
 	    treatmentManager.removeTreatmentDoneListener(treatmentDoneListener);

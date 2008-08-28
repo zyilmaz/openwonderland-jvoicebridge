@@ -95,6 +95,8 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
 	    } catch (ParseException e) {
 		throw new IOException(e.getMessage());
 	    }
+
+	    treatmentManager.stopTreatment(false);
 	}
     }
 
