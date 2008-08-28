@@ -51,6 +51,8 @@ public class DotAuAudioSource extends FileAudioSource {
     }
 
     private void initialize() throws IOException {
+	done();
+
 	in = getInputStream(path);
 
 	/*
