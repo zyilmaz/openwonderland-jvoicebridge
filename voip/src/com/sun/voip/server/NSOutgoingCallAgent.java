@@ -78,6 +78,8 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
 		    treatmentManager = new TreatmentManager(cp.getInputTreatment(),
                         RtpPacket.PCM_ENCODING, mixerMediaPreference.getSampleRate(), 
 		        mixerMediaPreference.getChannels());
+
+	    	    treatmentManager.stopTreatment(false);
 	        } catch (IOException e) {
 		    Logger.println("Invalid input treatment:  " + cp.getInputTreatment());
 		    throw new IOException(
@@ -95,8 +97,6 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
 	    } catch (ParseException e) {
 		throw new IOException(e.getMessage());
 	    }
-
-	    treatmentManager.stopTreatment(false);
 	}
     }
 
