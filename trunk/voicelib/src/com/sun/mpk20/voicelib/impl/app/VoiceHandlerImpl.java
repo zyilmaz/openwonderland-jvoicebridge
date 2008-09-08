@@ -1480,7 +1480,15 @@ public class VoiceHandlerImpl implements VoiceHandler,
     public void stopPlayingRecording(String callId, String recordingFile) 
 	    throws IOException {
 
-	stopTreatmentToCall(callId, recordingFile);
+	try {
+	    VoiceManager voiceManager = 
+		AppContext.getManager(VoiceManager.class);
+
+	    voiceManager.stopInputTreatment(callId);
+	} catch (IOException e) {
+	    logger.info("Unable to stop playing recording " + callId
+		+ " " + e.getMessage());
+	}
     }
 
     static class AmbientSpatializer implements Spatializer {
