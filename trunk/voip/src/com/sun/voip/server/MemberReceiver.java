@@ -448,13 +448,16 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 		        cp.getInputTreatment());
 		}
 
-	        new InputTreatment(this, absolutePath,
-		    0, conferenceMediaInfo.getSampleRate(),
-		    conferenceMediaInfo.getChannels());
-
 	        if (Logger.logLevel >= Logger.LOG_INFO) {
-	            Logger.println("New input treatment:  " + absolutePath);
+	            Logger.println("Call " + cp 
+			+ " New input treatment:  " + absolutePath);
 	        }
+
+		synchronized (this) {
+	            new InputTreatment(this, absolutePath,
+		        0, conferenceMediaInfo.getSampleRate(),
+		        conferenceMediaInfo.getChannels());
+		}
 	    } catch (IOException e) {
 	        e.printStackTrace();
 
@@ -548,7 +551,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	    return;
 	}
 
-	synchronized (whisperGroup) {
+	synchronized (this) {
 	    if (cp.getInputTreatment() != null && 
 		    cp.getInputTreatment().length() > 0) {
 
@@ -561,6 +564,11 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 		    if (cp.getRecordDirectory() != null) {
 	    	        absolutePath = Recorder.getAbsolutePath(
 			    cp.getRecordDirectory(), cp.getInputTreatment());
+		    }
+
+	            if (Logger.logLevel >= Logger.LOG_INFO) {
+		        Logger.println("Call " + cp + " new input treatment "
+			    + absolutePath);
 		    }
 
 	            new InputTreatment(this, absolutePath, 0, 
@@ -579,6 +587,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
     private InputTreatment iTreatment;
 
+    private Object lock = new Object();
+
     class InputTreatment extends Thread {
 
 	TreatmentManager treatmentManager;
@@ -588,8 +598,9 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	private int sampleRate;
 	private int channels;
 
-	public InputTreatment(TreatmentDoneListener treatmentDoneListener, String treatment, 
-		int repeatCount, int sampleRate, int channels) {
+	public InputTreatment(TreatmentDoneListener treatmentDoneListener, 
+		String treatment, int repeatCount, int sampleRate, 
+		int channels) {
 
 	    this.treatmentDoneListener = treatmentDoneListener;
             this.treatment = treatment;
@@ -597,15 +608,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
             this.sampleRate = sampleRate;
             this.channels = channels;
 
-	    if (iTreatment != null && iTreatment.getTreatmentManager() != null) {
-		Logger.println("Stopping previous input treatment");
-
-		iTreatment.done();
-	    }
-
-	    iTreatment = this;
-
 	    start();
+
  	}
 
 	public TreatmentManager getTreatmentManager() {
@@ -613,12 +617,51 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
   	}
 
 	public void done() {
+	    if (treatmentManager == null) {
+		return;
+	    }
+
 	    treatmentManager.removeTreatmentDoneListener(treatmentDoneListener);
-	    Logger.println("Calling stoptreatment for " + treatmentManager);
+
+	    if (Logger.logLevel >= Logger.LOG_INFO) {
+	        Logger.println("Calling stoptreatment for " + treatmentManager);
+	    }
+
 	    treatmentManager.stopTreatment();
 	}
 
         public void run() {
+	    synchronized (lock) {
+	        if (iTreatment != null) { 
+		    if (iTreatment.getTreatmentManager() != null) {
+	                if (Logger.logLevel >= Logger.LOG_INFO) {
+		            Logger.println("Stopping previous input treatment "
+			        + iTreatment.getTreatmentManager().getId());
+			}
+		        iTreatment.done();
+		    } else {
+		        try {
+			    synchronized (iTreatment) {
+		                iTreatment.wait();
+			    }
+	                    if (Logger.logLevel >= Logger.LOG_INFO) {
+		                Logger.println(
+			            "Stopping previous input treatment after waiting "
+			            + iTreatment.getTreatmentManager().getId());
+			    }
+
+		            iTreatment.done();
+		        } catch (InterruptedException e) {
+		        }
+		    }
+	        }
+
+	        iTreatment = this;
+	    }
+
+	    Logger.println("Trying to create treatment manager for "
+		+ treatment);
+
 	    try {
 	        treatmentManager = new TreatmentManager(
 		    treatment, repeatCount, sampleRate, channels);
@@ -628,6 +671,10 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
                 callHandler.cancelRequest("Invalid input treatment "
                     + treatment + ":  " + e.getMessage());
+
+		synchronized (this) {
+		    notifyAll();
+		}
 
 		return;
 	    }
@@ -640,6 +687,15 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 		}
 	    } else {
 		inputTreatment = treatmentManager;
+	    }
+
+	    if (Logger.logLevel >= Logger.LOG_INFO) {
+	        Logger.println("Created treatment manager for " 
+		    + treatmentManager.getId());
+	    }
+
+	    synchronized (this) {
+		notifyAll();
 	    }
 	}
     }
@@ -1075,8 +1131,6 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	    log(packet);
 	}
     }
-
-    private static Integer lock = new Integer(0);
 
     private int receiveMedia(byte[] receivedData, int length) 
 	    throws SpeexException {
