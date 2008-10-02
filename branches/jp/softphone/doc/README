@@ -1,0 +1,11 @@
+
+jVoiceBridge Software Phone
+---------------------------
+
+The jVoiceBridge software phone is an extension of the Sip Communicator
+softphone, designed to work with jVoiceBridge.  Among the new features
+are: support for high-fidelity, stereo audio; native audio drivers on Linux and
+Mac OS X; improved STUN support; and an updated user interface.
+
+The softphone is distributed as a single jar file.  To run it, simply use
+"java -jar softphone.jar".

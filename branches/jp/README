@@ -1,0 +1,102 @@
+
+jVoiceBridge README
+-------------------
+
+ABOUT jVoiceBridge
+
+jVoiceBridge is a Java-based software conference bridge.  It uses the SIP and RTP protocols to send signaling and audio data, respectively.  It is designed to be highly reliable and scalable, while still providing advanced features such as high-fidelity, stereo audio and individual mixes. 
+
+jVoiceBridge is currently used in a variety of applications, including conference calling and 3D virtual worlds.  Since the voice bridge is based on the SIP standard, it interoperates with existing SIP components such as software phones, and VoIP to PSTN gateways.  The jVoiceBridge package also includes a Java-based software phone which is optimized to work with the bridge.
+
+WHAT IS INCLUDED
+
+This package includes the source for the jVoiceBridge distribution.  jVoiceBridge consists of two main parts: the voice bridge and the softphone.  
+
+The voice bridge is a server application which mixes audio for a variety of uses.  The softphone is a client-side Java application that can be used to connect to the voice bridge in high-fidelity stereo.  While the voice bridge and softphone are optimized to work together, any SIP-based software phone should work with the voice bridge.
+
+BUILDING THE SOFTWARE
+
+Building jVoiceBridge requires the followings software:
+
+Java SE, version 1.5 or later
+Apache Ant, version 1.6.5 or later
+
+To build the voice bridge and softphone, expand the source bundle into a directory, which we will refer to as "<bridge_dir>".  <bridge_dir> contains the top-level and files, as well as the following directories:
+
+<bridge_dir>/common:    shared libraries and code
+<bridge_dir>/stun:      implementation of RFC 3489
+<bridge_dir>/voip:      voice bridge
+<bridge_dir>/softphone: software phone implementation
+
+Each of these directories contains an independent sub-project, with separate build scripts.
+
+To compile a distribution, from <bridge_dir>, run the command:
+
+$ ant dist
+
+This will create a distribution bundle in the directory <bridge_dir>/dist.  This should include the softphone, bridge and doc directories.
+
+The <bridge_dir>/dist/softphone directory contains the standalone softphone.jar file. This jar includes all classes and data needed to run the softphone.
+
+The <bridge_dir>/dist/bridge directory contains all the jar files needed to run the bridge, and a run.xml file which can be used with ant to launch the bridge.
+
+the <bridge_dir>/dist/doc directory contains documentation.
+
+
+RUNNING THE VOICE BRIDGE
+
+To run the voice bridge, from <bridge_dir> run:
+
+$ ant run-bridge
+
+   ** NOTE (Mac OS X only):
+   If you're running the JDK 1.6 Developer Preview release, you'll need to comment out the following lines from 
+   <bridge_dir>/dist/bridge/run.xml:
+
+            <!--jvmarg value="-XX:+UseParNewGC"/-->
+            <!--jvmarg value="-XX:+UseConcMarkSweepGC"/-->
+
+This will start up the voice bridge on the local host, port 5060.  To change the port the bridge runs on, you can create a file called "my.build.properties" in <bridge_dir> and add the following line:
+
+bridge.sip.port=xxx
+
+Once the bridge is running, you should be able to telnet to the bridge control port (port 6666) and type "help" to see a list of bridge commands.
+
+RUNNING THE SOFTPHONE
+
+To run the softphone, from <bridge_dir> run:
+
+$ ant run-softphone
+
+This will launch the softphone.  
+
+By default, the softphone does not have a SIP registrar set, so will not register properly.  Generally, it is a good idea to use the voice bridge as a SIP registrar.  You can do this selecting Settings in the softphone menu, then
+Configure, click on sip in the Configuration window, scroll down to
+Registrar address and enter <registrar IP address>;sip-stun:<registrar port>
+Click Save, Close, then restart the softphone.
+
+When the softphone registers correctly, you will see the current registered address in green at the bottom of the softphone.  You can mouse over the address to see the full version.  When placing calls to the softphone, use this address.
+
+CONTROLLING THE VOICE BRIDGE
+
+The voice bridge can be remotely controlled using the bridge control port, by default port 6666.  From a standard client, you should be able to telnet to this port and get information and send commands to the bridge.
+
+A full description of the commands for the bridge does not currently exist, but there is a Java API to access the most common functionality.  Note that these APIs do not cover all the features of the bridge.
+
+The voice bridge API is in the com.sun.voip.client.connector package in the voip directory.  This package is built into the bridge_connector.jar file, which is available in <bridge_dir>/dist/bridge.
+
+JavaDoc for the bridge API is available in the <bridge_dir>/dist/doc/connector directory.  There is a sample program that places calls using the bridge connector API in the <bridge_dir>/dist/doc/example directory, called PlaceCall.java.
+
+To build the PlaceCall example, use a command like:
+
+$ javac -cp ../../bridge/bridge_connector.jar PlaceCall.java
+
+To run it, use:
+
+$ java -cp ../../bridge/bridge_connector.jar:. PlaceCall
+
+This will place a call to the given SIP address from the given bridge.  For example, if your softphone has the address "sip:test@192.168.0.1:5062", you can place a call to that phone with:
+
+$ java PlaceCall localhost 6666 testConf sip:test@192.168.0.1:5062
+
+This will create a conference called "testConf" and place a call to the softphone.  If you call another phone with the same conference name, the two parties will be able to talk to each other. 

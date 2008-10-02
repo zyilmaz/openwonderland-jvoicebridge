@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="changeme" default="all" basedir=".">
+    <property name="cc.solaris10x86" 
+              value="/usr/dist/pkgs/sunstudio_i386/SUNWspro/bin/cc"/>
+    <property name="cc.solaris10sparc"
+              value="/usr/dist/pkgs/sunstudio_sparc/SUNWspro/bin/cc"/>
+    <target name="all" depends="init, compile_solaris_10_x86, compile_solaris_10_sparc"/>
+    
+    <target name="init">
+        <condition property="solaris10x86">
+            <os name="SunOS" arch="x86" version="5.10"/>
+        </condition>
+        <condition property="solaris10sparc">
+            <os name="SunOS" arch="sparc" version="5.10"/>
+        </condition>
+    </target>
+    
+    <target name="compile_solaris_10_x86" if="solaris10x86">
+        <exec executable="${cc.solaris10x86}">
+            <arg line="-G -o libhrtimer_SunOS_x86.so Solaris10NativeTimer.c
+                       -I.. -I/usr/jdk/latest/include -I/usr/jdk/latest/include/solaris -lrt"/>
+        </exec>
+        
+        <copy todir="../../../../../../../lib">
+            <fileset dir="." includes="libhrtimer_SunOS_x86.so"/>
+        </copy>
+    </target>
+
+    <target name="compile_solaris_10_sparc" if="solaris10sparc">
+        <exec executable="${cc.solaris10sparc}">
+            <arg line="-G -o libhrtimer_SunOS_sparc.so Solaris10NativeTimer.c
+                       -I.. -I/usr/jdk/latest/include -I/usr/jdk/latest/include/solaris -lrt"/>
+        </exec>
+
+        <copy todir="../../../../../../../lib">
+            <fileset dir="." includes="libhrtimer_SunOS_sparc.so"/>
+        </copy>
+    </target>
+
+</project>
