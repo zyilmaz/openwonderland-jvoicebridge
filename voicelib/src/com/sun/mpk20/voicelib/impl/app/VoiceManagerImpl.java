@@ -106,8 +106,6 @@ public class VoiceManagerImpl implements VoiceManager {
 
     private String conferenceId;
 
-    private String audioDirectory;
-
     private VoiceManagerParameters voiceManagerParameters;
 
     private ConcurrentHashMap<String, AudioGroup> audioGroups = new ConcurrentHashMap();
@@ -144,12 +142,6 @@ public class VoiceManagerImpl implements VoiceManager {
 		+ e.getMessage());
 	    return;
 	} 
-
-        audioDirectory = System.getProperty(AUDIO_DIR);
-
-        if (audioDirectory == null || audioDirectory.length() == 0) {
-            audioDirectory = DEFAULT_AUDIO_DIR;
-        }
 
 	DefaultSpatializer livePlayerSpatializer = new DefaultSpatializer();
 	livePlayerSpatializer.setMaximumVolume(
@@ -202,10 +194,6 @@ public class VoiceManagerImpl implements VoiceManager {
 
     public String getConferenceId() {
 	return conferenceId;
-    }
-
-    public String getAudioDirectory() {
-	return audioDirectory;
     }
 
     public VoiceService getBackingManager() {
