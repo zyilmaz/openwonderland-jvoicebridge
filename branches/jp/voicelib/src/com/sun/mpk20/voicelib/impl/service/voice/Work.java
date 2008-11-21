@@ -23,6 +23,8 @@
 
 package com.sun.mpk20.voicelib.impl.service.voice;
 
+import com.sun.mpk20.voicelib.app.BridgeInfo;
+
 import com.sun.voip.CallParticipant;
 
 public class Work {
@@ -59,7 +61,7 @@ public class Work {
     public String targetCallId;
     public double[] privateMixParameters;
     public String treatment;
-    public String bridgeInfo;
+    public BridgeInfo bridgeInfo;
     public boolean isMuted;
     public String recordingFile;
     public String phoneNumber;

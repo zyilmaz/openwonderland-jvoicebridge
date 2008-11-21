@@ -23,7 +23,10 @@
 
 package com.sun.mpk20.voicelib.app;
 
-public interface Spatializer {
+import java.io.Serializable;
+
+public interface Spatializer extends Serializable {
+
     /**
      * Determine the private mix parameters for audio from the given source
      * going to the given destination.
@@ -45,7 +48,7 @@ public interface Spatializer {
     public void setAttenuator(double attenuator);
 
     public double getAttenuator();
-	
+
     public Object clone();
 
 } 

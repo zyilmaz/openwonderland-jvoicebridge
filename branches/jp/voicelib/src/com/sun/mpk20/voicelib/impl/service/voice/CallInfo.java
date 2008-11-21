@@ -31,6 +31,7 @@ import com.sun.voip.CallParticipant;
  * This most likely has to be kept in a persistent database for recovery!
  */
 class CallInfo {
+
     public CallParticipant cp; 
     public BridgeConnection bridgeConnection;
 

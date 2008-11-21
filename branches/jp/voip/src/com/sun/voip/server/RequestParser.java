@@ -1838,6 +1838,29 @@ public class RequestParser {
         } catch (ParameterException e) {
         }
 
+	try {
+	    value = getValue("sendInfo", "si", request);
+
+	    String[] tokens = value.split(":");
+
+	    String conferenceId = tokens[tokens.length - 1];
+
+	    String command;
+
+	    if (tokens.length > 1) {
+		command = "";
+
+	        for (int i = 0; i < tokens.length - 1; i++) {
+		    command += tokens[i];
+		}
+	    } else {
+		command = "all";
+	    }
+
+	    requestHandler.sendInfo(conferenceId, command);
+            return true;
+        } catch (ParameterException e) {
+        }
 
         try {
             ConferenceSender.setSenderThreads(

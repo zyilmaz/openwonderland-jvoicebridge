@@ -80,6 +80,7 @@ public class CallStatus implements Serializable {
     private static final String CONFERENCE_ID_KEY = "ConferenceId";
     private static final String CALL_INFO_KEY = "CallInfo";
     private static final String DTMF_KEY_KEY = "DTMFKey";
+    private static final String INFO_KEY = "Info";
     
     /** 
      * Use <code>getInstance()</code> instead.

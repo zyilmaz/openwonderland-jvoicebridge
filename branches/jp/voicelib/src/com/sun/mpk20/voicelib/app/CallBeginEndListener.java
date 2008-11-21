@@ -23,12 +23,14 @@
 
 package com.sun.mpk20.voicelib.app;
 
+import java.io.Serializable;
+
 import com.sun.voip.client.connector.CallStatus;
 
 /**
  * Get notification of call status changes
  */
-public interface CallBeginEndListener {
+public interface CallBeginEndListener extends Serializable {
 
     public void callBeginEndNotification(CallStatus status);
 

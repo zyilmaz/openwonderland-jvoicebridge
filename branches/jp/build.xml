@@ -110,7 +110,52 @@
             </fileset>
         </zip>
         
+        <zip zipfile="${dist.dir}/jVoiceBridge.zip">
+            <fileset dir="${dist.dir}">
+                <include name="README"/>
+            </fileset>
+        </zip>
+
 <!--        <delete dir="tmp"/> -->
+    </target>
+
+    <target name="wonderland-dist" depends="jar, dist-bridge, dist-softphone, dist-voicelib" description="Build distribution zip for Wonderland">
+    
+	<mkdir dir="wonderland"/>
+	<mkdir dir="wonderland-tmp"/>
+	<mkdir dir="wonderland-tmp/core/ext/"/>
+	<mkdir dir="wonderland-tmp/modules/tools/audio-manager/lib/"/>
+	<mkdir dir="wonderland-tmp/modules/tools/phone/lib/"/>
+	<mkdir dir="wonderland-tmp/modules/tools/voicebridge/lib/zip/"/>
+
+	<copy todir="wonderland-tmp/core/ext">
+	   <fileset file="${softphone.dir}/build/lib/softphone.jar"/>
+	</copy>
+
+	<copy todir="wonderland-tmp/modules/tools/audio-manager/lib">
+	   <fileset file="${bridge.dir}/build/lib/bridge_connector.jar"/>
+	   <fileset file="${bridge.dir}/build/lib/bridge.jar"/>
+	   <fileset file="${voicelib.dir}/build/lib/voicelib.jar"/>
+	</copy>
+
+	<copy todir="wonderland-tmp/modules/tools/phone/lib">
+	   <fileset file="${bridge.dir}/build/lib/bridge_connector.jar"/>
+	   <fileset file="${bridge.dir}/build/lib/bridge.jar"/>
+	   <fileset file="${voicelib.dir}/build/lib/voicelib.jar"/>
+	</copy>
+
+	<copy todir="wonderland-tmp/modules/tools/voicebridge/lib/zip">
+	   <fileset file="${dist.dir}/voicebridge-dist.zip"/>
+	</copy>
+
+        <zip zipfile="${dist.dir}/wonderland-dist.zip">
+            <fileset dir="wonderland-tmp">
+		<include name="core/ext/**"/>
+		<include name="modules/tools/audio-manager/lib/**"/>
+		<include name="modules/tools/phone/lib/**"/>
+		<include name="modules/tools/voicebridge/lib/zip/**"/>
+            </fileset>
+        </zip>
     </target>
 
     <target name="dist-bridge" depends="jar-bridge"
@@ -138,6 +183,13 @@
                 <include name="run.xml"/>
             </fileset>
         </copy>
+
+        <zip zipfile="${dist.dir}/voicebridge-dist.zip">
+            <fileset dir="${dist.dir}/bridge">
+                <include name="**"/>
+            </fileset>
+        </zip>
+
     </target>
     
     <target name="dist-softphone" depends="jar-softphone"

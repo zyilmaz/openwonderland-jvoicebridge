@@ -23,12 +23,14 @@
 
 package com.sun.voip;
 
+import java.io.Serializable;
+
 import java.net.InetSocketAddress;
 
 /**
  * A Class to represent a call participant - a party in a call.
  */
-public class CallParticipant {
+public class CallParticipant implements Serializable {
     /**
      * parameters used for this call
      */

@@ -169,6 +169,18 @@ public class Bridge extends Thread {
         logDirectory = System.getProperty(
             "com.sun.voip.server.Bridge.logDirectory", "." + fileSep + "log");
 
+	File file = new File(logDirectory);
+
+	if (file.exists() == false) {
+	    if (file.mkdir() == false) {
+		System.out.println("Unable to create directory " + logDirectory);
+	    }
+	} else  {
+	    if (file.isDirectory() == false) {
+		System.out.println(logDirectory + " is not a directory");
+	    }
+	}
+
 	String serverLog = System.getProperty(
 	    "gov.nist.javax.sip.SERVER_LOG", "sipServer.log");
 
@@ -280,6 +292,15 @@ public class Bridge extends Thread {
             Logger.println("Outside line prefix set to '" + outsideLinePrefix + "'");
         } 
 
+        String internationalPrefix = System.getProperty(
+           "com.sun.voip.server.INTERNATIONAL_PREFIX");
+
+        if (internationalPrefix != null) {
+            RequestHandler.setInternationalPrefix(internationalPrefix);
+            Logger.println("International prefix set to '" + internationalPrefix 
+		+ "'");
+        } 
+
 	Logger.println("");
 	Logger.println("The Bridge is initialized and Ready");
 	Logger.println("");
@@ -305,7 +326,6 @@ public class Bridge extends Thread {
 
 		if (localHostAddress.equalsIgnoreCase("localhost")) {
                     localHostAddress = InetAddress.getLocalHost().getHostAddress();
-
 		}
             }
             

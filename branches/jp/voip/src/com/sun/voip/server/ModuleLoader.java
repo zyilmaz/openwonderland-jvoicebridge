@@ -88,7 +88,7 @@ public class ModuleLoader extends URLClassLoader {
 		    continue;
 		}
 
-	        if (dirEntry.indexOf(".jar") < 0) {
+	        if (dirEntry.endsWith(".jar") == false) {
 		    if (Logger.logLevel >= Logger.LOG_INFO) {
 		        Logger.println("Skipping non-jar file " + dirEntry);
 		    }

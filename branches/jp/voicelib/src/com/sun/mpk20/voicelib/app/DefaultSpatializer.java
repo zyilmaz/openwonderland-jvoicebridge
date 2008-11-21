@@ -42,7 +42,7 @@ public class DefaultSpatializer implements Spatializer, Serializable {
     private static final String MAXIMUM_VOLUME =
         "com.sun.server.impl.app.VoiceManager.MAXIMUM_VOLUME";
 
-    private static final double DEFAULT_MAXIMUM_VOLUME = .8;
+    public static final double DEFAULT_MAXIMUM_VOLUME = .8;
 
     private static final String FALLOFF =
         "com.sun.server.impl.app.VoiceManager.FALLOFF";
@@ -52,8 +52,6 @@ public class DefaultSpatializer implements Spatializer, Serializable {
     private static final double DEFAULT_FULL_VOLUME_RADIUS = .1;
 
     private static final double DEFAULT_ZERO_VOLUME_RADIUS = .26;
-
-    private static final double PiOver2 = Math.PI / 2;
 
     private static double[] sinTable = new double[360];
 
@@ -114,7 +112,7 @@ public class DefaultSpatializer implements Spatializer, Serializable {
     public void setFalloff(double falloff) {
         falloffFunction.setFalloff(falloff);
 
-        logger.fine("Set falloff to " + round(falloff));
+        logger.fine("Set falloff to " + Util.round100(falloff));
 
         falloffFunction.setFalloff(falloff);
     }
@@ -125,7 +123,7 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 
     public void setFullVolumeRadius(double fullVolumeRadius) {
 	logger.fine("Set full volume radius to " 
-	    + round(fullVolumeRadius));
+	    + Util.round100(fullVolumeRadius));
 	falloffFunction.setFullVolumeRadius(fullVolumeRadius);
     }
 
@@ -135,7 +133,7 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 
     public void setZeroVolumeRadius(double zeroVolumeRadius) {
 	logger.fine("Set zero volume radius to " 
-	    + round(zeroVolumeRadius));
+	    + Util.round100(zeroVolumeRadius));
 	falloffFunction.setZeroVolumeRadius(zeroVolumeRadius);
     }
 
@@ -144,7 +142,7 @@ public class DefaultSpatializer implements Spatializer, Serializable {
     }
 
     public void setMaximumVolume(double maximumVolume) {
-	logger.fine("Set maximum volume to " + round(maximumVolume));
+	logger.fine("Set maximum volume to " + Util.round100(maximumVolume));
 	falloffFunction.setMaximumVolume(maximumVolume);
     }
 
@@ -188,26 +186,6 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 	return attenuator;
     }
 
-    class Position {
-	public double x;
-	public double y;
-	public double z;
-	public double orientation;
-
-	public Position(double x, double y, double z, double orientation) {
-	    this.x = x;
-	    this.y = y;
-	    this.z = z;
-	    this.orientation = orientation;
-	}
-
-	public String toString() {
-	    return "(" + round(x) + ", " + round(y) + ", " 
-		+ round(z) + ")" + ":" + toDegrees(orientation);
-	}
-
-    }
-
     public double[] spatialize(double sourceX, double sourceY, 
 	    double sourceZ, double sourceOrientation,
 	    double destX, double destY, double destZ, 
@@ -217,8 +195,6 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 	    sourceOrientation);
 
 	Position p1 = new Position(destX, destY, destZ, destOrientation);
-
-	logger.finest("spatialize:  " + p1 + " to " + p2);
 
 	/*
 	 * Here are the assumptions about what happens to the sound volume
@@ -249,12 +225,11 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 	 *
 	 * It is used to attenuate the volume.
 	 */
-	double distance = getDistance(p1, p2);
+	double distance = Util.getDistance(p1, p2);
+
+	System.out.println("distance " + distance + " p1 " + p1 + " p2 " + p2);
 
 	double volume = falloffFunction.distanceToVolumeLevel(distance);
-
-	logger.finest("distance " + round(distance) + " volume " 
-	    + round(volume));
 
         /*
          * p1ReceiveAngle is the angle at call 1 at which the sound from call 2 
@@ -266,9 +241,11 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 	    //debug = true;
 	}
 
-	double p1ReceiveAngle = getAngle(p1, p2);
+	double p1ReceiveAngle = Util.getAngle(p1, p2);
 
-	double p1ReceiveDegrees = toDegrees(p1ReceiveAngle);
+	double p1ReceiveDegrees = Util.toDegrees(p1ReceiveAngle);
+
+	logger.finest(p1 + " to " + p2 + " receiveDegrees " + p1ReceiveDegrees);
 
 	if (debug) {
 	    logger.info("receive angle " + p1ReceiveDegrees);
@@ -292,7 +269,7 @@ public class DefaultSpatializer implements Spatializer, Serializable {
             privateMixParameters[0] = -d / 90;
 	    privateMixParameters[1] = -(1 - (d / 90));
 
-	    logger.finest("d " + d + " p0 " + round(privateMixParameters[0]));
+	    logger.finest("d " + d + " p0 " + Util.round100(privateMixParameters[0]));
 	} else if (p1ReceiveDegrees <= 270) {
 	    double d = p1ReceiveDegrees - 180;
             privateMixParameters[0] = -(1 - (d / 90));
@@ -310,10 +287,10 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 
         privateMixParameters[3] = volume * attenuator;    // volume
 
-	privateMixParameters[0] = round(privateMixParameters[0]);
-	privateMixParameters[1] = round(privateMixParameters[1]);
-	privateMixParameters[2] = round(privateMixParameters[2]);
-	privateMixParameters[3] = round(privateMixParameters[3]);
+	privateMixParameters[0] = Util.round100(privateMixParameters[0]);
+	privateMixParameters[1] = Util.round100(privateMixParameters[1]);
+	privateMixParameters[2] = Util.round100(privateMixParameters[2]);
+	privateMixParameters[3] = Util.round100(privateMixParameters[3]);
 
 	logger.finest("p1Rec " + p1ReceiveDegrees
 	    + " privateMixParameters " + privateMixParameters[0] + ", " 
@@ -322,116 +299,6 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 
 	return privateMixParameters;
     }
-
-    public static double getDistance(double sourceX, double sourceY,
-                                     double sourceZ, double destX, 
-				     double destY, double destZ) {
-
-	double xd = sourceY - sourceX;
-        double yd = destY - destX;
-
-        double d = Math.sqrt(xd * xd + yd * yd);
-
-        double zd = destZ - sourceZ;
-
-        double distance = d;
-
-        if (zd != 0) {
-            distance = Math.sqrt(d * d + zd * zd);
-        }
-
-        return distance;
-    }
-
-    public static double getDistance(Position p1, Position p2) {
-	double xd = p2.x - p1.x;
-	double yd = p2.y - p1.y;
-
-	double d = Math.sqrt(xd * xd + yd * yd);
-
-	double zd = p2.z - p1.z;
-
-	double distance = d;
-
-	if (zd != 0) {
-	    distance = Math.sqrt(d * d + zd * zd);
-	}
-
-	logger.finest(
-	    "P1 (" + round(p1.x) + "," + round(p1.y) + ")"
-	    + " P2 (" + round(p2.x) + "," + round(p2.y) + ")"
-	    + " distance " + round(distance));
-
-	return distance;
-    }
-
-    /*
-     * Get angle at which sound from p2 hits p1
-     */
-    private double getAngle(Position p1, Position p2) {
-	if (p1.x == p2.x && p1.y == p2.y) {
-	    /*
-	     * p1 and p2 are at the same place
-	     * Their rotations don't matter.
-	     * Treat them like they are facing each other.
-	     */
-	    return 0;
-	}
-
-	double p1ReceiveAngle;
-
-	if (p1.x == p2.x) {
-	    /*
-	     * p1 and p2 are along the same vertical line.
-	     */
-            if (p1.y < p2.y) {
-		/*
-		 * p1 is below p2, the angle is correct as is.
-		 */
-                p1ReceiveAngle = PiOver2;         // 90 degrees
-            } else {
-		/*
-		 * p1 is above p2, p1 is receiving audio 
-		 * on the opposite size.
-		 */
-                p1ReceiveAngle = -PiOver2;        // -90 degrees
-	    }
-	} else {
-	    p1ReceiveAngle = Math.atan((p2.y - p1.y) / (p2.x - p1.x));
-	}
-
-	if (p1.x > p2.x) {
-	    logger.finest("p1RecAngle needs PI added " + toDegrees(p1ReceiveAngle));
-	    p1ReceiveAngle += Math.PI;
-	} 
-
-	if (debug) {
-          logger.info("p1=" + p1 + " p2=" + p2
-            + " p1RecAng " + toDegrees(p1ReceiveAngle) + " p1 orient " 
-	    + toDegrees(p1.orientation)
-	    + " p1RecAng adj " + toDegrees(p1ReceiveAngle -  p1.orientation));
-	}
-
-	p1ReceiveAngle -= p1.orientation;
-
-	return p1ReceiveAngle;
-    }
-
-    private int toDegrees(double radians) {
-        int degrees = ((int) Math.toDegrees(radians)) % 360;
-
-        if (degrees < 0) {
-	    logger.finest("degrees < 0, adding 360 " + degrees);
-            degrees += 360;
-        }
-
-        return degrees;
-    }
-
-    public static double round(double v) {
-        return Math.round(v * 100) / (double) 100;
-    }
-
     public static void main(String[] args) {
 	DefaultSpatializer spatializer = new DefaultSpatializer();
 
@@ -452,16 +319,16 @@ public class DefaultSpatializer implements Spatializer, Serializable {
     private static void doit(DefaultSpatializer spatializer, int n) {
 	for (int i = 0; i < n; i++) {
 	    double sourceX = i;
-	    double sourceY = i + 1;
+	    double sourceZ = i + 1;
 	    double sourceOrientation = i;
 
 	    double destX = i + 2;
-	    double destY = i + 3;
+	    double destZ = i + 3;
 	    double destOrientation = i + 1;
 
-    	    spatializer.spatialize(sourceX, sourceY, 
-	        0, sourceOrientation, destX, destY, 
-		0, destOrientation);
+    	    spatializer.spatialize(sourceX, 0, 
+	        sourceZ, sourceOrientation, destX, 0, 
+		destZ, destOrientation);
 	}
     }
 
@@ -481,4 +348,5 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 	    + " fvr " + getFullVolumeRadius() 
 	    + " zvr " + getZeroVolumeRadius();
     }
+
 }

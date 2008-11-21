@@ -41,8 +41,7 @@ import javax.jnlp.UnavailableServiceException;
 public class SoftphoneExtInstaller {
     /** the name of the softphone jars */
     private static final String SOFTPHONE_JAR_NAME = "/softphone.jar";
-    private static final String TRITONUS_SHARE_JAR_NAME = "/tritonus_share.jar";
-    private static final String TRITONUS_REMAINING_JAR_NAME = "/tritonus_remaining.jar";
+
     private static final String CORE_AUDIO_NAME = 
 	"/libMediaFramework.jnilib";
     

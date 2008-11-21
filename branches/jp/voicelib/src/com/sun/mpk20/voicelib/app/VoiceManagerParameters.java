@@ -23,58 +23,28 @@
 
 package com.sun.mpk20.voicelib.app;
 
+import java.io.Serializable;
+
 /**
  * VoiceManager parameters
  */
-public class VoiceManagerParameters {
+public class VoiceManagerParameters implements Serializable {
 
     public int logLevel;
-    public double liveMaxVolume;
-    public double liveZeroVolRadius;
-    public double liveFullVolRadius;
-    public double liveFalloff;
-    public double stationaryMaxVolume;
-    public double stationaryZeroVolRadius;
-    public double stationaryFullVolRadius;
-    public double stationaryFalloff;
-    public double outworlderMaxVolume;
-    public double outworlderZeroVolRadius;
-    public double outworlderFullVolRadius;
-    public double outworlderFalloff;
+    public DefaultSpatializer livePlayerSpatializer;
+    public DefaultSpatializer stationarySpatializer;
 
     public VoiceManagerParameters() {
     }
 
     public VoiceManagerParameters(int logLevel, 
-	    double liveMaxVolume,
-            double liveZeroVolRadius, 
-	    double liveFullVolRadius,
-	    double liveFalloff,
-	    double stationaryMaxVolume,
-	    double stationaryZeroVolRadius,
-	    double stationaryFullVolRadius,
-	    double stationaryFalloff,
-	    double outworlderMaxVolume,
-	    double outworlderZeroVolRadius,
-	    double outworlderFullVolRadius,
-	    double outworlderFalloff) {
+	     DefaultSpatializer livePlayerSpatializer,
+	     DefaultSpatializer stationarySpatializer) {
 
 	this.logLevel = logLevel;
 
-	this.liveMaxVolume = liveMaxVolume;
-        this.liveZeroVolRadius = liveZeroVolRadius;
-        this.liveFullVolRadius = liveFullVolRadius;
-        this.liveFalloff = liveFalloff;
-
-	this.stationaryMaxVolume = stationaryMaxVolume;
-        this.stationaryZeroVolRadius = stationaryZeroVolRadius;
-        this.stationaryFullVolRadius = stationaryFullVolRadius;
-        this.stationaryFalloff = stationaryFalloff;
-
-	this.outworlderMaxVolume = outworlderMaxVolume;
-	this.outworlderZeroVolRadius = outworlderZeroVolRadius;
-	this.outworlderFullVolRadius = outworlderFullVolRadius;
-	this.outworlderFalloff = outworlderFalloff;
+	this.livePlayerSpatializer = livePlayerSpatializer;
+	this.stationarySpatializer = stationarySpatializer;
     }
 
 }

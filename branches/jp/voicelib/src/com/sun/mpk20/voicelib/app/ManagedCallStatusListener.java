@@ -23,10 +23,13 @@
 
 package com.sun.mpk20.voicelib.app;
 
+import java.io.Serializable;
+
 import com.sun.voip.client.connector.CallStatusListener;
 
 import com.sun.sgs.app.ManagedObject;
 
 public interface ManagedCallStatusListener extends ManagedObject, 
-	CallStatusListener {
+	CallStatusListener, Serializable {
+
 }

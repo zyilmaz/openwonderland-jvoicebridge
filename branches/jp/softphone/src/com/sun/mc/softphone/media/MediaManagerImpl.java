@@ -872,6 +872,14 @@ if (false) {
         }   
     }   
 
+    public int getMicVolumeLevel() {
+	if (audioTransmitter == null) {
+	    return 0;
+	}
+
+	return audioTransmitter.getMicVolumeLevel();
+    }
+
     public int getPacketsReceived() {
 	if (audioReceiver == null) {
 	    return 0;

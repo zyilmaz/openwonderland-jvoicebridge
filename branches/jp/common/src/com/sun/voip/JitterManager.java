@@ -256,7 +256,7 @@ public class JitterManager {
      *
      *   - a JitterObject for a missing packet will have isMissing set
      *
-     *   _ a JitterObject for inserted silence will have data set to null
+     *   - a JitterObject for inserted silence will have data set to null
      *
      *   - a JitterObject with data null is a place holder.
      *     Place holders preserve the sequence ordering and are used 

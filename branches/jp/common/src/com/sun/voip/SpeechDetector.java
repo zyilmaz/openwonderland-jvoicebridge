@@ -44,6 +44,8 @@ public class SpeechDetector {
     double sum       = 0;
     double cnt       = 0;
 
+    int soundLevel;
+
     int speechDetectorCalls;
     long speechDetectorTime;
 
@@ -141,6 +143,7 @@ public class SpeechDetector {
 	     * average next 8 samples (MSB only), square result, 
 	     * add to running avg
 	     */
+
 	    double avg = (double)
 	    	((linearData[i + 0]
 	        + linearData[i + 2]
@@ -167,7 +170,10 @@ public class SpeechDetector {
 	}
 
 	speechDetectorTime += (CurrentTime.getTime() - start);
-	return (speakingChanged());
+
+	soundLevel = (int) sum;
+
+	return speakingChanged();
     }
 
     /*
@@ -274,6 +280,34 @@ public class SpeechDetector {
      */
     public boolean isSpeaking() {
 	return isSpeaking;
+    }
+
+    public int getSoundLevel() {
+	return soundLevel / 10000;
+    }
+
+    public int getClipCount(byte[] linearData) {
+	int clipCount = 0;
+
+	for (int i = 0; i < linearData.length; i += 2) {
+	    if (linearData[i] == (byte) 0xff && linearData[i + 1] == (byte) 0xff) {
+		clipCount++;
+	    }
+	}
+
+	return clipCount;
+    }
+
+    public int getClipCount(int[] linearData) {
+        int clipCount = 0;
+
+        for (int i = 0; i < linearData.length; i++) {
+            if ((linearData[i] & 0xffff) == (short) 0xffff) {
+                clipCount++;
+            }
+        }
+
+        return clipCount;
     }
 
     public void printStatistics() {

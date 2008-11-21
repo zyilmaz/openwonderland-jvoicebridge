@@ -136,6 +136,7 @@ public class AudioTransmitter extends Thread {
     private String treatmentToPlay;
     private int treatmentRepeats = -1;
     
+    private boolean speakingWhileMuted;
     private boolean isMuted;
 
     private SpeechDetector speechDetector;
@@ -540,11 +541,13 @@ if (false) {
     public void mute(boolean isMuted) {
 	this.isMuted = isMuted;
 
+	speakingWhileMuted = false;
+
 	if (microphone == null) {
 	    return;
 	}
 
-	microphone.mute(isMuted);
+	//microphone.mute(isMuted);
 	
 	if (Logger.logLevel >= Logger.LOG_INFO) {
 	    Logger.println("Softphone telling microphone to "
@@ -553,11 +556,11 @@ if (false) {
     }
 
     public boolean isMuted() {
-	if (microphone == null) {
+	//if (microphone == null) {
 	    return isMuted;
-	}
+	//}
 
-	return microphone.isMuted();
+	//return microphone.isMuted();
     }
 
     /*
@@ -776,6 +779,14 @@ if (false) {
 	    if (speechDetector != null) {
                 if (speechDetector.processData(microphoneData)) {
                     speaking = speechDetector.isSpeaking();
+
+		    if (isMuted && speaking && audioReceiver != null) {
+			if (speakingWhileMuted == false) {
+			    speakingWhileMuted = true;
+
+			    audioReceiver.playAudioFile("speaking_while_muted.au");
+			}
+		    }
 
 		    if (Logger.logLevel >= Logger.LOG_INFO) {
                         if (speaking) {
@@ -1692,6 +1703,20 @@ if (false) {
 
     public int getMicOverflow() {
 	return micOverflow;
+    }
+
+    public int getMicVolumeLevel() {
+	if (speechDetector == null) {
+	    return 0;
+	}
+
+	int soundLevel = speechDetector.getSoundLevel();
+
+	if (soundLevel > 10) {
+	    Logger.println("" + soundLevel);
+	}
+
+	return soundLevel;
     }
 
     private int dataSize;

@@ -34,14 +34,15 @@
     <property name="lib.dir" location="./lib"/>
     <property name="voip.dir" location="../voip"/>
     <property name="voip.build.lib.dir" location="../voip/build/lib"/>
+    <property name="common.build.lib.dir" location="../common/build/lib"/>
     
     <!-- values in my.build.properties override build.properties -->
     <property file="my.build.properties"/>
     <property file="build.properties"/>
     
     <path id="build.classpath">
-        <pathelement location="../common/lib/swing-layout-1.0.jar"/>
         <pathelement location="${voip.build.lib.dir}/bridge_connector.jar"/>
+        <pathelement location="${common.build.lib.dir}/voip.jar"/>
         <pathelement location="${lib.dir}/sgs.jar"/>
     </path>
 

@@ -238,8 +238,8 @@ set_speaker_swparams(snd_pcm_t *handle, int channels, int bufferSize)
 	thresholdFrames = bufferSize / 2 / channels;
     }
 
-    fprintf(stderr, "speaker buffer size %d., thresholdFrames %d\n",
-	 bufferSize, thresholdFrames);
+    //fprintf(stderr, "speaker buffer size %d., thresholdFrames %d\n",
+    //	 bufferSize, thresholdFrames);
  
     /* set silence threshold */
     ret = snd_pcm_sw_params_set_silence_threshold(handle, swparams, 

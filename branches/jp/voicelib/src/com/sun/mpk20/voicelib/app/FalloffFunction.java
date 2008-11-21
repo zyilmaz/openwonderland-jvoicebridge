@@ -99,22 +99,22 @@ public abstract class FalloffFunction implements Serializable {
      * of the window width.
      */
     public double distanceToVolumeLevel(double distance) {
-	logger.finest("distance " + round(distance) 
-	    + " fvr " + round(fullVolumeRadius)
-	    + " zvr " + round(zeroVolumeRadius) + " this " + this);
+	logger.finest("distance " + Util.round100(distance) 
+	    + " fvr " + Util.round100(fullVolumeRadius)
+	    + " zvr " + Util.round100(zeroVolumeRadius) + " this " + this);
 
 	if (distance <= fullVolumeRadius) {
-	    logger.finest("distance < zvr, full volume d " + round(distance)
-		+ " fvr " + round(fullVolumeRadius) + " zvr " 
-		+ round(zeroVolumeRadius));
+	    logger.finest("distance < zvr, full volume d " + Util.round100(distance)
+		+ " fvr " + Util.round100(fullVolumeRadius) + " zvr " 
+		+ Util.round100(zeroVolumeRadius));
 
 	    return maximumVolume; // * falloff;
 	}
 
 	if (distance >= zeroVolumeRadius) {
 	    logger.finest("Distance > zvr, v is 0, d " + distance
-		+ " fvr " + round(fullVolumeRadius) + " zvr " 
-		+ round(zeroVolumeRadius));
+		+ " fvr " + Util.round100(fullVolumeRadius) + " zvr " 
+		+ Util.round100(zeroVolumeRadius));
 
 	    return 0.0;
 	}
@@ -133,11 +133,11 @@ public abstract class FalloffFunction implements Serializable {
 	    v = maximumVolume;
 	}
 
-	logger.finest("distance " + round(distance)
-	    + " fvr " + round(fullVolumeRadius) + " zvr " 
-	    + round(zeroVolumeRadius)
-	    + " d - f " + round(distance - fullVolumeRadius)
-	    + " v " + round(v));
+	logger.finest("distance " + Util.round100(distance)
+	    + " fvr " + Util.round100(fullVolumeRadius) + " zvr " 
+	    + Util.round100(zeroVolumeRadius)
+	    + " d - f " + Util.round100(distance - fullVolumeRadius)
+	    + " v " + Util.round100(v));
 
 	if (v > maximumVolume) {
 	    logger.info("v > maximumVolume");
@@ -150,10 +150,6 @@ public abstract class FalloffFunction implements Serializable {
 	}
 
 	return v; // * falloff;
-    }
-
-    public double round(double v) {
-	return Math.round(v * 100) / (double) 100;
     }
 
     protected abstract double getVolume(double distance);

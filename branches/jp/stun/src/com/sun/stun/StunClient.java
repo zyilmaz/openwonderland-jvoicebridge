@@ -163,7 +163,7 @@ public class StunClient extends Thread {
     public void run() {
         int socketTimeout;
 
-	logger.info("using STUN server " + stunServer);
+	logger.fine("using STUN server " + stunServer);
 
 	try {
 	    if (datagramSocket != null) {

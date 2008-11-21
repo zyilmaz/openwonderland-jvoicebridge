@@ -41,10 +41,18 @@ public class AudioFilePlayer extends Thread {
     private boolean finished = false;
     private Speaker speaker;
 
+
     public AudioFilePlayer(String audioFile, int repeatCount,
 	    Speaker speaker) throws IOException {
 
+	this(audioFile, repeatCount, speaker, null);
+    }
+
+    public AudioFilePlayer(String audioFile, int repeatCount,
+	    Speaker speaker, AudioFileDoneListener listener) throws IOException {
+
 	this.speaker = speaker;
+	this.listener = listener;
 
 	treatmentManager = new TreatmentManager(audioFile, repeatCount,
 	    speaker.getSampleRate(), speaker.getChannels()); 
@@ -55,6 +63,12 @@ public class AudioFilePlayer extends Thread {
 	}
 
 	start();
+    }
+
+    private AudioFileDoneListener listener;
+
+    public void setAudioFileDoneListener(AudioFileDoneListener listener) {
+	this.listener = listener;
     }
 
     public void done() {
@@ -78,6 +92,8 @@ public class AudioFilePlayer extends Thread {
 	    Logger.println("Playing audio file... " 
 		+ treatmentManager.getId());
 	}
+
+	speaker.flush();
 
 	try {
 	    while (!done) {
@@ -114,6 +130,10 @@ public class AudioFilePlayer extends Thread {
 	        finished = true;
 	        notifyAll();
 	    }
+	}
+
+	if (listener != null) {
+	    listener.audioFilePlayerDone();
 	}
 
         if (Logger.logLevel >= Logger.LOG_MOREINFO) {

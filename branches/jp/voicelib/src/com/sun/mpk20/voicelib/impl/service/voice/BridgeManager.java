@@ -23,6 +23,8 @@
 
 package com.sun.mpk20.voicelib.impl.service.voice;
 
+import com.sun.mpk20.voicelib.app.BridgeInfo;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -199,8 +201,12 @@ public class BridgeManager extends Thread
 	    bc.monitorIncomingCalls(true);
 
 	    synchronized (bridgeConnections) {
-		for (BridgeConnection bridgeConnection : bridgeConnections) {
-		    bc.monitorConferences(bridgeConnection.getConferences());
+		if (bridgeConnections.size() == 0) {
+		    bc.monitorConference(conferenceId);
+		} else {
+		    for (BridgeConnection bridgeConnection : bridgeConnections) {
+		        bc.monitorConferences(bridgeConnection.getConferences());
+		    }
 		}
 	    }
 	} catch (IOException e) {
@@ -331,7 +337,7 @@ public class BridgeManager extends Thread
      * Initiate a call.  bridgeInfo must be what was returned
      * from getVoiceBridge().  This is <bridge public address>:<public sip port>
      */
-    public void initiateCall(CallParticipant cp, String bridgeInfo) 
+    public void initiateCall(CallParticipant cp, BridgeInfo bridgeInfo) 
 	    throws IOException, ParseException {
 
 	String callId = cp.getCallId();
@@ -346,13 +352,7 @@ public class BridgeManager extends Thread
 		    "No voice bridge available " + cp + " " + e.getMessage());
 	    }
 	} else {
-	    String tokens[] = bridgeInfo.split(":");
-
-	    if (tokens.length != 2) {
-		throw new IOException("Invalid bridge info: " + bridgeInfo);
-	    }
-
-	    bc = findBridge(tokens[0], tokens[1]);
+	    bc = findBridge(bridgeInfo.publicHostName, String.valueOf(bridgeInfo.publicSipPort));
 
 	    if (bc == null) {
 		throw new IOException("Unable to find bridge for '"
@@ -733,16 +733,25 @@ public class BridgeManager extends Thread
         }
     }
 
-    public String getVoiceBridge() {
+    public BridgeInfo getVoiceBridge() throws IOException {
 	BridgeConnection bc;
 
 	try {
 	    bc = getBridgeConnection();
 	} catch (IOException e) {
-	    return "";
+	    logger.warning(e.getMessage());
+	    return null;
 	}
 
-	return bc.getPublicAddress();
+	BridgeInfo bridgeInfo = new BridgeInfo();
+	bridgeInfo.privateHostName = bc.getPrivateHost();
+	bridgeInfo.privateControlPort = bc.getPrivateControlPort();
+	bridgeInfo.privateSipPort = bc.getPrivateSipPort();
+	bridgeInfo.publicHostName = bc.getPublicHost();
+	bridgeInfo.publicControlPort = bc.getPublicControlPort();
+	bridgeInfo.publicSipPort = bc.getPublicSipPort();
+
+	return bridgeInfo;
     }
 
     public void setSpatialAudio(boolean enabled) throws IOException {
@@ -802,7 +811,9 @@ public class BridgeManager extends Thread
 
 	String callId = status.getCallId();
 
-        if (status == null || callId == null) {
+        if (status == null || 
+		(status.getCode() != CallStatus.INFO && callId == null)) {
+
             return;
         }
 

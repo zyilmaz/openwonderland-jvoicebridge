@@ -69,7 +69,7 @@ import java.util.NoSuchElementException;
  * Serves as an RTP endpoint which receives data from the RtpSocket and
  * writes it to the speaker
  */
-public class AudioReceiver extends Thread {
+public class AudioReceiver extends Thread implements AudioFileDoneListener {
     private RtpSocket rtpSocket;		// socket for send and receive
     private RtpReceiverPacket rtpReceiverPacket;
 
@@ -308,6 +308,28 @@ public class AudioReceiver extends Thread {
     }
 
     private DtmfBuffer dtmfBuffer;
+
+    public void playAudioFile(String file) {
+	if (speaker == null) {
+	    return;
+	}
+
+	if (comfortNoisePlayer != null) {
+	    comfortNoisePlayer.done();
+	}
+
+	dropMicrophoneData = true;
+
+	try {
+	    new AudioFilePlayer(file, 0, speaker, this);
+	} catch (IOException e) {
+	    Logger.println("Unable to play " + file + ": " + e.getMessage());
+	}
+    }
+
+    public void audioFilePlayerDone() {
+	dropMicrophoneData = false;
+    }
 
     /*
      * Start playing a DTMF tone rather than received audio
@@ -833,6 +855,8 @@ public class AudioReceiver extends Thread {
     private int silencePackets;
     private int dataPackets;
 
+    private boolean dropMicrophoneData;
+
     class PacketProcessor extends Thread {
 	private Ticker ticker;
 	private int n;
@@ -883,9 +907,11 @@ public class AudioReceiver extends Thread {
 			/*
 			 * Write silence to the speaker now to prevent underrun
 			 */
-			while (silenceCount-- > 0) {
-			    writeSpeaker(new byte[speakerWriteSize], 0,
-				speakerWriteSize);
+			if (dropMicrophoneData == false) {
+			    while (silenceCount-- > 0) {
+			        writeSpeaker(new byte[speakerWriteSize], 0,
+				    speakerWriteSize);
+			    }
 			}
 		    }
 
@@ -907,7 +933,10 @@ public class AudioReceiver extends Thread {
                 }
 
 		recordAudio(speakerData);
-                sendDataToSpeaker(speakerData);
+
+		if (dropMicrophoneData == false) {
+                    sendDataToSpeaker(speakerData);
+		}
 
 		if (Logger.logLevel >= Logger.LOG_DETAILINFO) {
 		    if ((n % 1000) == 0) {

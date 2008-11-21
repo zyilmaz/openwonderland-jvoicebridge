@@ -501,7 +501,7 @@ if (false) {
 	    voipGateway.startsWith("127.") == true) {
 
 	    throw new SipException("The bridge's ip address must be "
-		+ Bridge.getPrivateHost() 
+		+ voipGateway
 		+ " in order to issue a call to " + voipGateway);
 	}
 
