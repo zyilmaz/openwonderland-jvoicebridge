@@ -877,6 +877,13 @@ class RequestHandler extends Thread implements CallEventListener {
         }
     }   
 
+    public void sendInfo(String conferenceId, String info) {
+	CallEvent callEvent = new CallEvent(CallEvent.INFO);
+	callEvent.setConferenceId(conferenceId);
+	callEvent.setInfo("888 INFO Info='" + info + "'");
+	notifyConferenceMonitors(callEvent);
+    }
+
     public void callEventNotification(CallEvent callEvent) {
 	notifyConferenceMonitors(callEvent);
 

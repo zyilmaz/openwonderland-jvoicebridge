@@ -996,15 +996,17 @@ public class ConferenceManager {
 
 	ConferenceManager conferenceManager;
 
-	try {
-	    conferenceManager = findConferenceManager(conferenceId);
+	synchronized (conferenceList) {
+	    try {
+	        conferenceManager = findConferenceManager(conferenceId);
 
-	    if (Logger.logLevel >= Logger.LOG_INFO) {
-	        Logger.println("found existing conference:  '" 
-		    + conferenceId + "'");
+	        if (Logger.logLevel >= Logger.LOG_INFO) {
+	            Logger.println("found existing conference:  '" 
+		        + conferenceId + "'");
+	        }
+	        return conferenceManager;	
+	    } catch (ParseException e) {
 	    }
-	    return conferenceManager;	
-	} catch (ParseException e) {
 	}
 
 	try {

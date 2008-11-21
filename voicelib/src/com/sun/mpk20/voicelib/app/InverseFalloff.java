@@ -59,12 +59,12 @@ public class InverseFalloff extends FalloffFunction
 
 	double v = Math.pow(falloff, iD);
 
-	logger.finer("InverseFalloff d " + round(distance) 
+	System.out.println("InverseFalloff d " + Util.round100(distance) 
 	   + " fvr " + fullVolumeRadius + " zvr " + zeroVolumeRadius
-	   + " a " + round(attenuationDistance) 
-	   + " d/a " + round(distance / attenuationDistance) 
-	   + " falloff " + round(falloff) + " iD " + iD 
-	   + " v " + round(v));
+	   + " a " + Util.round100(attenuationDistance) 
+	   + " d/a " + Util.round100(distance / attenuationDistance) 
+	   + " falloff " + Util.round100(falloff) + " iD " + iD 
+	   + " v " + Util.round100(v));
 
         return v;
     }

@@ -107,4 +107,6 @@ public interface MediaManager {
 
     public void stopRecording(boolean isLocal);
 
+    public int getMicVolumeLevel();
+
 }

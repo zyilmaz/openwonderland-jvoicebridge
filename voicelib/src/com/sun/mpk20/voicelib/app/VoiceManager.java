@@ -1,175 +1,174 @@
-/*
- * Copyright 2007 Sun Microsystems, Inc.
- *
- * This file is part of jVoiceBridge.
- *
- * jVoiceBridge is free software: you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License version 2 as 
- * published by the Free Software Foundation and distributed hereunder 
- * to you.
- *
- * jVoiceBridge is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Sun designates this particular file as subject to the "Classpath"
- * exception as provided by Sun in the License file that accompanied this 
- * code. 
- */
-
 package com.sun.mpk20.voicelib.app;
 
+import com.sun.voip.client.connector.CallStatusListener;
+
+import java.math.BigInteger;
+
 import java.io.IOException;
+import java.io.Serializable;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 import java.util.logging.Level;
 
-import com.sun.voip.CallParticipant;
+//add javadoc
 
 /**
- * Provides facilities for voice.
+ * The VoiceManager interface is an API providing call setup and control.
  */
-public interface VoiceManager {
+public interface VoiceManager extends Serializable {
 
-    public void monitorConference(String conferenceId) throws IOException;
+    public static final String VOICEMANAGER_PREFIX = "COM.SUN.MPK20.VOICELIB.APP.VOICEMANAGER.";
 
-    public String getVoiceBridge();
+    public static final String NAME = VoiceManager.class.getName();
+    public static final String DS_PREFIX = NAME + ".";
 
-    public void setupCall(CallParticipant cp, double x, double y, double z,
-	double orientation, Spatializer spatializer, String bridge) 
-	throws IOException;
+    /* The name of the list for call status listeners */
+    public static final String DS_MANAGED_ALL_CALL_LISTENERS =
+        DS_PREFIX + "AllCallListeners";
 
-    public void transferCall(String callId, String confereneId) throws IOException;
+    /* The name of the list for call status listeners */
+    public static final String DS_MANAGED_CALL_STATUS_LISTENERS =
+        DS_PREFIX + "CallStatusListeners";
 
-    public void setPublicSpatializer(String callId, Spatializer spatializer);
+    /* The name of the list for call begin/end listeners */
+    public static final String DS_MANAGED_CALL_BEGIN_END_LISTENERS =
+        DS_PREFIX + "CallBeginEndListeners";
 
-    public Spatializer getPublicSpatializer(String callId);
+    public static final String DEFAULT_CONFERENCE="Test:PCM/16000/2";
 
-    public void setPrivateSpatializer(String targetCallId, String sourceCallId,
-	Spatializer spatializer);
+    public static final String DEFAULT_LIVE_PLAYER_AUDIO_GROUP_ID =
+        "DefaultLivePlayerAudioGroup";
 
-    public void setIncomingSpatializer(String targetCallId, 
-        Spatializer spatializer);
+    public static final String DEFAULT_STATIONARY_PLAYER_AUDIO_GROUP_ID =
+        "DefaultStationaryPlayerAudioGroup";
 
-    public Spatializer getIncomingSpatializer(String targetCallId);
+    public static final String AUDIO_DIR = "com.sun.sgs.impl.app.voice.AUDIO_DIR";
 
-    public void setTalkAttenuator(String callId, double talkAttenuator);
+    public static final String DEFAULT_AUDIO_DIR = ".";
 
-    public double getTalkAttenuator(String callId);
+    //
+    // Call setup 
+    // 
 
-    public void setListenAttenuator(String callId, double listenAttenuator);
+    /**
+     * Get the next available voice bridge.
+     */
+    public BridgeInfo getVoiceBridge() throws IOException;
 
-    public double getListenAttenuator(String callId);
+    /**
+     * Initiate a call
+     */
+    public Call createCall(String id, CallSetup setup) throws IOException;
 
-    public void callEstablished(String callId) throws IOException;
+    public Call getCall(String id);
 
-    public void createPlayer(String callId, double x, double y, double z,
-	double orientation, boolean isOutworlder);
+    public ConcurrentHashMap<String, Call> getCalls();
 
-    public void removePlayer(String callId);
+    public void endCall(Call call, boolean removePlayer) throws IOException;
 
-    public void newInputTreatment(String callId, String treatment) 
-	throws IOException;
+    /*
+     * Group management
+     */
+    public AudioGroup createAudioGroup(String id, AudioGroupSetup setup);
 
-    public void stopInputTreatment(String callId) throws IOException;
+    public AudioGroup getAudioGroup(String id);
 
-    public void restartInputTreatment(String callId) throws IOException;
+    public AudioGroup getDefaultLivePlayerAudioGroup();
 
-    public void playTreatmentToCall(String callId, String treatment) 
-	throws IOException;
+    public AudioGroup getDefaultStationaryPlayerAudioGroup();
 
-    public void pauseTreatmentToCall(String callId, String treatment) 
-	throws IOException;
+    public ConcurrentHashMap<String, AudioGroup> getAudioGroups();
 
-    public void stopTreatmentToCall(String callId, String treatment) 
-	throws IOException;
+    public void removeAudioGroup(String id);
 
-    public void endCall(String callId) throws IOException;
+    /*
+     * Treatments
+     */
+    public TreatmentGroup createTreatmentGroup(String id);
 
-    public void endCall(String callId, boolean tellBackingManager) 
-	throws IOException;
+    public void removeTreatmentGroup(TreatmentGroup group);
 
-    public void disconnectCall(String callId) throws IOException;
+    public TreatmentGroup getTreatmentGroup(String id);
 
-    public void muteCall(String callId, boolean isMuted) throws IOException;
+    public Treatment createTreatment(String id, TreatmentSetup setup) throws IOException;
 
-    public void restorePrivateMixes() throws IOException;
+    public Treatment getTreatment(String id);
 
-    public void setPositionAndOrientation(String callId , double x, double y, 
-	double z, double orientation) throws IOException;
+    public ConcurrentHashMap<String, Treatment> getTreatments();
 
-    public void setPosition(String callId, double x, double y, double z)
-	throws IOException;
+    /*
+     * Recording setup and control
+     */
+    public Recorder createRecorder(String id, RecorderSetup setup) throws IOException;
 
-    public void setOrientation(String callId, double orientation) 
-	throws IOException;
+    public Recorder getRecorder(String id);
+    
+    public ConcurrentHashMap<String, Recorder> getRecorders();
 
-    public void setAttenuationRadius(String callId, double attenuationRadius)
-	throws IOException;
+    /*
+     * Voice bridge parameters.
+     */
+    public void setVoiceBridgeParameters(VoiceBridgeParameters parameters);
+	
+    /*
+     * VoiceManager
+     */
+    public VoiceService getBackingManager();
 
-    public void setAttenuationVolume(String callId, double attenuationVolume)
-	throws IOException;
+    public double getScale();
 
-    public void setMasterVolume(String callId, double masterVolume);
+    public String getConferenceId();
 
-    public double getMasterVolume(String callId);
+    public String getAudioDirectory();
 
-    public void setPrivateMix(String targetCallId, String fromCallId, 
-	double[] privateMixParameters) throws IOException;
+    public void setVoiceManagerParameters(VoiceManagerParameters parameters);
 
-    public void addCallStatusListener(ManagedCallStatusListener mcsl);
+    public VoiceManagerParameters getVoiceManagerParameters();
 
-    public void setSpatialAudio(boolean enabled) throws IOException ;
+    public Player createPlayer(String id, PlayerSetup setup);
 
-    public void setSpatialMinVolume(double spatialMinVolume) throws IOException ;
+    public void removePlayer(String id);
+    
+    public void addVirtualPlayerListener(VirtualPlayerListener listener);
 
-    public void setSpatialFalloff(double spatialFalloff) throws IOException ;
+    public void removeVirtualPlayerListener(VirtualPlayerListener listener);
 
-    public void setSpatialEchoDelay(double spatialEchoDelay) throws IOException ;
+    public Player getPlayer(String id);
 
-    public void setSpatialEchoVolume(double spatialEchoVolume) throws IOException ;
+    public ConcurrentHashMap<String, Player> getPlayers();
 
-    public void setSpatialBehindVolume(double spatialBehindVolume) throws IOException ;
+    public void addWall(double startX, double startY, double endX, double endY,
+        double characteristic);
 
-    public void addWall(double startX, double startY, 
-	double endX, double endY, double characteristic) throws IOException;
+    public void setDefaultSpatializers(DefaultSpatializers defaultSpatializers);
 
-    public Spatializer getLivePlayerSpatializer();
+    public DefaultSpatializers getDefaultSpatializers();
 
-    public Spatializer getStationarySpatializer();
+    public void setDefaultSpatializers(DefaultSpatializers defaultSpatializers,
+	double startX, double startY, double endX, double endY);
 
-    public Spatializer getOutworlderSpatializer();
-
-    public void setParameters(VoiceManagerParameters p);
-
-    public VoiceManagerParameters getParameters();
+    public DefaultSpatializers getDefaultSpatializers(
+	double startX, double startY, double endX, double endY);
 
     public void setLogLevel(Level level);
 
+    public Level getLogLevel();
+
     public int getNumberOfPlayersInRange(double x, double y, double z);
 
-    public int getNumberOfPlayersInRange(String callId);
+    public void addCallStatusListener(CallStatusListener listener);
 
-    public void startRecording(String callId, String recordingFile)
-	throws IOException;
+    public void addCallStatusListener(CallStatusListener listener, String callID);
 
-    public void stopRecording(String callId)
-	throws IOException;
+    public void removeCallStatusListener(CallStatusListener listener);
 
-    public void playRecording(String callId, String recordingFile)
-	throws IOException;
+    public void removeCallStatusListener(CallStatusListener listener, String callID);
 
-    public void stopPlayingRecording(String callId, String recordingFile) 
-	throws IOException;
+    public void addCallBeginEndListener(CallBeginEndListener listener);
 
-    public void migrateCall(CallParticipant cp) throws IOException;
+    public void removeCallBeginEndListener(CallBeginEndListener listener);
 
-    public void setGroupId(String callId, String groupId);
-
-    public String getGroupId(String callId);
+    public void dump(String command);
 
 }
-

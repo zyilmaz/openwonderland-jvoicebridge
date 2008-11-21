@@ -33,8 +33,6 @@ import java.io.InputStream;
  * @author jkaplan
  */
 public class NativeLibUtil {
-    
-    
     /**
      * Load a native library by reading it from a jar file and storing
      * the data in a temporary file.  This assumes the native library is
@@ -54,7 +52,7 @@ public class NativeLibUtil {
         // load the data from the jar file
         InputStream in = clazz.getResourceAsStream("native/" + name);
         
-	System.err.println("native name is native/" + name);
+	//System.err.println("native name is native/" + name);
 
         // create a temporary file
         String suffix = null;

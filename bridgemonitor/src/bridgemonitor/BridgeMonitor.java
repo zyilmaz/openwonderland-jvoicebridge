@@ -410,7 +410,7 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 		    aQualityTmp = callDetails[1];
 		}
 
-		System.out.println("aQualityTmp " + aQualityTmp);
+		//System.out.println("aQualityTmp " + aQualityTmp);
 
                 String[] aQTarr = aQualityTmp.split(":");
                 String aQuality = aQTarr[1];

@@ -28,13 +28,15 @@ import com.sun.sgs.app.ManagedReference;
 import com.sun.sgs.app.NameNotBoundException;
 import com.sun.sgs.app.PeriodicTaskHandle;
 import com.sun.sgs.app.Task;
+import com.sun.sgs.app.TaskManager;
+
+import com.sun.sgs.auth.Identity;
 
 import com.sun.sgs.kernel.ComponentRegistry;
 import com.sun.sgs.kernel.KernelRunnable;
 import com.sun.sgs.kernel.RecurringTaskHandle;
-import com.sun.sgs.kernel.TaskOwner;
 import com.sun.sgs.kernel.TaskReservation;
-import com.sun.sgs.kernel.TaskScheduler;
+import com.sun.sgs.kernel.TransactionScheduler;
 
 import com.sun.sgs.service.DataService;
 import com.sun.sgs.service.NonDurableTransactionParticipant;
@@ -42,13 +44,22 @@ import com.sun.sgs.service.Service;
 import com.sun.sgs.service.TaskService;
 import com.sun.sgs.service.Transaction;
 import com.sun.sgs.service.TransactionProxy;
-import com.sun.sgs.service.TransactionRunner;
 
 import com.sun.mpk20.voicelib.app.ManagedCallStatusListener;
 import com.sun.mpk20.voicelib.app.Spatializer;
 import com.sun.mpk20.voicelib.app.DefaultSpatializer;
 
+import com.sun.mpk20.voicelib.app.AudioGroup;
+import com.sun.mpk20.voicelib.app.AudioGroupSetup;
+import com.sun.mpk20.voicelib.app.BridgeInfo;
+import com.sun.mpk20.voicelib.app.Call;
+import com.sun.mpk20.voicelib.app.CallSetup;
+import com.sun.mpk20.voicelib.app.Recorder;
+import com.sun.mpk20.voicelib.app.RecorderSetup;
+import com.sun.mpk20.voicelib.app.Treatment;
+import com.sun.mpk20.voicelib.app.TreatmentSetup;
 import com.sun.mpk20.voicelib.app.VoiceManager;
+import com.sun.mpk20.voicelib.app.VoiceService;
 import com.sun.mpk20.voicelib.app.VoiceManagerParameters;
 
 import java.io.IOException;
@@ -78,8 +89,10 @@ import com.sun.voip.client.connector.CallStatusListener;
  * @since 1.0
  * @author Joe Provino
  */
-public class VoiceServiceImpl implements VoiceManager, Service,
+public class VoiceServiceImpl implements VoiceService, Service,
 	CallStatusListener, NonDurableTransactionParticipant {
+
+   private final Identity identity;
 
    private ThreadLocal<ArrayList<Work>> localWorkToDo =
        new ThreadLocal<ArrayList<Work>>() {
@@ -112,7 +125,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     private boolean isConfiguring = false;
 
     // the system's task scheduler, where tasks actually run
-    private TaskScheduler taskScheduler = null;
+    private TransactionScheduler transactionScheduler;
 
     // a proxy providing access to the transaction state
     private static TransactionProxy transactionProxy = null;
@@ -131,8 +144,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
     private Properties properties;
 
-    private TaskOwner defaultOwner;
-
     private BridgeManager bridgeManager;
 
     /**
@@ -141,22 +152,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
      * @param properties startup properties
      * @param systemRegistry the registry of system components
      */
-
-    /*
-     * Service interface pre-.95 darkstar server.
-     */
-    public VoiceServiceImpl(Properties properties,
-                            ComponentRegistry systemRegistry) {
-        this.properties = properties;
-
-        txnMap = new ConcurrentHashMap<Transaction,TxnState>();
-        recurringMap = new ConcurrentHashMap<String,RecurringTaskHandle>();
-
-        // the scheduler is the only system component that we use
-        taskScheduler = systemRegistry.getComponent(TaskScheduler.class);
-
-        bridgeManager = new BridgeManager(this);
-    }
 
     /*
      * Service interface .95 darkstar server.
@@ -172,109 +167,56 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         recurringMap = new ConcurrentHashMap<String,RecurringTaskHandle>();
 
         // the scheduler is the only system component that we use
-        taskScheduler = systemRegistry.getComponent(TaskScheduler.class);
+        transactionScheduler = systemRegistry.getComponent(TransactionScheduler.class);
 	dataService = transactionProxy.getService(DataService.class);
         taskService = transactionProxy.getService(TaskService.class);
 
 	bridgeManager = new BridgeManager(this);
+	bridgeManager.configure(properties);
+
+	identity = transactionProxy.getCurrentOwner();
     }
 
-    public void monitorConference(String conferenceId) throws IOException {
-	bridgeManager.monitorConference(conferenceId);
+    public String getTypeName() {
+	return "VoiceService";
     }
 
-    public String getVoiceBridge() {
+    public BridgeInfo getVoiceBridge() throws IOException {
 	return bridgeManager.getVoiceBridge();
     }
 
-    public void setupCall(CallParticipant cp, double x, double y, double z,
-	    double orientation, Spatializer spatializer, String bridgeInfo) 
-	    throws IOException {
-
+    public void createCall(CallSetup setup) throws IOException {
 	getTxnState();
 
 	Work work = new Work(Work.SETUPCALL);
-	work.cp = cp;
-	work.bridgeInfo = bridgeInfo;
+	work.cp = setup.cp;
+	work.bridgeInfo = setup.bridgeInfo;
 
         localWorkToDo.get().add(work);
     }
 
-    public void createPlayer(String callId, double x, double y, double z,
-	double orientation, boolean isOrb) {
-    }
-
-    public void removePlayer(String callId) {
-    }
-
-    public void transferCall(String callId, String conferenceId) 
-	    throws IOException {
-
-	bridgeManager.transferCall(callId, conferenceId);
-    }
-
-    public void setPublicSpatializer(String callId, Spatializer publicSpatializer) {
-    }
-
-    public Spatializer getPublicSpatializer(String callId) {
-	return null;
-    }
-
-    public void setPrivateSpatializer(String fromCallId, String targetCallId,
-	    Spatializer spatializer) {
-    }
-
-    public void setIncomingSpatializer(String targetCallId,
-            Spatializer spatializer) {
-    }
-
-    public Spatializer getIncomingSpatializer(String targetCallId) {
-	return null;
-    }
-
-    public void setTalkAttenuator(String callId, double talkAttenuator) {
-    }
-
-    public double getTalkAttenuator(String callId) {
-	return 0;
-    }
-
-    public void setListenAttenuator(String callId, double listenAttenuator) {
-    }
-
-    public double getListenAttenuator(String callId) {
-	return 0;
-    }
-
-    public void callEstablished(String callId) throws IOException {
-	logger.fine("call established:  " + callId);
-    }
-
-    public void newInputTreatment(String callId, String treatment) 
-	    throws IOException {
-
+    public void muteCall(String callId, boolean isMuted) throws IOException {
 	getTxnState();
 
-	Work work = new Work(Work.NEWINPUTTREATMENT, callId);
-
-	work.treatment = treatment;
+	Work work = new Work(Work.MUTECALL, callId);
+	work.isMuted = isMuted;
 
 	localWorkToDo.get().add(work);
     }
 
-    public void stopInputTreatment(String callId) throws IOException {
+    public void transferCall(CallParticipant cp) throws IOException {
 	getTxnState();
 
-	localWorkToDo.get().add(new Work(Work.STOPINPUTTREATMENT, callId));
+	Work work = new Work(Work.MIGRATECALL);
+	work.cp = cp;
+
+	localWorkToDo.get().add(work);
     }
 
-    public void restartInputTreatment(String callId) throws IOException {
-	getTxnState();
+    public void transferToConference(String callId, String conferenceId) 
+	    throws IOException {
 
-	localWorkToDo.get().add(new Work(Work.RESTARTINPUTTREATMENT, callId));
-    }
-
-    public void restorePrivateMixes() throws IOException {
+	bridgeManager.transferCall(callId, conferenceId);
     }
 
     public void playTreatmentToCall(String callId, String treatment) 
@@ -288,8 +230,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	localWorkToDo.get().add(work);
     }
 
-    public void pauseTreatmentToCall(String callId, String treatment)
-	     throws IOException {
+    public void pauseTreatmentToCall(String callId, String treatment) 
+	    throws IOException {
 
 	getTxnState();
 
@@ -299,8 +241,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	localWorkToDo.get().add(work);
     }
 
-    public void stopTreatmentToCall(String callId, String treatment)
-	     throws IOException {
+    public void stopTreatmentToCall(String callId, String treatment) 
+	    throws IOException {
 
 	getTxnState();
 
@@ -310,38 +252,12 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	localWorkToDo.get().add(work);
     }
 
-    public void migrateCall(CallParticipant cp) {
-	getTxnState();
-
-	Work work = new Work(Work.MIGRATECALL);
-	work.cp = cp;
-
-	localWorkToDo.get().add(work);
-    }
-
-    public void setGroupId(String callId, String groupId) {
-    }
-
-    public String getGroupId(String callId) {
- 	return null;
-    }
-
-    public void disconnectCall(String callId) throws IOException {
-	endCall(callId);
-    }
-
-    public void endCall(String callId, boolean tellBackingManager) 
-	    throws IOException {
-
-	endCall(callId);
-    }
-
     public void endCall(String callId) throws IOException {
 	try {
 	    bridgeManager.getBridgeConnection(callId);
 	} catch (IOException e) {
 	    logger.info("can't find connection for " + callId
-		+ e.getMessage());
+		+ " " + e.getMessage());
 
 	    return;	// nothing to do
 	}
@@ -355,13 +271,40 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	localWorkToDo.get().add(work);
     }
 
-    public void muteCall(String callId, boolean isMuted) throws IOException {
+    public void setPrivateMix(String targetCallId, String fromCallId,
+	    double[] privateMixParameters) throws IOException {
+
 	getTxnState();
 
-	Work work = new Work(Work.MUTECALL, callId);
-	work.isMuted = isMuted;
+	if (targetCallId == null) {
+	    throw new IOException("Invalid targetCallId " + targetCallId);
+	}
 
-	localWorkToDo.get().add(work);
+	if (fromCallId == null) {
+	    throw new IOException("Invalid fromCallId " + fromCallId);
+	}
+
+	logger.finest("setPrivateMix for " + targetCallId 
+	    + " from " + fromCallId
+	    + " privateMixParameters: " + privateMixParameters[0] 
+	    + "," + privateMixParameters[1] + "," + privateMixParameters[2]
+	    + "," + privateMixParameters[3]);
+
+	Work work = new Work(Work.SETPRIVATEMIX, targetCallId);
+	work.fromCallId = fromCallId;
+	work.privateMixParameters = privateMixParameters;
+
+	//    localWorkToDo.get().add(work);
+
+	bridgeManager.setPrivateMix(work);
+    }
+
+    public void monitorConference(String conferenceId) throws IOException {
+	bridgeManager.monitorConference(conferenceId);
+    }
+
+    public void setLogLevel(Level level) {
+	logger.setLevel(level);
     }
 
     public void setSpatialAudio(boolean enabled) throws IOException {
@@ -396,95 +339,28 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	bridgeManager.setSpatialBehindVolume(spatialBehindVolume);
     }
 
-    public void setMasterVolume(String callId, double masterVolume) {
-    }
-
-    public double getMasterVolume(String callId) {
-	return 0;
-    }
-
-    public void setPrivateMix(String targetCallId, String fromCallId,
-	    double[] privateMixParameters) throws IOException {
+    public void newInputTreatment(String callId, String treatment) 
+	    throws IOException {
 
 	getTxnState();
 
-	if (targetCallId == null) {
-	    throw new IOException("Invalid targetCallId " + targetCallId);
-	}
+	Work work = new Work(Work.NEWINPUTTREATMENT, callId);
 
-	if (fromCallId == null) {
-	    throw new IOException("Invalid fromCallId " + fromCallId);
-	}
+	work.treatment = treatment;
 
-	logger.finest("setPrivateMix for " + targetCallId 
-	    + " from " + fromCallId
-	    + " privateMixParameters: " + privateMixParameters[0] 
-	    + "," + privateMixParameters[1] + "," + privateMixParameters[2]
-	    + "," + privateMixParameters[3]);
-
-	Work work = new Work(Work.SETPRIVATEMIX, targetCallId);
-	work.fromCallId = fromCallId;
-	work.privateMixParameters = privateMixParameters;
-
-	//    localWorkToDo.get().add(work);
-
-	bridgeManager.setPrivateMix(work);
+	localWorkToDo.get().add(work);
     }
 
-    public void setPositionAndOrientation(String callId, double x, double y, 
-	    double z, double orientation) throws IOException {
+    public void stopInputTreatment(String callId) throws IOException {
+	getTxnState();
 
+	localWorkToDo.get().add(new Work(Work.STOPINPUTTREATMENT, callId));
     }
 
-    public void setPosition(String callId, double x, double y, double z)
-	    throws IOException {
+    public void restartInputTreatment(String callId) throws IOException {
+	getTxnState();
 
-    }
-	
-    public void setOrientation(String callId, double orientation)
-	    throws IOException {
-
-    }
-
-    public void setAttenuationRadius(String callId, double attenuationRadius)
-	    throws IOException {
-    
-    }
-  
-    public void setAttenuationVolume(String callId, double attenuationVolume)
-	    throws IOException {
-    
-    }
-
-    public void addWall(double startX, double startY, 
-	    double endX, double endY, double characteristic) throws IOException{
-    }
-
-    public Spatializer getLivePlayerSpatializer() {
-	return null;
-    }
-
-    public Spatializer getStationarySpatializer() {
-	return null;
-    }
-
-    public Spatializer getOutworlderSpatializer() {
-	return null;
-    }
-
-    public void setParameters(VoiceManagerParameters parameters) {
-    }
-
-    public VoiceManagerParameters getParameters() {
-	return new VoiceManagerParameters();
-    }
-
-    public int getNumberOfPlayersInRange(double x, double y, double z) {
-	return 0;
-    }
-
-    public int getNumberOfPlayersInRange(String callId) {
-	return 0;
+	localWorkToDo.get().add(new Work(Work.RESTARTINPUTTREATMENT, callId));
     }
 
     public void startRecording(String callId, String recordingFile) throws IOException {
@@ -513,12 +389,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	throws IOException {
     }
 
-    public void setLogLevel(Level level) {
-	logger.setLevel(level);
-    }
-
     public void addCallStatusListener(ManagedCallStatusListener mcsl) {
-	logger.finest("addCallStatusListener " + mcsl);
+	logger.warning("addCallStatusListener " + mcsl);
 
         CallStatusListeners listeners = getCallStatusListeners();
 
@@ -527,7 +399,17 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	 */
         synchronized (listeners) {
 	    listeners.add(dataService.createReference(mcsl));
-	    logger.finest("VS:  listeners size " + listeners.size());
+	    logger.warning("VS:  listeners size " + listeners.size());
+	}
+    }
+
+    public void removeCallStatusListener(ManagedCallStatusListener mcsl) {
+	logger.warning("removeCallStatusListener " + mcsl);
+
+        CallStatusListeners listeners = getCallStatusListeners();
+
+	synchronized (listeners) {
+	    listeners.remove(dataService.createReference(mcsl));
 	}
     }
 
@@ -545,7 +427,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     /**
      * {@inheritDoc}
      */
-    public void configure(ComponentRegistry systemRegistry,
+    public void xxxconfigure(ComponentRegistry systemRegistry,
                           TransactionProxy transactionProxy) {
 
         if (isConfigured) {
@@ -576,7 +458,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
      * The work here must be done in a transaction.
      */
     public void callStatusChanged(CallStatus status) {
-
 	logger.finest("Call status changed:  " + status);
 
 	/*
@@ -597,10 +478,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
             }
 	}
 
-        CallStatusNotifier notifier = new CallStatusNotifier(status);
-
-        taskScheduler.scheduleTask(new TransactionRunner(notifier), 
-	    defaultOwner);
+        transactionScheduler.scheduleTask(new CallStatusNotifier(status), identity); 
     }
 
     /**
@@ -898,14 +776,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
      * joins to the transaction) if the state doesn't exist.
      */
     private TxnState getTxnState() {
-	if (defaultOwner == null) {
-	    defaultOwner = transactionProxy.getCurrentOwner();
-
-	    logger.info("Default owner is " + defaultOwner);
-
-	    bridgeManager.configure(properties);
-	}
-
         // resolve the current transaction and the local state
         Transaction txn = transactionProxy.getCurrentTransaction();
         TxnState txnState = txnMap.get(txn);
@@ -934,8 +804,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	CallStatusListeners listeners = null;
 
 	try {
-	    listeners = dataService.getServiceBinding(DS_CALL_STATUS_LISTENERS,
-		CallStatusListeners.class);
+	    listeners = (CallStatusListeners) dataService.getServiceBinding(
+		DS_CALL_STATUS_LISTENERS);
 	} catch (NameNotBoundException e) {
 	    listeners = new CallStatusListeners();
 
@@ -948,8 +818,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
             }
 	}
 
-        return dataService.getServiceBinding(DS_CALL_STATUS_LISTENERS,
-		    CallStatusListeners.class);
+        return (CallStatusListeners) dataService.getServiceBinding(
+	    DS_CALL_STATUS_LISTENERS);
     }
 
     /**
@@ -993,7 +863,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     }
 
     private class CallStatusNotifier implements KernelRunnable {
-
 	private final CallStatus status;
 
 	public CallStatusNotifier(CallStatus status) {
@@ -1021,13 +890,11 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	        listenerList = listeners.toArray(new ManagedReference[0]);
 	    }
 
-	    logger.finest("CallStatusNotifier:  " + status);
-
 	    for (int i = 0; i < listenerList.length; i++) {
-	        ManagedCallStatusListener mcsl = 
-		    listenerList[i].get(ManagedCallStatusListener.class);
+	        ManagedCallStatusListener mcsl = (ManagedCallStatusListener)
+		    listenerList[i].get();
 
-	        logger.finest("Notifying listener " + i + " status " + status);
+		logger.warning("Notifying listener " + i + " status " + status);
 
 	        try {
 		    mcsl.callStatusChanged(status);

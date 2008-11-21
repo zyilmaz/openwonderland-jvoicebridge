@@ -52,7 +52,7 @@
 	    <fileset dir="${build.classes.dir}">
 		 <include name="**/*.*"/>
 	    </fileset>
-	    <fileset dir="src" includes="com/sun/voip/server/sounds/dtmf*.au, com/sun/voip/server/sounds/silence.100ms.au, com/sun/voip/server/sounds/comfort_noise.au, com/sun/voip/server/sounds/dialtojoin.au"/>
+	    <fileset dir="src" includes="com/sun/voip/server/sounds/dtmf*.au, com/sun/voip/server/sounds/silence.100ms.au, com/sun/voip/server/sounds/comfort_noise.au, com/sun/voip/server/sounds/dialtojoin.au, com/sun/voip/server/sounds/speaking_while_muted.au"/>
         </jar>
     </target>
     

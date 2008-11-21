@@ -160,6 +160,12 @@
 			when to send a comfort payload.  Default value is 50.
                 ]]></description>
             </property>
+            <property name="com.sun.mc.softphone.media.DETECT_SPEAKING">
+                <labelname>Detect Speaking </labelname>
+                <description><![CDATA[
+		    Detect speaking.
+                ]]></description>
+            </property>
         </media>
 	<network>
             <property name="com.sun.mc.stun.LOCAL_IP_ADDRESS">

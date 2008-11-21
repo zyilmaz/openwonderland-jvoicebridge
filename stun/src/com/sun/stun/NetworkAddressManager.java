@@ -170,7 +170,7 @@ public class NetworkAddressManager {
 	    try {
 	    	defaultAddress = getLocalHostFromInterfaces();
 
-		logger.info("If localHost had not been specified "
+		logger.fine("If localHost had not been specified "
 		    + "and could not be determined by using STUN, "
 		    + defaultAddress.getHostAddress() 
 		    + " would have been chosen from the interface list.");
@@ -196,7 +196,7 @@ public class NetworkAddressManager {
 	try {
 	    InetAddress address = InetAddress.getByName(preferredAddress);
 
-	    logger.info("Using specified local address " + address);
+	    logger.fine("Using specified local address " + address);
 
 	    return address;
 	} catch (UnknownHostException e) {

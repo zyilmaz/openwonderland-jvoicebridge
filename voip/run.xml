@@ -35,6 +35,7 @@
 	    <jvmarg value="-Dcom.sun.voip.server.LOCALHOST_SECURITY=${voicebridge.localhost.security}"/>
             <jvmarg value="-Dcom.sun.voip.server.OUTSIDE_LINE_PREFIX=${voicebridge.outside.line.prefix}"/>
             <jvmarg value="-Dcom.sun.voip.server.LONG_DISTANCE_PREFIX=${voicebridge.long.distance.prefix}"/>
+            <jvmarg value="-Dcom.sun.voip.server.INTERNATIONAL_PREFIX=${voicebridge.international.prefix}"/>
             <jvmarg value="-Dcom.sun.voip.server.LONE_RECEIVER_PORT=${voicebridge.lone.receiver.port}"/>
             <jvmarg value="-ms200m"/>
             <jvmarg value="-mx200m"/>

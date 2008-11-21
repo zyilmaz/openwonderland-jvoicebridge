@@ -23,6 +23,8 @@
 
 package com.sun.mpk20.voicelib.impl.service.voice;
 
+import com.sun.mpk20.voicelib.app.BridgeInfo;
+
 import com.sun.voip.CallParticipant;
 import com.sun.voip.client.connector.CallStatus;
 import com.sun.voip.client.connector.impl.VoiceBridgeConnection;
@@ -172,7 +174,7 @@ public class BridgeConnection extends VoiceBridgeConnection {
 	super.connect();
 	
 	/*
-	 * Connect in syncrhonous mode to get command status.
+	 * Connect in synchronous mode to get command status.
 	 */
 	connect(true);
 
@@ -787,7 +789,8 @@ if (false) {
         switch (br.getStatus()) {
         case SUCCESS:
             logger.finest("getBridgeInfo success: " + cmd);
-            return br.getContents().toString();
+
+	    return br.getContents().toString();
 
         default:
             throw new IOException("getBridgeInfo failed:  " + cmd

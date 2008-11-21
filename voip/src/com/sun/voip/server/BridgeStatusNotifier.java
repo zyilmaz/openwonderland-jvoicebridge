@@ -67,11 +67,8 @@ public class BridgeStatusNotifier extends Thread {
 	    socket = new Socket();
 	    socket.connect(isa);
 	} catch (IOException e) {
-	    Logger.println("Unable to notify " + isa
-		+ " that a bridge is online:  "
-		+ e.getMessage());
-
-	    Logger.println("Retrying once a second...");
+	    Logger.println("retrying once a second to notify server " + isa
+		+ " that this bridge is online:  " + e.getMessage());
 	}
 
 	start();

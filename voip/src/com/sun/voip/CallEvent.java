@@ -270,7 +270,11 @@ public class CallEvent {
 	}
 
 	if (info != null && info.length() > 0) {
-	    s += " " + info;
+	    if (s.length() > 0) {
+	        s += " ";
+	    }
+
+	    s += info;
 	} 
 
 	if (event == DTMF_KEY) {
