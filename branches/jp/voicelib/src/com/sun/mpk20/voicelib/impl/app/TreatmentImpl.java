@@ -47,6 +47,8 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
 
     Call call;
 
+    CallStatusListener listener;
+
     public TreatmentImpl(String id, TreatmentSetup setup) throws IOException {
     	this.setup = setup;
 	this.id = Util.generateUniqueId(id);
@@ -59,7 +61,7 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
 
 	cp.setConferenceId(vm.getConferenceId());
 
-	cp.setInputTreatment(getTreatmentFile(setup.treatment));
+	cp.setInputTreatment(setup.treatment);
 	cp.setName(this.id);
 	//cp.setVoiceDetection(true);
         
@@ -76,7 +78,9 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
 
 	callSetup.cp = cp;
 
-	callSetup.listener = setup.listener;
+	callSetup.listener = this;
+
+	listener = setup.listener;
 
 	try {
 	    call = vm.createCall(this.id, callSetup);
@@ -109,31 +113,6 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
 
     public void stop() {
 	// need to tell vm to remove treatment
-    }
-
-    /**
-     * Resolve a treatment name into an absolute file name.  If the treatment
-     * name does not start with the path separator, prepend the value of
-     * the audioDir property to it to get the file name
-     * @param treatment the unresolved treatment name
-     * @return the resolved treatment name
-     */
-    private String getTreatmentFile(String treatment) {
-	/*
-	 * If it's a URL, leave it alone
-	 * XXX there must be a better way to check for this!
-	 */
-	if (treatment.startsWith("http:")) {
-	    return treatment;
-	}
-
-        String ps = System.getProperty("file.separator");
-        if (!treatment.startsWith(ps)) {
-	    VoiceManager vm = AppContext.getManager(VoiceManager.class);
-            treatment = vm.getAudioDirectory() + ps + treatment;
-        }
-        
-        return treatment;
     }
 
     public void callStatusChanged(CallStatus status) {
@@ -180,6 +159,11 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
 	
 	    break;
         }
+
+	if (listener != null) {
+	    listener.callStatusChanged(status);
+	}
+
     }
 
     public String toString() {
