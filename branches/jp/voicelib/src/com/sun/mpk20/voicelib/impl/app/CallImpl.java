@@ -49,8 +49,6 @@ public class CallImpl implements Call, CallStatusListener {
 	this.id = id;
 	this.setup = setup;
 	
-	logger.warning("creating call for " + id);
-
 	if (setup.cp == null) {
 	    logger.warning("CallParticipant is null!");
 	    throw new IOException("CallParticipant is null!");
@@ -196,7 +194,7 @@ public class CallImpl implements Call, CallStatusListener {
             return;
         }
 
-	logger.warning("callStatus " + callStatus);
+	logger.finer("Call:  callStatus " + callStatus);
 
 	VoiceManager vm = AppContext.getManager(VoiceManager.class);
 

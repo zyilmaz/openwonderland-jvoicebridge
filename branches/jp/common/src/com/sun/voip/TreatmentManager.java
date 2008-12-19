@@ -49,6 +49,8 @@ public class TreatmentManager implements MixDataSource {
 
     private static String[] soundPath; 
 
+    private static String soundCachePath;
+
     static {
 	String s = System.getProperty("com.sun.voip.server.Bridge.soundPath",
             "/com/sun/voip/server/sounds");
@@ -65,6 +67,35 @@ public class TreatmentManager implements MixDataSource {
 	 * On Windows user.dir contains a ":" such as C:\
 	 */
 	soundPath[sp.length] = System.getProperty("user.dir");
+
+	s = System.getProperty("com.sun.voip.server.Bridge.soundCachePath");
+
+	if (s != null && s.length() > 0) {
+	    File file = new File(s);
+
+	    if (file.exists() == false) {
+		Logger.println("Network audio cache path doesn't exist:  " + s);
+	    } else if (file.isDirectory() == false) {
+		Logger.println("Network audio cache path is not a directory:  " + s);
+	    } else if (file.canWrite() == false) {
+		Logger.println("Network audio cache path is not writeable:  " + s);
+	    } else {
+		soundCachePath = s;
+	    }
+	} else {
+	    Logger.println("There is no network audio cache path.");
+	}
+
+	if (soundCachePath == null) {
+	    Logger.println("Network audio files will not be cached.");
+	} else {
+	    if (soundCachePath.startsWith(File.separator) == false) {
+		soundCachePath = System.getProperty("user.dir") 
+		    + File.separator + soundCachePath;
+	    }
+
+	    Logger.println("Network audio files will be cached in " + soundCachePath);
+	}
     }
 
     public TreatmentManager(String treatment, int repeatCount) 
@@ -92,6 +123,10 @@ public class TreatmentManager implements MixDataSource {
 
     public String getId() {
 	return treatment;
+    }
+
+    public static String getSoundCachePath() {
+	return soundCachePath;
     }
 
     public int getSampleRate() {

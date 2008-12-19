@@ -62,18 +62,12 @@ public class SipServer implements SipListener {
     /*
      * default port for SIP communication
      */
-    private static final int SIP_PORT = 5060; 
+    public static final int SIP_PORT = 5060; 
 
     /*
      * ip addresses of the SIP Proxy (NIST Proxy Server by default)
      */
     private static String defaultSipProxy;
-
-    /*
-     * IP address of the Cisco SIP/VoIP gateways
-     */
-    private static ArrayList<String> voIPGateways = new ArrayList();
-    private static ArrayList<String> voIPGatewayLoginInfo = new ArrayList();
 
     /*
      * flag to indicate whether to send SIP Uri's to a proxy or directly
@@ -102,15 +96,6 @@ public class SipServer implements SipListener {
     /**
      * Constructor
      */
-    public static void main(String[] args) {
-	if (args.length != 2) {
-	    Logger.println("Usage:  java SipServer <gateway IP Address> <sip URI>");
-	    System.exit(1);
-	}
-
-	new RegisterProcessing(args[0], args[1]);
-    }
-
     public SipServer(String localHostAddress, Properties properties) { 
         sipListenersTable = new Hashtable();
         sipServerCallback = new SipServerCallback();
@@ -123,30 +108,7 @@ public class SipServer implements SipListener {
     private void setup(String localHostAddress, Properties properties) { 
         properties.setProperty("javax.sip.IP_ADDRESS", localHostAddress);
 
-        /*
-         * get IPs of the voip gateways
-         */
-        String gateways = System.getProperty(
-                "com.sun.voip.server.VoIPGateways", "");
-
-        /*
-         * parse voIPGateways and create the list with IP addresses
-         * of VoIP gateways
-         */
-        if (setVoIPGateways(gateways) == false) {
-            Logger.error("Invalid VoIP gateways " + gateways);
-        }
-
-	if (voIPGateways.size() == 0) {
-	    Logger.println("There are no VoIP gateways.  "
-		+ "You cannot make calls to the phone system.");
-            Logger.println("If you want to use the phone system "
-		+ "you can specify VoIP gateways with "
-		+ "-Dcom.sun.voip.server.VoIPGateways.");
-	} else {
-            Logger.println("VoIP gateways: " + getAllVoIPGateways());
-            Logger.println("");
-	}
+	GatewayManager.getGatewayInfo();
 
         /*
 	 * Obtain an instance of the singleton SipFactory 
@@ -236,13 +198,7 @@ public class SipServer implements SipListener {
              */
             SipUtil.initialize();
 
-	    for (int i = 0; i < voIPGatewayLoginInfo.size(); i++) {
-		String loginInfo = voIPGatewayLoginInfo.get(i);
-
-		if (loginInfo.length() > 0) {
-		    new RegisterProcessing(voIPGateways.get(i), loginInfo);
-		}
-	    }
+	    GatewayManager.registerGateways();
         } catch(NullPointerException e) { 
             Logger.exception("Stack has no ListeningPoints", e); 
             System.exit(-1);
@@ -262,75 +218,6 @@ public class SipServer implements SipListener {
 
         Logger.println("Default SIP Proxy:        " + defaultSipProxy);
 	Logger.println("");
-    }
-
-    public static ArrayList<String> getVoIPGateways() {
-        return voIPGateways;
-    }
-
-    /**
-     * Set the IP address of the VoIPGateway.
-     * @param ip String with dotted IP address
-     */
-    public static boolean setVoIPGateways(String gateways) {
-	voIPGateways = new ArrayList();
-	voIPGatewayLoginInfo = new ArrayList();
-
-        gateways = gateways.replaceAll("\\s", "");
-
-	if (gateways.length() == 0) {
-	    return true;
-	}
-
-	String[] g = gateways.split(",");
-
-        for (int i = 0; i < g.length; i++) {
-	    String[] gatewayInfo = g[i].split(";");
-
-            try {
-                /*
-                 * Make sure address is valid
-                 */
-                InetAddress inetAddress =
-                    InetAddress.getByName(gatewayInfo[0]);
-
-                voIPGateways.add(inetAddress.getHostAddress());
-
-		if (gatewayInfo.length > 1) {
-		    voIPGatewayLoginInfo.add(gatewayInfo[1]);    
-		    new RegisterProcessing(gatewayInfo[0], gatewayInfo[1]);
-		} else {
-		    voIPGatewayLoginInfo.add("");
-		}
-            } catch (UnknownHostException e) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Get String with all VoIP Gateways.
-     */
-    public static String getAllVoIPGateways() {
-        String s = "";
-
-        for (int i = 0; i < voIPGateways.size(); i++) {
-            s += (String) voIPGateways.get(i);
-
-	    String gatewayLoginInfo = voIPGatewayLoginInfo.get(i);
-
-	    if (gatewayLoginInfo.length() > 0) {
-	        s += ";" + voIPGatewayLoginInfo.get(i);
-	    }
-
-            if (i < voIPGateways.size() - 1) {
-                s += ", ";
-            }
-        }
-
-        return s;
     }
 
     /**

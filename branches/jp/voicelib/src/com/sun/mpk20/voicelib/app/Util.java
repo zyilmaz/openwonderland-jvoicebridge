@@ -103,12 +103,10 @@ public class Util implements Serializable {
 	    p1ReceiveAngle += Math.PI;
 	} 
 
-	//if (debug) {
-          System.out.println("p1=" + p1 + " p2=" + p2
+	logger.finest("p1=" + p1 + " p2=" + p2
             + " p1RecAng " + toDegrees(p1ReceiveAngle) + " p1 orient " 
 	    + toDegrees(p1.orientation)
 	    + " p1RecAng adj " + toDegrees(p1ReceiveAngle - p1.orientation));
-	//}
 
 	p1ReceiveAngle -= p1.orientation;
 

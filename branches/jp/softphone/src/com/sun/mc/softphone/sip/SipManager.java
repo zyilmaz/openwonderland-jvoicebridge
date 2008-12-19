@@ -82,8 +82,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 
-import com.sun.stun.NetworkAddressManager;
-
 import com.sun.voip.Logger;
 
 /**
@@ -429,17 +427,18 @@ public class SipManager
                 boolean successfullyBound = false;
                 while (!successfullyBound) {
                     try {
-			InetAddress localHost = 
-			    NetworkAddressManager.getPrivateLocalHost();
+			InetAddress privateLocalHost = 
+			    SipCommunicator.getPrivateLocalAddress();
 
                         listeningPoint = sipStack.createListeningPoint(
-                            localHost.getHostAddress(), localPort, transport);
+                            privateLocalHost.getHostAddress(), localPort, 
+			    transport);
 
 			publicIsa = listeningPoint.getPublicAddress();
 
 			Logger.println("private address is " 
-			    + localHost.getHostAddress() + ":" + localPort
-			    + " publicIsa is " + publicIsa);
+			    + privateLocalHost.getHostAddress() + ":" 
+			    + localPort + " publicIsa is " + publicIsa);
                     }
                     catch (InvalidArgumentException ex) {
                         //choose another port between 1024 and 65000
@@ -1423,8 +1422,6 @@ if (false) {
 	    Utils.setPreference("com.sun.mc.softphone.sip.PUBLIC_ADDRESS", 
 		address);
 
-            //NetworkAddressManager.setPublicControlAddress(publicIsa);
-            
 	    if (Logger.logLevel >= Logger.LOG_MOREINFO) {
 	        Logger.println("Softphone registered as " + address);
 	    }

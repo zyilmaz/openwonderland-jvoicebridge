@@ -120,8 +120,6 @@ public interface VoiceManager extends Serializable {
 
     public String getConferenceId();
 
-    public String getAudioDirectory();
-
     public void setVoiceManagerParameters(VoiceManagerParameters parameters);
 
     public VoiceManagerParameters getVoiceManagerParameters();
@@ -169,6 +167,6 @@ public interface VoiceManager extends Serializable {
 
     public void removeCallBeginEndListener(CallBeginEndListener listener);
 
-    public void dump(String command);
+    public String dump(String command);
 
 }

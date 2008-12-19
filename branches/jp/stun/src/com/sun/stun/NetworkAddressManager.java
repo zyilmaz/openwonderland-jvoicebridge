@@ -33,9 +33,9 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+
+import java.lang.reflect.Method;
 
 import java.util.Enumeration;
 
@@ -43,260 +43,145 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.sun.stun.StunClient;
-import com.sun.stun.StunServer;
 
 public class NetworkAddressManager {
 
     private static final Logger logger =
         Logger.getLogger(NetworkAddressManager.class.getName());
 
-    private static InetAddress privateLocalHost;
-
-    private static String stunServer;
-    private static int stunServerPort = StunServer.STUN_SERVER_PORT;
-
-    private static int timeout = 100;
-
-    static {
-        stunServer = System.getProperty("com.sun.mc.stun.STUN_SERVER");
-    
-        String s = System.getProperty("com.sun.mc.stun.STUN_SERVER_PORT");
-
-	if (s != null) {
-	    try {
-		stunServerPort = Integer.parseInt(s);
-	    } catch (NumberFormatException e) {
-		logger.info("Invalid STUN server port " + s
-		    + ".  Defaulting to " + stunServerPort);
-	    }
-	}
-
-	try {
-	    getLocalHost();
-	} catch (IOException e) {
-	    logger.info("Unable to initialize localHost: "
-		+ e.getMessage());
-	}
-
-	s = System.getProperty(
-	    "com.sun.mc.stun.NETWORK_INTERFACE_TIMEOUT", "100");
-
-	try {
-	    timeout = Integer.parseInt(s);
-	} catch (NumberFormatException e) {
-	    logger.info("Invalid timeout value for isReachable(): " + s);
-	}
-    }
-
-    public NetworkAddressManager(String stunServer) throws IOException {
-	this(stunServer, stunServerPort);
-    }
-
-    public NetworkAddressManager(String stunServer, int stunServerPort) 
-	    throws IOException {
-
-	try {
-	    stunServer = InetAddress.getByName(stunServer).getHostAddress();
-	} catch (UnknownHostException e) {
-	    logger.info("Invalid stunServer:  " + e.getMessage());
-	    throw new IOException("Invalid stunServer:  " + e.getMessage());
-	}
-
-	stunServerPort = stunServerPort;
+    private NetworkAddressManager() {
     }
 
     public static void setLogLevel(Level newLevel) {
 	logger.setLevel(newLevel);
     }
 
-    public static void getLocalHost() throws IOException {
-	/*
-	 * If there's a preferred address, use it.
-	 */
+    private static Method isUp = null;
+    private static Method isLoopback = null;
+    private static Class networkInterfaceClass;
+
+    private static int timeout = 100;
+
+    static {
 	try {
-	    privateLocalHost = getLocalHostFromPreferredAddress();
-	    logger.info("Using preferred address " 
-		+ privateLocalHost.getHostAddress());
-	    showDefaultAddress(true);
-	    return;
-	} catch (IOException e) {
+	    networkInterfaceClass = Class.forName("java.net.NetworkInterface");
+
+	    isUp = networkInterfaceClass.getDeclaredMethod("isUp", 
+		new Class[]{NetworkInterface.class});
+	    isLoopback = networkInterfaceClass.getDeclaredMethod(
+		"isLoopback", new Class[]{NetworkInterface.class});
+	} catch (Exception e) {
 	}
 
-	/*
-	 * Try connecting to the STUN server to get our local address
-	 */
-	try {
-	    privateLocalHost = getLocalHostFromStun();
-	    logger.info("Using local address " 
-		+ privateLocalHost.getHostAddress()
-	        + " as determined by connecting to " + stunServer
-		+ ":" + stunServerPort);
+        String s = System.getProperty(
+            "com.sun.mc.stun.NETWORK_INTERFACE_TIMEOUT", "100");
 
-	    showDefaultAddress(false);
-	    return;
-	} catch (IOException e) {
-	}
+        try {
+            timeout = Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            logger.info("Invalid timeout value: " + s);
+        }
 
-	try {
-	    privateLocalHost = getLocalHostFromInterfaces();
-
-	    logger.info("Using local address " 
-		+ privateLocalHost.getHostAddress()
-		+ " selected from the list of interfaces");
-	} catch (IOException e) {
-	    logger.info(e.getMessage());
-	}
-    }
-	
-    /*
-     * Show the default address which would have been used if there
-     * wasn't a preferred address.
-     */
-    public static void showDefaultAddress(boolean useStun) {
-	InetAddress defaultAddress = null;
-
-	if (useStun) {
-	    try {
-	        defaultAddress = getLocalHostFromStun();
-
-	        logger.info("If localHost had not been specified, "
-		    + defaultAddress.getHostAddress() 
-		    + " would have been chosen by using STUN.");
-	    } catch (IOException e) {
-	    }
-	}
-
-	if (defaultAddress == null) {
-	    try {
-	    	defaultAddress = getLocalHostFromInterfaces();
-
-		logger.fine("If localHost had not been specified "
-		    + "and could not be determined by using STUN, "
-		    + defaultAddress.getHostAddress() 
-		    + " would have been chosen from the interface list.");
-	    } catch (IOException e) {
-		logger.info("If localHost had not been specified "
-		    + " it would not have been able to determine local host!");
-	    }
-	}
     }
 
-    public static InetAddress getLocalHostFromPreferredAddress() 
-	    throws IOException {
+    public static InetAddress getPrivateLocalAddress(String server, int port, 
+	    int timeout) throws UnknownHostException {
 
-	String preferredAddress = System.getProperty(
-	    "com.sun.mc.stun.LOCAL_IP_ADDRESS");
-
-	if (preferredAddress == null || preferredAddress.length() == 0) {
-	    throw new IOException("No preferred local address");
+	if (server == null || port == 0) {
+	    throw new UnknownHostException("Invalid server or port:  " 
+		+ server + ":" + port);
 	}
 
-	logger.fine("Trying preferred local address " + preferredAddress);
+        /*
+         * Try to connect to the TCP server to get our private local address
+         * Once connected, the socket will be bound to the correct local address.
+         */
+	InetAddress ia;
 
 	try {
-	    InetAddress address = InetAddress.getByName(preferredAddress);
-
-	    logger.fine("Using specified local address " + address);
-
-	    return address;
+	    ia = InetAddress.getByName(server);
 	} catch (UnknownHostException e) {
-	    String s = "Unknown local address "
-		+ preferredAddress + " " + e.getMessage();
-
-	    logger.info(s);
-	    throw new IOException(s);
+	    throw new UnknownHostException("Can't resolve hostname " 
+		+ server + ": " + e.getMessage());
 	}
-    }
 
-    /*
-     * Try to connect to the STUN Server to get our private local address
-     */
-    public static InetAddress getLocalHostFromStun() throws IOException {
-	if (stunServer == null) {
-	    throw new IOException("No Stun Server specified");
-	}
+	InetSocketAddress isa = new InetSocketAddress(ia, port);
 
 	Socket socket = new Socket();
 
-	InetSocketAddress isa = new InetSocketAddress(
-	    stunServer, stunServerPort);
-
-	socket.connect(isa, 10000);
+	try {
+	    socket.connect(isa, timeout);
+	} catch (IOException e) {
+	    throw new UnknownHostException("Unable to connect to " + isa
+		+ " " + e.getMessage());
+	}
 
 	InetAddress address = socket.getLocalAddress();
 
-	socket.close();
+	try {
+	    socket.close();
+	} catch (IOException e) {
+	    logger.warning("Unable to close socket to " + server + ":" + port
+		+ " " + e.getMessage());
+	}
+
+	logger.info("Using local address " 
+	    + address.getHostAddress()
+	    + " as determined by connecting to TCP server " + server
+	    + ":" + port);
+
 	return address;
     }
+	
+    public static InetAddress getPrivateLocalAddress(String ifName) throws UnknownHostException {
+	NetworkInterface iFace;
 
-    public static InetAddress getLocalHostFromInterfaces() throws IOException {
-	InetAddress possibleAddress = null;
+	try {
+	    iFace = NetworkInterface.getByName(ifName);
+	} catch (SocketException e) {
+	    throw new UnknownHostException("Unknown interface " + ifName + ": " + e.getMessage());
+	}
+ 
+	InetAddress ia = getAddress(iFace);
 
+	if (ia != null) {
+	    return ia;
+	}
+
+	throw new UnknownHostException("Unusable interface " + ifName);
+    }
+
+    public static InetAddress getPrivateLocalAddress() throws UnknownHostException {
+	InetAddress ia = findLocalAddress();
+
+	logger.info("Using local address " 
+	    + ia.getHostAddress() + " selected from the list of interfaces");
+
+	return ia;
+    }
+
+    private static InetAddress findLocalAddress() throws UnknownHostException {
 	/*
 	 * Look for addresses at each interface and pick one that's usable.
 	 */
         try {
             Enumeration localIfaces = NetworkInterface.getNetworkInterfaces();
 
+	    InetAddress ia = null;
+
 	    while (localIfaces.hasMoreElements()) {
                 NetworkInterface iFace = (NetworkInterface) 
 		    localIfaces.nextElement();
 
-                Enumeration addresses = iFace.getInetAddresses();
+	        ia = getAddress(iFace);
 
-		logger.fine("Interface name: " + iFace.getName());
-
-		InetAddress address;
-
-                while (addresses.hasMoreElements()) {
-                    address = (InetAddress) addresses.nextElement();
-
-		    logger.fine("Address: " + address);
-
-        	    if (address instanceof Inet4Address == false) {
-			logger.fine("Skipping non-IPV4 address " + address);
-			continue;
-		    }
-
-		    if (address.isAnyLocalAddress() || 
-                            isWindowsAutoConfiguredIPv4Address(address) ||
-                            address.toString().substring(0,3).equals("/0.")) {
-
-                        logger.fine("Skipping " + address);
-                        continue;
-                    }
-
-                    if (address.isLinkLocalAddress()) {
-                        logger.fine("Found Linklocal ipv4 address " + address);
-			return address;
-                    } 
-
-		    if (possibleAddress == null && 
-			    address.isLoopbackAddress() == false &&
-                	    address.toString().substring(0,3).equals("/0.") == false) {
-
-			logger.fine("Setting possible address to " + possibleAddress);
-			possibleAddress = address;
-		    }
-
-		    if (iFace.getName().startsWith("cipsec") && 
-			    isReachable(address)) {
-
-			logger.fine("Using cipsec " + address);
-			return address;
-		    }
-
-		    if (iFace.getName().startsWith("ip.tun") &&
-                    	    isReachable(address)) {
-
-			logger.fine("Using ip.tun " + address);
-                        return address;
-                    }
+		if (ia != null) {
+		    break;
 		}
 	    }
 
-	    if (possibleAddress != null) {
-		return possibleAddress;
+	    if (ia != null) {
+		return ia;
 	    }
 
 	    /*
@@ -308,80 +193,92 @@ public class NetworkAddressManager {
 		String s = "Local address " + address + " is not usable!";
 
 		logger.fine(s);
-		throw new IOException(s);
+		throw new UnknownHostException(s);
 	    }
 
 	    logger.fine("private local host is " + address);
 	    return address;
         } catch (Exception e) {
-	    throw new IOException("Failed to get local host! " 
+	    throw new UnknownHostException("Failed to get local host! " 
 		+ e.getMessage());
         }
     }
-   
-    /*
-     * Ask stunServer to resolve socket.getAddress().
-     */
-    public static InetSocketAddress getPublicAddressFor(
-	    InetSocketAddress stunServer, DatagramSocket socket) 
-	    throws IOException {
 
-	StunClient stunClient = new StunClient(stunServer, socket);
-
-	return stunClient.getMappedAddress();
-    }
-	    
-    /* 
-     * Ask stunServer to resolve address
-     */
-    public static InetAddress getPublicAddressFor(
-	    InetAddress address) throws IOException {
-
-	if (stunServer != null) {
-	    Socket socket = new Socket();
-
-	    InetSocketAddress isa = new InetSocketAddress(
-		stunServer, stunServerPort);
-
-	    socket.connect(isa, 10000);
-
-	    StunClient stunClient = new StunClient(socket);
-
-	    InetAddress ia = stunClient.getMappedAddress().getAddress();
-
-	    socket.close();
-            
-	    return ia;
+    private static InetAddress getAddress(NetworkInterface iFace) {
+	if (isUsable(iFace) == false) {
+	    return null;
 	}
 
-	return address;
-    }
+	Enumeration addresses = iFace.getInetAddresses();
 
-    public static InetAddress getPrivateLocalHost() throws IOException {
-        if (privateLocalHost == null) {
-	    throw new IOException("Unable to determine localHost!");
-	}
+	logger.fine("Interface name: " + iFace.getName());
 
-	return privateLocalHost;
-    }
+	InetAddress possibleAddress = null;
 
-    public static InetAddress getPublicLocalHost() throws IOException {
-        return getPublicAddressFor(privateLocalHost);
-    }
+        while (addresses.hasMoreElements()) {
+            InetAddress address = (InetAddress) addresses.nextElement();
 
+	    logger.fine("Address: " + address);
 
-    private static boolean isReachable(InetAddress address) {
-	try {
-            if (address.isReachable(timeout) == false) {
-                return false;
+            if (address instanceof Inet4Address == false) {
+		logger.fine("Skipping non-IPV4 address " + address);
+		continue;
+	    }
+
+	    if (address.isAnyLocalAddress() || 
+		isWindowsAutoConfiguredIPv4Address(address) ||
+		address.toString().substring(0,3).equals("/0.")) {
+
+                logger.fine("Skipping " + address);
+                continue;
             }
-	} catch (IOException e) {
-	    logger.info("can't reach " + address + " " + e.getMessage());
-	    return false;
+
+	    if (iFace.getName().startsWith("cipsec") && 
+		isReachable(address, timeout)) {
+
+		logger.info("Using cipsec " + address);
+		return address;
+	    }
+
+	    if (iFace.getName().startsWith("ip.tun") &&
+                isReachable(address, timeout)) {
+
+		logger.info("Using ip.tun " + address);
+                return address;
+            }
+
+	    if (address.isLoopbackAddress() == false &&
+                address.toString().substring(0,3).equals("/0.") == false) {
+
+	        if (possibleAddress == null || possibleAddress.isLinkLocalAddress()) {
+		    logger.fine("Setting possible address to " + possibleAddress);
+		    possibleAddress = address;
+		}
+		continue;
+            } 
 	}
 
-        return true;
-    }   
+	return possibleAddress;
+    }
+
+    private static boolean isUsable(NetworkInterface iFace) {
+	try {
+	    if (isUp != null) {
+                if ((Boolean) isUp.invoke(networkInterfaceClass, new Object[]{iFace}) == false) {
+                    return false;
+                }
+	    }
+
+            if (isLoopback != null) {
+                if ((Boolean) isLoopback.invoke(networkInterfaceClass, new Object[]{iFace}) == true) {
+                    return false;
+	        }
+            }
+	} catch (Exception e) {
+	}
+
+	return true;  // we can't tell if it's usable or not.
+    }
 
     private static boolean isLinkLocalIPv4Address(InetAddress addr) {
         byte address[] = addr.getAddress();
@@ -403,11 +300,36 @@ public class NetworkAddressManager {
         return false;
     }
 
-    public static boolean isWindowsAutoConfiguredIPv4Address(InetAddress addr) {
+    private static boolean isWindowsAutoConfiguredIPv4Address(InetAddress addr) {
         return (addr.getAddress()[0] & 0xff) == 169
             && (addr.getAddress()[1] & 0xff) == 254;
     }
 
+    private static boolean isReachable(InetAddress address, int timeout) {
+	try {
+            if (address.isReachable(timeout) == false) {
+                return false;
+            }
+	} catch (IOException e) {
+	    logger.info("can't reach " + address + " " + e.getMessage());
+	    return false;
+	}
+
+        return true;
+    }   
+
+    /*
+     * Ask stunServer to resolve socket.getAddress().
+     */
+    public static InetSocketAddress getPublicAddressFor(
+	    InetSocketAddress stunServer, DatagramSocket socket) 
+	    throws IOException {
+
+	StunClient stunClient = new StunClient(stunServer, socket);
+
+	return stunClient.getMappedAddress();
+    }
+	    
     public static void main(String[] args) {
 	if (args.length != 4) {
 	    System.out.println("Usage:  java com.sun.stun.NetworkAddressManager <stun server> "

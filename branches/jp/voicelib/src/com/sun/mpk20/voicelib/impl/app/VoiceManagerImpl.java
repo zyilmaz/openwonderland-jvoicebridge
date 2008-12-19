@@ -226,7 +226,9 @@ public class VoiceManagerImpl implements VoiceManager {
     }
 
     public void endCall(Call call, boolean removePlayer) throws IOException {
-	dump("all");
+	if (logger.isLoggable(Level.FINE)) {
+	    System.out.println(dump("all"));
+	}
 
  	call.end(removePlayer);	
 
@@ -234,7 +236,9 @@ public class VoiceManagerImpl implements VoiceManager {
 	    logger.warning("Call " + call + " not in list of calls");
 	} 
 
-	dump("all");
+	if (logger.isLoggable(Level.FINE)) {
+	    System.out.println(dump("all"));
+	}
     }
 
     public ConcurrentHashMap<String, Call> getCalls() {
@@ -510,7 +514,7 @@ public class VoiceManagerImpl implements VoiceManager {
         } catch (NameNotBoundException e) {
             try {
                 dm.setBinding(DS_MANAGED_ALL_CALL_LISTENERS, 
-		    new ManagedCallStatusListeners());
+		    new ManagedAllCallListeners());
             }  catch (RuntimeException re) {
                 logger.warning("failed to bind pending map " + re.getMessage());
                 throw re;
@@ -542,19 +546,19 @@ public class VoiceManagerImpl implements VoiceManager {
         }
     }
 
-    private boolean listenerAdded = false;
+    private boolean bindingsInitialized = false;
 
     public void addCallStatusListener(CallStatusListener listener) {
 	addCallStatusListener(listener, null);
     }
 
     public void addCallStatusListener(CallStatusListener listener, String callId) {
-	if (listenerAdded == false) {
-	    listenerAdded = true;
+	if (bindingsInitialized == false) {
+	    bindingsInitialized = true;
 
 	    initializeBindings();
 
-	    backingManager.addCallStatusListener(new CallStatusNotifier(callId));
+	    backingManager.addCallStatusListener(new CallStatusNotifier());
 	}
 
 	if (listener instanceof ManagedCallStatusListener) {
@@ -578,7 +582,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	    listeners = new CopyOnWriteArrayList<CallStatusListener>();
 	    callStatusListeners.put(callId, listeners);
 	} else if (listeners.contains(listener)) {
-	    logger.warning("listener " + listener + " is already in the list.");
+	    logger.fine("listener " + listener + " is already in the list.");
 	    return;
 	}
 
@@ -736,10 +740,7 @@ public class VoiceManagerImpl implements VoiceManager {
 
     static class CallStatusNotifier implements ManagedCallStatusListener {
 
-	String callId;
-
-	public CallStatusNotifier(String callId) {
-	    this.callId = callId;
+	public CallStatusNotifier() {
 	}
 
         public void callStatusChanged(CallStatus callStatus) {
@@ -747,7 +748,13 @@ public class VoiceManagerImpl implements VoiceManager {
 
             String callId = callStatus.getCallId();
 
-	    logger.fine("Got status " + callStatus);
+	    logger.finer("Got status " + callStatus);
+
+	    if (code == CallStatus.INFO) {
+	        VoiceManagerImpl vm = AppContext.getManager(VoiceManagerImpl.class);
+	        System.out.println(vm.dump(callStatus.getOption("Info")));
+		return;
+	    }
 
 	    if (code == CallStatus.ESTABLISHED ||
 		    code == CallStatus.MIGRATED ||
@@ -755,16 +762,8 @@ public class VoiceManagerImpl implements VoiceManager {
 
 	        notifyCallBeginEndListeners(callStatus);
 	        notifyManagedCallBeginEndListeners(callStatus);
-	    } else if (code == CallStatus.INFO) {
-	        VoiceManagerImpl vm = AppContext.getManager(VoiceManagerImpl.class);
-	        vm.dump(callStatus.getOption("Info"));
-		return;
 	    }
 	
-	    if (callId != null && this.callId != null && callId.equals(this.callId) == false) {
-		return;
-	    }
-
 	    notifyCallStatusListeners(callStatus);
 	    notifyManagedCallStatusListeners(callStatus);
         }
@@ -775,27 +774,54 @@ public class VoiceManagerImpl implements VoiceManager {
 	    CopyOnWriteArrayList<CallStatusListener> listeners = vm.getAllCallListeners();
 
 	    for (CallStatusListener listener : listeners) {
+		System.out.println("Notifying " + listener);
                 listener.callStatusChanged(status);
 	    }
 	
 	    String callId = status.getCallId();
 
-	    if (callId == null) {
+	    if (callId == null || callId.length() == 0) {
+		logger.warning("No callID:  '" + callId + "'");
 	 	return;
 	    }
 
 	    listeners = vm.getCallStatusListeners().get(callId);
 
 	    if (listeners == null) {
+		logger.finer("No listeners for " + callId);
 		return;
 	    }
 
 	    for (CallStatusListener listener : listeners) {
+		logger.finer("Notifiying " + listener + " callId " + callId);
                 listener.callStatusChanged(status);
             }
         }
 
         private void notifyManagedCallStatusListeners(CallStatus status) {
+            DataManager dm = AppContext.getDataManager();
+
+            ManagedAllCallListeners managedAllListeners = (ManagedAllCallListeners) dm.getBinding(
+		DS_MANAGED_ALL_CALL_LISTENERS);
+
+	    for (ManagedReference<ManagedCallStatusListener> managedListener : managedAllListeners) {
+                managedListener.get().callStatusChanged(status);
+            }
+
+	    ManagedCallStatusListeners managedListeners =
+                (ManagedCallStatusListeners) dm.getBinding(DS_MANAGED_CALL_STATUS_LISTENERS);
+
+	    CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>> listenerList =
+		managedListeners.get(status.getCallId());
+
+	    if (listenerList == null) {
+	  	logger.finer("No listeners for " + status.getCallId());
+		return;
+	    }
+
+	    for (ManagedReference<ManagedCallStatusListener> listener : listenerList) {
+                listener.get().callStatusChanged(status);
+            }
 	}
  
         private void notifyCallBeginEndListeners(CallStatus status) {
@@ -901,75 +927,88 @@ public class VoiceManagerImpl implements VoiceManager {
 	prefs.put(VOICEMANAGER_PREFIX + preference, String.valueOf(value));
     }
 
-    public void dump(String command) {
+    public String dump(String command) {
 	String[] tokens = command.split("[+]");
+
+	String s = "";
 
 	for (int i = 0; i < tokens.length; i++) {
 	    if (tokens[i].equalsIgnoreCase("all")) {
-		dumpAudioGroups();
-		dumpCalls();
-		dumpPlayers();
+		s += dumpAudioGroups();
+		s += dumpCalls();
+		s += dumpPlayers();
 	    } else if (tokens[i].equalsIgnoreCase("audioGroups")) {
-		dumpAudioGroups();
+		s += dumpAudioGroups();
 	    } else if (tokens[i].equalsIgnoreCase("calls")) {
-		dumpCalls();
+		s += dumpCalls();
 	    } else if (tokens[i].equalsIgnoreCase("players")) {
-		dumpPlayers();
+		s += dumpPlayers();
 	    } else {
-		System.out.println("Unrecognized object to dump:  " 
-		   + tokens[i]);
+		logger.warning("Unrecognized object to dump:  " + tokens[i]);
 	    }
 	}
 
-	System.out.println("");
+	if (s.length() == 0) {
+	    return "";
+	}
+
+	s += "\n";
+
+	return s;
     }
 
-    private void dumpAudioGroups() {
-	System.out.println("");
-	System.out.println("Audio Groups");
-	System.out.println("------------");
+    private String dumpAudioGroups() {
+	String s = "\n";
+	s += "Audio Groups\n";
+	s += "------------\n";
 
 	if (audioGroups.size() > 0) {
             Enumeration<AudioGroup> ae = audioGroups.elements();
 
 	    while (ae.hasMoreElements()) {
-		System.out.println(ae.nextElement().dump());
+		s += ae.nextElement().dump() + "\n";
 	    }
 	} else {
-	    System.out.println("There are no audio groups!");
+	    s += "There are no audio groups!\n";
 	}
+
+	return s;
     }
 	
-    private void dumpCalls() {
-	System.out.println("");
-	System.out.println("Calls");
-	System.out.println("-----");
+    private String dumpCalls() {
+	String s = "\n";
+	s += "Calls\n";
+	s += "-----\n";
 
 	if (calls.size() > 0) {
 	    Enumeration<Call> ce = calls.elements();
 
 	    while (ce.hasMoreElements()) {
-		System.out.println(ce.nextElement().dump());
+		s += ce.nextElement().dump() + "\n";
 	    }
 	} else {
-	    System.out.println("There are no calls!");
+	    s += "There are no calls!\n";
 	}
+
+	return s;
     }
 
-    private void dumpPlayers() {
-	System.out.println("");
-	System.out.println("Players");
-	System.out.println("-------");
+    private String dumpPlayers() {
+	String s = "\n";
+	s += "Players\n";
+	s += "-------\n";
 
 	if (players.size() > 0) {
 	    Enumeration<Player> pe = players.elements();
 
 	    while (pe.hasMoreElements()) {
-		System.out.println(pe.nextElement().dump());
+		s += pe.nextElement().dump() + "\n";
 	    }
 	} else {
-	    System.out.println("There are no players!");
+	    s += "There are no players!\n";
 	}
+
+	return s;
     }
 
 }

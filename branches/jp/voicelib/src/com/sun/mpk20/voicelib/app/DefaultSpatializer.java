@@ -49,9 +49,9 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 
     private static final double DEFAULT_FALLOFF = .92;
 
-    private static final double DEFAULT_FULL_VOLUME_RADIUS = .1;
+    private static final double DEFAULT_FULL_VOLUME_RADIUS = 8;
 
-    private static final double DEFAULT_ZERO_VOLUME_RADIUS = .26;
+    private static final double DEFAULT_ZERO_VOLUME_RADIUS = 22;
 
     private static double[] sinTable = new double[360];
 
@@ -164,16 +164,16 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 	if (volume == 1) {
 	    setFullVolumeRadius(DEFAULT_FULL_VOLUME_RADIUS);
 	    setZeroVolumeRadius(DEFAULT_ZERO_VOLUME_RADIUS);
-	    System.out.println("adjusting volume to defaults");
+	    logger.fine("adjusting volume to defaults");
 	} else if (volume > 1) {
 	    setFullVolumeRadius(DEFAULT_FULL_VOLUME_RADIUS + volume - 1);
 	    setZeroVolumeRadius(DEFAULT_ZERO_VOLUME_RADIUS);
-	    System.out.println("volume " + volume + " adjusting full vol radius to "
+	    logger.fine("volume " + volume + " adjusting full vol radius to "
 		+ (DEFAULT_FULL_VOLUME_RADIUS + volume - 1));
 	} else {
 	    setFullVolumeRadius(DEFAULT_FULL_VOLUME_RADIUS);
 	    setZeroVolumeRadius(DEFAULT_ZERO_VOLUME_RADIUS - volume);
-	    System.out.println("volume " + volume + " adjusting zero vol radius to "
+	    logger.fine("volume " + volume + " adjusting zero vol radius to "
 		+ (DEFAULT_ZERO_VOLUME_RADIUS - volume));
 	}
     }
@@ -227,9 +227,10 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 	 */
 	double distance = Util.getDistance(p1, p2);
 
-	System.out.println("distance " + distance + " p1 " + p1 + " p2 " + p2);
-
 	double volume = falloffFunction.distanceToVolumeLevel(distance);
+
+	logger.finest("distance " + distance + " p1 " + p1 + " p2 " + p2 
+	    + " volume " + volume + " fcn " + falloffFunction);
 
         /*
          * p1ReceiveAngle is the angle at call 1 at which the sound from call 2 

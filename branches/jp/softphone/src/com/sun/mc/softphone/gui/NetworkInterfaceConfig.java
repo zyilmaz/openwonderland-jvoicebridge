@@ -157,7 +157,7 @@ public class NetworkInterfaceConfig extends JFrame {
 	InetAddress preferredAddress = null;
 
 	try {
-	    defaultAddress = NetworkAddressManager.getPrivateLocalHost();
+	    defaultAddress = NetworkAddressManager.getPrivateLocalAddress();
 	    Logger.println("Default address is " + defaultAddress);
 	} catch (IOException e) {
 	    Logger.println("Unable to determine default local address:  "

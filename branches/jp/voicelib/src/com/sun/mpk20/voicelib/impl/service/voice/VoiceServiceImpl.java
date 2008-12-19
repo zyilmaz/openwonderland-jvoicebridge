@@ -372,7 +372,11 @@ public class VoiceServiceImpl implements VoiceService, Service,
 	localWorkToDo.get().add(work);
     }
 
-    public void stopRecording(String callId) throws IOException {
+    public void pauseRecording(String callId, String recordingFile) throws IOException {
+	logger.warning("pauseRecording is not yet implemented");
+    }
+
+    public void stopRecording(String callId, String recordingFile) throws IOException {
 	getTxnState();
 
 	Work work = new Work(Work.STOPRECORDING, callId);
@@ -384,6 +388,11 @@ public class VoiceServiceImpl implements VoiceService, Service,
     public void playRecording(String callId, String recordingFile) throws IOException {
 	newInputTreatment(callId, recordingFile);
     }
+
+    public void pausePlayingRecording(String callId, String recordingFile) throws IOException {
+	logger.warning("pausePlayingRecording is not yet implemented");
+    }
+
 
     public void stopPlayingRecording(String callId, String recordingFile) 
 	throws IOException {

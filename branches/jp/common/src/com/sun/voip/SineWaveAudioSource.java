@@ -108,6 +108,10 @@ public class SineWaveAudioSource implements AudioSource {
         return channels;
     }
 
+    public int getEncoding() {
+	return AudioSource.LINEAR;
+    }
+
     public static void main(String[] args) {
 	SineWaveAudioSource s = new SineWaveAudioSource(440, 2000, 1.0F, 8000, 1);
 

@@ -353,23 +353,22 @@ if (false) {
 	String fromNumber = "."; 	// see comments above.
 	String toNumber = cp.getPhoneNumber();
 
-        // int toSipPort = SipServer.getSipAddress().getPort();
-	// XXX this should be the proxy or gateway port!
-	int toSipPort = 5060;
+	InetSocketAddress proxy = null;
 
-	String proxy = cp.getSipProxy();
+	proxy = GatewayManager.getVoIPGateway(cp.getSipProxy());
 
 	if (proxy == null) {
-	    proxy = SipServer.getDefaultSipProxy();
+	    proxy = GatewayManager.getVoIPGateway(SipServer.getDefaultSipProxy());
 	}
 
-	String voipGateway = cp.getVoIPGateway();
+	InetSocketAddress voipGateway = null;
+
+	voipGateway = GatewayManager.getVoIPGateway(cp.getVoIPGateway());
 
 	if (toNumber.length() <= 4) {
 	    /*
 	     * XXX Special case for <= 4 digit phone numbers
 	     */
-	    voipGateway = proxy;
 	    Logger.println("Call " + cp + " Using proxy " + proxy 
 		+ " for " + toNumber);
         } else if (toNumber.indexOf("sip:") == 0) {
@@ -409,12 +408,12 @@ if (false) {
                 try {
                     inetAddress = InetAddress.getByName(host);
 
-                    voipGateway = inetAddress.getHostAddress();
+                    voipGateway = GatewayManager.getVoIPGateway(inetAddress.getHostAddress());
 
                     int port = sipURI.getPort();
 
                     if (port > 0) {
-                        toSipPort = port;
+		 	voipGateway = new InetSocketAddress(voipGateway.getAddress(), port);
                     }
 
                     toNumber = user;
@@ -426,13 +425,11 @@ if (false) {
                     //cp.setPhoneNumber(toNumber);
 
             	    Logger.println("Call " + cp + " Sending INVITE directly to " 
-			+ inetAddress + ":" + toSipPort);
+			+ voipGateway);
                 } catch (UnknownHostException e) {
 		    /*
 		     * Let proxy handle it
 		     */
-	            voipGateway = proxy;
-	
             	    Logger.println("Call " + cp + " Using proxy " + proxy 
                 	+ " for " + toNumber);
 
@@ -441,8 +438,6 @@ if (false) {
 		    toNumber = toNumber.substring(4);
                 }
 	    } else {
-	        voipGateway = proxy;
-
                 Logger.println("Call " + cp + " Using proxy " + proxy 
                     + " for " + toNumber);
 
@@ -480,7 +475,7 @@ if (false) {
 	if (voipGateway == null) {
 	    Logger.println("Call " + cp + " voipGateway is null!");
 
-	    ArrayList<String> voipGateways = SipServer.getVoIPGateways();
+	    ArrayList<InetSocketAddress> voipGateways = GatewayManager.getVoIPGateways();
 
 	    if (voipGateways.size() == 0) {
 		throw new SipException("No voip Gateway! " + cp);
@@ -490,7 +485,7 @@ if (false) {
 	}
 
 	if (Bridge.getPrivateHost().startsWith("127.") && 
-	    voipGateway.equals("127.0.0.1") == false) {
+	    voipGateway.getAddress().getHostAddress().equals("127.0.0.1") == false) {
 
 	    throw new SipException("The bridge's ip address is "
 		+ Bridge.getPrivateHost()
@@ -498,23 +493,16 @@ if (false) {
 	}
 
 	if (Bridge.getPrivateHost().startsWith("127.") == false && 
-	    voipGateway.startsWith("127.") == true) {
+	    voipGateway.getAddress().getHostAddress().startsWith("127.") == true) {
 
 	    throw new SipException("The bridge's ip address must be "
 		+ voipGateway
 		+ " in order to issue a call to " + voipGateway);
 	}
 
-	Logger.writeFile("Call " + cp + " voip gateway / proxy " + voipGateway
-	    + " port " + toSipPort);
+	Logger.writeFile("Call " + cp + " voip gateway / proxy " + voipGateway);
 
-        toAddress = addressFactory.createSipURI(toNumber, voipGateway); 
-
-	/*
-	 * Don't do this because port should be that of the toNumber if specified
-	 * otherwise that of the voipGateway
-	 */
-        // toAddress.setPort(toSipPort);
+        toAddress = addressFactory.createSipURI(toNumber, voipGateway.getAddress().getHostAddress()); 
 
         toNameAddress = addressFactory.createAddress(toNumber, toAddress); 
         toHeader = headerFactory.createToHeader(toNameAddress, null);
@@ -531,9 +519,9 @@ if (false) {
 	    toNumber = toNumber.substring(0, ix);
 	}
 
-        requestURI = addressFactory.createSipURI(toNumber, voipGateway); 
+        requestURI = addressFactory.createSipURI(toNumber, voipGateway.getAddress().getHostAddress()); 
 
-	requestURI.setPort(toSipPort);
+	requestURI.setPort(voipGateway.getPort());
 
         requestURI.setTransportParam
             (sipProvider.getListeningPoint().getTransport()); 

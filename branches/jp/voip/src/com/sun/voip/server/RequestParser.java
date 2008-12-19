@@ -3099,7 +3099,7 @@ public class RequestParser {
 
         try {
             value = getValue("voIPGateways", "vgs", request);
-            if (SipServer.setVoIPGateways(value) == false) {
+            if (GatewayManager.setVoIPGateways(value) == false) {
 		throw new ParseException("invalid host or IP address " 
 		    + value, 0);
 	    }
@@ -3378,7 +3378,7 @@ public class RequestParser {
 	    + SdpManager.useTelephoneEvent());
 
 	requestHandler.writeToSocket("voIPGateways			= "
-	    + SipServer.getAllVoIPGateways());
+	    + GatewayManager.getAllVoIPGateways());
 
         requestHandler.writeToSocket("whisperAttenuation		= "
             + WhisperGroup.getDefaultAttenuation());
@@ -3480,7 +3480,7 @@ public class RequestParser {
 
 	//requestHandler.writeToSocket("speexEncode | se = true | false");
 
-	requestHandler.writeToSocket("voipGateway | vg = <ip address>");
+	requestHandler.writeToSocket("voipGateway | vg = <ip address>[:<port][;<login info>]");
 
 	requestHandler.writeToSocket(
 	    "useConferenceReceiverThread | ucrt = true | false");
@@ -3725,7 +3725,7 @@ public class RequestParser {
 	requestHandler.writeToSocket("useTelephoneEvent = true | false");
 
 	requestHandler.writeToSocket(
-	    "voIPGateways | vgs = <ip address>[,<ip address>...]");
+	    "voIPGateways | vgs = <ip address[:<port][;<login info>][,<ip address>...]");
 
  	requestHandler.writeToSocket(
 	    "wisperGroupOptions | wgo  = <conferenceId> : <WhIsperGroupId> "

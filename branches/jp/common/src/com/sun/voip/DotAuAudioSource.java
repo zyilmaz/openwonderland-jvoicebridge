@@ -43,6 +43,12 @@ public class DotAuAudioSource extends FileAudioSource {
     private InputStream in;
 
     /*
+     * Default constructor
+     */
+    public DotAuAudioSource() {
+    }
+    
+    /*
      * Read an audio file.  Pad with linear silence.
      */
     public DotAuAudioSource(String path) throws IOException {
@@ -55,6 +61,15 @@ public class DotAuAudioSource extends FileAudioSource {
 
 	in = getInputStream(path);
 
+	readHeader(in);
+    }
+
+    public byte[] readHeader(InputStream in, String path) throws IOException {
+	this.path = path;
+	return readHeader(in);
+    }
+ 
+    public byte[] readHeader(InputStream in) throws IOException {
 	/*
 	 * Audio file header
   	 *
@@ -122,6 +137,8 @@ public class DotAuAudioSource extends FileAudioSource {
                 ((audioFileHeader[6] <<  8) & 0xff00) | 
                 (audioFileHeader[7] & 0xff);
                 
+	    byte[] data = null;
+
             if (hdr_size > AUDIO_FILE_HEADER_SIZE) {
                 /*
                  * read remainder of the header and discard
@@ -129,7 +146,7 @@ public class DotAuAudioSource extends FileAudioSource {
                 int excess_hdr_size =
                     hdr_size - AUDIO_FILE_HEADER_SIZE;
                     
-                byte[] data = new byte[excess_hdr_size];
+                data = new byte[excess_hdr_size];
                 
                 in.read(data, 0, excess_hdr_size);
 
@@ -139,6 +156,22 @@ public class DotAuAudioSource extends FileAudioSource {
 			+ " excess " + excess_hdr_size);
 		}
             }  
+
+	    int total_hdr_len = audioFileHeader.length;
+
+	    if (data != null) {
+		total_hdr_len += data.length;
+	    }
+
+	    byte[] header = new byte[total_hdr_len];
+
+	    System.arraycopy(audioFileHeader, 0, header, 0, audioFileHeader.length);
+
+	    if (data != null) {
+	        System.arraycopy(data, 0, header, audioFileHeader.length, data.length);
+	    }
+
+	    return header;
 	} catch (Exception e) {
             throw new IOException("Can't read data!  " + path + " "
 		+ e.getMessage());
@@ -148,11 +181,16 @@ public class DotAuAudioSource extends FileAudioSource {
     public int[] getLinearData(int sampleTime) throws IOException {
 	byte[] fileData = readAudioFile(sampleTime);
 
+	return processLinearData(fileData);
+    }
+
+    public int[] processLinearData(byte[] fileData) {
 	if (fileData == null) {
 	    return null;
 	}
 
 	int[] linearData;
+
 	if (encoding == ULAW) {
             // 1 ulaw byte for each int
             linearData = new int[fileData.length];
@@ -226,6 +264,10 @@ public class DotAuAudioSource extends FileAudioSource {
 
     public int getChannels() {
 	return channels;
+    }
+
+    public int getEncoding() {
+	return encoding;
     }
 
     public void rewind() throws IOException {

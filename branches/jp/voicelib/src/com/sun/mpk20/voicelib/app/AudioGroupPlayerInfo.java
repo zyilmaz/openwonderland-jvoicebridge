@@ -15,6 +15,7 @@ public class AudioGroupPlayerInfo {
     public boolean isSpeaking;
 
     public enum ChatType {
+	EXCLUSIVE,
 	SECRET,
 	PRIVATE,
 	PUBLIC
