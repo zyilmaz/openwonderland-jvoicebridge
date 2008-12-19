@@ -512,7 +512,7 @@ public class Bridge extends Thread {
 	    }
 
 	    InetAddress gateway = InetAddress.getByName(
-		SipServer.getVoIPGateways().get(0));
+		GatewayManager.getVoIPGateways().get(0).getAddress().getHostAddress());
 
             datagramPacket = new DatagramPacket(
 		s.getBytes(), s.length(), gateway, 9);

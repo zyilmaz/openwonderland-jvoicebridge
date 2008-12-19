@@ -45,4 +45,6 @@ public interface AudioSource {
 
     public int getChannels();
 
+    public int getEncoding();
+
 }

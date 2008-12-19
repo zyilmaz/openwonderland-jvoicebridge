@@ -69,12 +69,18 @@ public abstract class FileAudioSource implements AudioSource {
         }
         
         String ext = path.substring(extIdx);
+
         Class<? extends FileAudioSource> clazz = types.get(ext);
+
         if (clazz == null) {
             Logger.error("No player for extension " + ext);
             return null;
         }
         
+	if (ext.equals(".au") && path.startsWith("http:")) {
+	    clazz = NetworkDotAuAudioSource.class;
+	}
+
         try {
             Constructor<? extends FileAudioSource> c =
                     clazz.getConstructor(String.class);

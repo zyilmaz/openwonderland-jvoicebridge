@@ -972,6 +972,10 @@ public class MemberSender {
     }
 
     public void setDtmfKeyToSend(String dtmfKeyToSend) {
+	if (initializationDone == false) {
+	    return;
+	}
+
 	if (telephoneEventPayload == 0) {
 	    String treatment;
 

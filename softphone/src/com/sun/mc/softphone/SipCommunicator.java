@@ -161,6 +161,8 @@ public class SipCommunicator extends Thread implements
 
     private static Object sipCommunicatorLock = new Object();
 
+    private static InetAddress privateLocalAddress;
+
     /*
      * Meeting central starts the communicator and adds MC as
      * as listener so that the comunicator can tell MC the 
@@ -213,6 +215,14 @@ public class SipCommunicator extends Thread implements
         }
     }
  
+    public static InetAddress getPrivateLocalAddress() throws IOException {
+	if (privateLocalAddress == null) {
+	    throw new IOException("Unknown private local address!");
+	}
+
+	return privateLocalAddress;
+    }
+
     public void initialize() {
 	Runtime.getRuntime().addShutdownHook(new ShutdownThread());
 
@@ -242,12 +252,15 @@ public class SipCommunicator extends Thread implements
                 + ", OS Arch = " + System.getProperty("os.arch")
                 + ", OS Version = " + System.getProperty("os.version"));
 
+	    setPrivateLocalAddress();
+
             try {
                 mediaManager = MediaManagerFactory.getInstance(false);
 		mediaManager.initialize(encryptionKey, encryptionAlgorithm,
 		    !openAudio());
             } catch (IOException e) {
                 Logger.println("Unable to start audio:  " + e.getMessage());
+		e.printStackTrace();
             }
 
 	    /*
@@ -324,6 +337,43 @@ public class SipCommunicator extends Thread implements
         } finally {
             console.logExit();
         }
+    }
+ 
+    private void setPrivateLocalAddress() {
+	String s = Utils.getPreference("com.sun.mc.stun.LOCAL_IP_ADDRESS");
+
+	if (s != null) {
+	    try {
+	        privateLocalAddress = InetAddress.getByName(s);
+	    } catch (UnknownHostException e) {
+		Logger.println("Invalid local host name:  " + s 
+		    + e.getMessage());
+	    }
+	}
+
+	if (privateLocalAddress == null) {
+	    String registrarAddress = sipManager.getRegistrarAddress();
+
+	    if (registrarAddress != null) {
+		try {
+		    privateLocalAddress = NetworkAddressManager.getPrivateLocalAddress(
+		        registrarAddress, sipManager.getRegistrarPort(), 5000);
+		} catch (IOException e) {
+		    Logger.println(e.getMessage());
+		}
+	    }
+	}
+
+	if (privateLocalAddress == null) {
+	    try {
+		privateLocalAddress = InetAddress.getLocalHost();
+
+		Logger.println("Using InetAddress.getLocalHost():  "
+		    + privateLocalAddress);
+	    } catch (UnknownHostException e) {
+		Logger.println("Can't get localhost! " + e.getMessage());
+	    }
+	}
     }
  
     public void placeCall(String callerName, String callee,
@@ -972,20 +1022,6 @@ public class SipCommunicator extends Thread implements
                     	String.valueOf(registrarPort));
 		}
 	    }
-
-            //InetAddress localhost = NetworkAddressManager.getPrivateLocalHost();
-
-            //String stackAddress = localhost.getHostAddress();
-            //Add the host address to the properties that will pass the stack
-
-	    //if (Logger.logLevel >= Logger.LOG_MOREINFO) {
-            //    Logger.println("Softphone setting stack address to " 
-	    //	    + stackAddress);
-	    //}
-
-            //Utils.setProperty("javax.sip.IP_ADDRESS", stackAddress);
-
-	    //Logger.println("Setting SIP Stack address to " + stackAddress);
 
 	    /*
 	     * The listening point specifies the address rather than the property

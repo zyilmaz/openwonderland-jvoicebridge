@@ -12,7 +12,7 @@ public interface Recorder extends Serializable {
 
     public void startRecording(String recordingFile) throws IOException;
 
-    public void pauseRecording();
+    public void pauseRecording() throws IOException;
 
     public void stopRecording() throws IOException;
 

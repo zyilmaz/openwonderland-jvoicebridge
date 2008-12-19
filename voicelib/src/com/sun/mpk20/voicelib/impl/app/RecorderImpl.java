@@ -2,8 +2,12 @@ package com.sun.mpk20.voicelib.impl.app;
 
 import com.sun.sgs.app.AppContext;
 
+import com.sun.mpk20.voicelib.app.AudioGroup;
+import com.sun.mpk20.voicelib.app.AudioGroupPlayerInfo;
 import com.sun.mpk20.voicelib.app.Call;
 import com.sun.mpk20.voicelib.app.CallSetup;
+import com.sun.mpk20.voicelib.app.Player;
+import com.sun.mpk20.voicelib.app.PlayerSetup;
 import com.sun.mpk20.voicelib.app.Recorder;
 import com.sun.mpk20.voicelib.app.RecorderSetup;
 import com.sun.mpk20.voicelib.app.VoiceManager;
@@ -26,6 +30,8 @@ public class RecorderImpl implements Recorder, Serializable {
 
     private String id;
     private RecorderSetup setup;
+
+    private String recordingFile;
 
     private static double scale;
 
@@ -63,10 +69,24 @@ public class RecorderImpl implements Recorder, Serializable {
 	
 	logger.info("New recorder at (" + setup.x + ":" + setup.z + ":" + setup.y + ")");
 
-	Call call = AppContext.getManager(VoiceManager.class).createCall(this.id, callSetup);
+	VoiceManager vm = AppContext.getManager(VoiceManager.class);
 
-	//backingManager.setupCall(cp, setup.x / scale, setup.z / scale, setup.y / scale, 
-	//    0, setup.spatializer, null);
+	Call call = vm.createCall(this.id, callSetup);
+
+	PlayerSetup playerSetup = new PlayerSetup();
+
+        playerSetup.x = setup.x;
+        playerSetup.y = setup.y;
+        playerSetup.z = setup.z;
+	playerSetup.isLivePlayer = true;
+
+        Player player = AppContext.getManager(VoiceManager.class).createPlayer(call.getId(), playerSetup);
+
+        call.setPlayer(player);
+        player.setCall(call);
+
+	vm.getDefaultLivePlayerAudioGroup().addPlayer(player,
+	    new AudioGroupPlayerInfo(true, AudioGroupPlayerInfo.ChatType.PUBLIC));
 
 	logger.finest("back from starting recorder...");
     }
@@ -88,21 +108,79 @@ public class RecorderImpl implements Recorder, Serializable {
     }
 	
     public void startRecording(String recordingFile) throws IOException {
+	Player player = AppContext.getManager(VoiceManager.class).getPlayer(id);
+
+	if (player == null) {
+	    logger.warning("can't find player for " + id);
+	    return;
+	}
+
+	this.recordingFile = recordingFile;
+
+	player.setRecording(true);
+
+	backingManager.startRecording(id, recordingFile);
     }
 
-    public void pauseRecording() {
+    public void pauseRecording() throws IOException {
+	Player player = AppContext.getManager(VoiceManager.class).getPlayer(id);
+
+	if (player == null) {
+	    logger.warning("can't find player for " + id);
+	    return;
+	}
+
+	player.setRecording(false);
+
+	backingManager.pauseRecording(id, recordingFile);
     }
 
     public void stopRecording() throws IOException {
+	Player player = AppContext.getManager(VoiceManager.class).getPlayer(id);
+
+	if (player == null) {
+	    logger.warning("can't find player for " + id);
+	    return;
+	}
+
+	player.setRecording(false);
+
+	backingManager.stopRecording(id, recordingFile);
     }
 
     public void playRecording(String recordingFile) throws IOException {
+	Player player = AppContext.getManager(VoiceManager.class).getPlayer(id);
+
+	if (player == null) {
+	    logger.warning("can't find player for " + id);
+	    return;
+	}
+
+	this.recordingFile = recordingFile;
+
+	backingManager.playRecording(id, recordingFile);
     }
 
     public void pausePlayingRecording() throws IOException {
+	Player player = AppContext.getManager(VoiceManager.class).getPlayer(id);
+
+	if (player == null) {
+	    logger.warning("can't find player for " + id);
+	    return;
+	}
+
+	backingManager.pausePlayingRecording(id, recordingFile);
     }
 
     public void stopPlayingRecording() throws IOException {
+	Player player = AppContext.getManager(VoiceManager.class).getPlayer(id);
+
+	if (player == null) {
+	    logger.warning("can't find player for " + id);
+	    return;
+	}
+
+	backingManager.stopPlayingRecording(id, recordingFile);
     }
 
 }

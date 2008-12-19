@@ -393,9 +393,8 @@ if (false) {
 		    + microphoneChannels);
 	    }
         } catch (ParseException e) {
-            Logger.println("Can't set transmit media info to "
-                + microphoneEncoding + "/" + microphoneSampleRate + "/" 
-		+ microphoneChannels);
+            Logger.println("Can't set transmit media info to " 
+		+ SipCommunicator.getPrivateLocalAddress() + microphoneChannels);
         }
 
 	try {
@@ -419,8 +418,8 @@ if (false) {
 	        Logger.println("audioPort is " + audioPort);
 	    }
 
-	    rtpSocket = new RtpSocket(
-		NetworkAddressManager.getPrivateLocalHost(), audioPort);
+	    rtpSocket = new RtpSocket(SipCommunicator.getPrivateLocalAddress(), 
+		audioPort);
 
 	    lastAudioPort = rtpSocket.getInetSocketAddress().getPort();
 
@@ -1037,7 +1036,7 @@ if (false) {
 
     public synchronized String generateSdp(String callee) throws IOException {
         //InetSocketAddress isa = new InetSocketAddress(
-        //    NetworkAddressManager.getLocalHost().getHostAddress(),
+        //    SipCommunicator.getPrivateLocalAddress().getHostAddress(),
         //    rtpSocket.getInetSocketAddress().getPort());
 
 	InetSocketAddress isa = new InetSocketAddress(
@@ -1297,7 +1296,7 @@ if (false) {
                 }
 
                 rtpSocket = new RtpSocket(
-		    NetworkAddressManager.getPrivateLocalHost(), audioPort);
+		    SipCommunicator.getPrivateLocalAddress(), audioPort);
             } catch (IOException e) {
 	        Logger.println("Can't createRtpSocket!  " + e.getMessage());
 	        throw new IOException("Can't createRtpSocket!  " 

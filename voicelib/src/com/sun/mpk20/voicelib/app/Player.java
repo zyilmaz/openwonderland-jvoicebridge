@@ -1,6 +1,6 @@
 package com.sun.mpk20.voicelib.app;
 
-import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.sun.voip.client.connector.CallStatusListener;
 
@@ -58,13 +58,13 @@ public interface Player extends CallStatusListener {
 
     public void removeAudioGroup(AudioGroup group);
 
-    public ArrayList<AudioGroup> getAudioGroups();
+    public CopyOnWriteArrayList<AudioGroup> getAudioGroups();
 
     public void addVirtualPlayer(VirtualPlayer p);
 
     public void removeVirtualPlayer(VirtualPlayer p);
 
-    public ArrayList<VirtualPlayer> getVirtualPlayers();
+    public CopyOnWriteArrayList<VirtualPlayer> getVirtualPlayers();
 
     public int getNumberOfPlayersInRange();
 

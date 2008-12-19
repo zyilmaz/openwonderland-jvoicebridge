@@ -55,4 +55,16 @@ public interface VoiceService extends Serializable {
 
     public void setSpatialBehindVolume(double spatialBehindVolume) throws IOException;
 
+    public void startRecording(String callId, String recordingFile) throws IOException;
+
+    public void pauseRecording(String callId, String recordingFile) throws IOException;
+
+    public void stopRecording(String callId, String recordingFile) throws IOException;
+
+    public void playRecording(String callId, String recordingFile) throws IOException;
+
+    public void pausePlayingRecording(String callId, String recordingFile) throws IOException;
+
+    public void stopPlayingRecording(String callId, String recordingFile) throws IOException;
+
 }

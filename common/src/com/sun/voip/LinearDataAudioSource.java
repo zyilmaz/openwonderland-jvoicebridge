@@ -90,4 +90,8 @@ public class LinearDataAudioSource implements AudioSource {
         return channels;
     }
 
+    public int getEncoding() {
+	return AudioSource.LINEAR;
+    }
+
 }

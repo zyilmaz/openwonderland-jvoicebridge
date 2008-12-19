@@ -32,9 +32,10 @@ import java.io.Serializable;
 
 import java.lang.Integer;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -84,6 +85,10 @@ public class PlayerImpl implements Player, CallStatusListener {
 
     private AudioSource audioSource;
 
+    /*
+     * The x-coordinate is positive to the left.
+     * I don't think this matters but we'll see!
+     */
     private double x;
  
     private double y;
@@ -96,14 +101,14 @@ public class PlayerImpl implements Player, CallStatusListener {
 
     private double masterVolume = 1.0;
 
-    private ArrayList<AudioGroup> audioGroups = new ArrayList();
+    private CopyOnWriteArrayList<AudioGroup> audioGroups = new CopyOnWriteArrayList();
 
-    private ArrayList<VirtualPlayer> virtualPlayers = new ArrayList();
+    private CopyOnWriteArrayList<VirtualPlayer> virtualPlayers = new CopyOnWriteArrayList();
 
     private ConcurrentHashMap<String, Spatializer> privateSpatializers =
 	new ConcurrentHashMap<String, Spatializer>();
 
-    private ArrayList<Player> playersInRange = new ArrayList<Player>();
+    private CopyOnWriteArrayList<Player> playersInRange = new CopyOnWriteArrayList<Player>();
 
     private static double scale;
 
@@ -120,12 +125,6 @@ public class PlayerImpl implements Player, CallStatusListener {
         logger.info("creating player for " + id
             + " at (" + setup.x + ", " + setup.y + ", " + setup.z + ": "
 	    + setup.orientation + ")" + " setup.isOutworlder " + setup.isOutworlder);
-
-	x = setup.x;
-	y = setup.y;
-	z = setup.z;
-
-	orientation = setup.orientation;
 
         if (setup.isOutworlder) {
             logger.fine(id + " outworlder");
@@ -169,6 +168,8 @@ public class PlayerImpl implements Player, CallStatusListener {
 
     public void setCall(Call call) {
 	this.call = call;
+
+	setPrivateMixes(true);
     }
 
     public Call getCall() {
@@ -183,7 +184,7 @@ public class PlayerImpl implements Player, CallStatusListener {
 	virtualPlayers.remove(vp);
     }
 
-    public ArrayList<VirtualPlayer> getVirtualPlayers() {
+    public CopyOnWriteArrayList<VirtualPlayer> getVirtualPlayers() {
 	return virtualPlayers;
     }
 
@@ -233,6 +234,9 @@ public class PlayerImpl implements Player, CallStatusListener {
     }
 
     private void setPosition(double x, double y, double z) {
+	/*
+	 * The x coordinate is positive to the left instead of the right!
+	 */
     	this.x = Util.round100(x / scale);
 	this.y = Util.round100(y / scale);
 	this.z = Util.round100(z / scale);
@@ -269,7 +273,6 @@ public class PlayerImpl implements Player, CallStatusListener {
 	    return;
 	}
 
-	logger.warning(this + " has a private spatializer for " + player);
 	privateSpatializers.put(player.getId(), spatializer);
 	setPrivateMixes(true);
     }
@@ -308,7 +311,6 @@ public class PlayerImpl implements Player, CallStatusListener {
 	}
 
 	updateAttenuation();
-	setPrivateMixes(true);
     }
 
     private void updateAttenuation() {
@@ -319,7 +321,7 @@ public class PlayerImpl implements Player, CallStatusListener {
 		privateAudioGroup = audioGroup;
 		logger.warning(this + " belongs to private audio group " + audioGroup);
 		break;
-	    }
+	    } 
 	}
 
 	if (privateAudioGroup != null) {
@@ -333,6 +335,8 @@ public class PlayerImpl implements Player, CallStatusListener {
     public void attenuateOtherGroups(AudioGroup audioGroup, double speakingAttenuation,
 	    double listenAttenuation) {
 
+	boolean inExclusiveAudioGroup = getExclusiveAudioGroup() != null;
+
 	for (AudioGroup ag : audioGroups) {
 	    if (audioGroup != null && ag.equals(audioGroup)) {
 		continue;
@@ -340,9 +344,20 @@ public class PlayerImpl implements Player, CallStatusListener {
 
 	    AudioGroupPlayerInfo info = ag.getPlayerInfo(this);
 
+	    if (inExclusiveAudioGroup) {
+	        info.speakingAttenuation = 0;
+	        info.listenAttenuation = 0;
+		System.out.println("group " + audioGroup + " " + this 
+		    + " in exclusive group, attenuation to 0 " + ag);
+		continue;
+	    }
+
 	    if (audioGroup != null) {
 	        info.speakingAttenuation = speakingAttenuation;
 	        info.listenAttenuation = listenAttenuation;
+		System.out.println("group " + audioGroup + " " + this 
+		    + " setting listen attenuation to " 
+		    + listenAttenuation + " " + ag);
 	    } else {
 	        info.speakingAttenuation = info.defaultSpeakingAttenuation;
 	        info.listenAttenuation = info.defaultListenAttenuation;
@@ -351,9 +366,21 @@ public class PlayerImpl implements Player, CallStatusListener {
 	    logger.warning(this + " group " + audioGroup + " speakingAttenuation " 
 		+ speakingAttenuation + " listenAttenuation " + listenAttenuation);
 	}
+
+	setPrivateMixes(true);
     }
 
-    public ArrayList<AudioGroup> getAudioGroups() {
+    private AudioGroup getExclusiveAudioGroup() {
+	for (AudioGroup audioGroup : audioGroups) {
+	    if (audioGroup.getPlayerInfo(this).chatType == AudioGroupPlayerInfo.ChatType.EXCLUSIVE) {
+		return audioGroup;
+	    }
+	}
+
+	return null;
+    }
+
+    public CopyOnWriteArrayList<AudioGroup> getAudioGroups() {
 	return audioGroups;
     }
 
@@ -363,18 +390,18 @@ public class PlayerImpl implements Player, CallStatusListener {
 
     public void addPlayerInRange(Player p) {
 	if (playersInRange.contains(p)) {
-	    System.out.println("playersInRange already contains " + p);
+	    logger.warning("playersInRange already contains " + p);
+	    return;
 	}
 	playersInRange.add(p);
     }
 
     public void removePlayerInRange(Player p) {
-	//synchronized (playersInRange) {
-	    if (playersInRange.contains(p) == false) {
-		//System.out.println("playersInRange doesn't contain " + p);
-	    }
-	    playersInRange.remove(p);
-	//}
+	if (playersInRange.contains(p) == false) {
+	    logger.warning("playersInRange doesn't contain " + p);
+	    return;
+	}
+	playersInRange.remove(p);
     }
 
     private long timeToSpatialize;
@@ -436,8 +463,6 @@ public class PlayerImpl implements Player, CallStatusListener {
 		 */
 		skipped++;
 	    } else {
-		logger.finer("Setting pm for " + this + " target " + p1);
-
 		/*
 		 * Set the private mix we have for p1
 		 */
@@ -528,7 +553,7 @@ public class PlayerImpl implements Player, CallStatusListener {
         VoiceService backingManager =
             AppContext.getManager(VoiceManager.class).getBackingManager();
 
-	ArrayList<AudioGroup> groups = p.getAudioGroups();
+	CopyOnWriteArrayList<AudioGroup> groups = p.getAudioGroups();
 
 	//logger.warning("groups size " + audioGroups.size() + " for " + this);
 	//logger.warning("groups size " + groups.size() + " for " + p);
@@ -554,8 +579,6 @@ public class PlayerImpl implements Player, CallStatusListener {
 		continue;  // p is not speaking in the group
 	    }
 
-	    System.out.println("Spatialize " + this + " other player " + p);
-
 	    double[] pmp = audioGroup.getSetup().spatializer.spatialize(
 	        p.getX(), p.getY(), p.getZ(), p.getOrientation(), 
 		getX(), getY(), getZ(), getOrientation());
@@ -575,7 +598,7 @@ public class PlayerImpl implements Player, CallStatusListener {
 	    }
 	}
 
-	//logger.warning("pm vol is " + privateMixParameters[3]);
+	logger.finest("pm vol is " + privateMixParameters[3]);
 
 	if (privateMixParameters[3] != 0) {
 	    /*
@@ -585,12 +608,13 @@ public class PlayerImpl implements Player, CallStatusListener {
 	    Spatializer spatializer = getPrivateSpatializer(p);
 
 	    if (spatializer != null) {
+		/*
+		 * The x-coordinate is positive in the opposite direction of what we need
+		 * for our calculations.  Change the sign of x here.
+                 */
 	        privateMixParameters = spatializer.spatialize(
 	            p.getX(), p.getY(), p.getZ(), p.getOrientation(), 
 		    getX(), getY(), getZ(), getOrientation());
-
-		logger.warning(this + " Using private spatializer for " + p
-		    + " vol " + privateMixParameters[3]);
 	    } else {
 		privateMixParameters[3] *= getWallAttenuation(p);
 	    }
@@ -699,7 +723,7 @@ public class PlayerImpl implements Player, CallStatusListener {
     }
 
 
-    private static ArrayList<Wall> walls = new ArrayList<Wall>();
+    private static CopyOnWriteArrayList<Wall> walls = new CopyOnWriteArrayList<Wall>();
 
     public void addWall(double startX, double startY, double endX, double endY,
         double characteristic) {
@@ -768,6 +792,16 @@ public class PlayerImpl implements Player, CallStatusListener {
 	    s += " " + audioGroup.getId();
 	}
 
+	if (privateSpatializers.size() > 0) {
+	    s += "\n    Private Spatializers:";
+
+	    Enumeration<String> keys = privateSpatializers.keys();
+
+	    while (keys.hasMoreElements()) {
+		s += " " + keys.nextElement();
+	    }
+	}
+	
 	if (virtualPlayers.size() > 0) {
 	    s = "\n    Virtual Players:  ";
 

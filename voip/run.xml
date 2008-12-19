@@ -22,6 +22,7 @@
 	    <jvmarg value="-Dcom.sun.voip.server.BRIDGE_LOCATION=BUR"/>
 	    <jvmarg value="-Dcom.sun.voip.server.LOCALHOST_SECURITY=${voicebridge.localhost.security}"/>
             <jvmarg value="-Dcom.sun.voip.server.Bridge.soundPath=${voicebridge.sound.path}"/>
+            <jvmarg value="-Dcom.sun.voip.server.Bridge.soundCachePath=${voicebridge.sound.cache.path}"/>
             <jvmarg value="-Dcom.sun.voip.server.BRIDGE_CONTROL_PORT=${voicebridge.control.port}"/>
 	    <jvmarg value="-Dcom.sun.voip.server.PUBLIC_IP_ADDRESS=${voicebridge.server.public.address}"/>
 	    <jvmarg value="-Dcom.sun.voip.server.BRIDGE_PUBLIC_CONTROL_PORT=${voicebridge.server.public.control.port}"/>

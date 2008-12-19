@@ -67,6 +67,9 @@ import javax.sip.address.*;
 import javax.sip.header.*;
 import javax.sip.message.*;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+
 import com.sun.voip.Logger;
 
 /**
@@ -85,14 +88,12 @@ class RegisterProcessing implements SipListener {
 
     private Timer reRegisterTimer = new Timer();
 
-    private String registrar;
+    private InetSocketAddress registrar;
     private String loginInfo;
 
     private String sipCallId;
 
     private SipServer.SipServerCallback sipServerCallback;
-
-    int registrarPort = 5060;
 
     int expires = 0;
 
@@ -101,7 +102,7 @@ class RegisterProcessing implements SipListener {
     private MessageFactory messageFactory = SipServer.getMessageFactory();
     private SipProvider sipProvider = SipServer.getSipProvider();
 
-    public RegisterProcessing(String registrar, String loginInfo) {
+    public RegisterProcessing(InetSocketAddress registrar, String loginInfo) {
 	this.registrar = registrar;
 	this.loginInfo = loginInfo;
 
@@ -180,12 +181,12 @@ class RegisterProcessing implements SipListener {
         //Request URI
         SipURI requestURI = null;
         try {
-            requestURI = addressFactory.createSipURI(null, registrar);
+            requestURI = addressFactory.createSipURI(null, registrar.getAddress().getHostAddress());
 	} catch (ParseException e) {
             throw new IOException("Bad registrar address:" + registrar + " " 
 		+ e.getMessage());
         }
-        requestURI.setPort(registrarPort);
+        requestURI.setPort(registrar.getPort());
         try {
             requestURI.setTransportParam(
 		sipProvider.getListeningPoint().getTransport());

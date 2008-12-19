@@ -51,6 +51,7 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
 
     public TreatmentImpl(String id, TreatmentSetup setup) throws IOException {
     	this.setup = setup;
+
 	this.id = Util.generateUniqueId(id);
 
 	logger.info("setupTreatment:  id " + this.id + " treatment " + setup.treatment);
@@ -68,12 +69,6 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
         // get a spatializer
         Spatializer spatializer = null;
         
-	if (setup.lowerLeftX != setup.upperRightX) {
-	     spatializer = new AmbientSpatializer(
-		setup.lowerLeftX, setup.lowerLeftY, setup.lowerLeftZ,
-		setup.upperRightX, setup.upperRightY, setup.upperRightZ);
-	}
-
 	CallSetup callSetup = new CallSetup();
 
 	callSetup.cp = cp;
@@ -82,8 +77,10 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
 
 	listener = setup.listener;
 
+	String callId = this.id.replaceAll(":", "_");
+
 	try {
-	    call = vm.createCall(this.id, callSetup);
+	    call = vm.createCall(callId, callSetup);
 	} catch (IOException e) {
 	    logger.info("Unable to setup treatment " + setup.treatment
 		+ " " + e.getMessage());
@@ -122,9 +119,9 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
         case CallStatus.ESTABLISHED:
 	    PlayerSetup playerSetup = new PlayerSetup();
 
-	    playerSetup.x = setup.lowerLeftX;
-	    playerSetup.y = setup.lowerLeftY;
-	    playerSetup.z = setup.lowerLeftZ;
+	    playerSetup.x = setup.x;
+	    playerSetup.y = setup.y;
+	    playerSetup.z = setup.z;
 	    
 	    Player player = vm.createPlayer(call.getId(), playerSetup);
 	

@@ -659,8 +659,10 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	        iTreatment = this;
 	    }
 
-	    Logger.println("Trying to create treatment manager for "
-		+ treatment);
+	    if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	        Logger.println("Trying to create treatment manager for "
+		    + treatment);
+	    }
 
 	    try {
 	        treatmentManager = new TreatmentManager(

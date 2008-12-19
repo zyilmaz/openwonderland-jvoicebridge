@@ -120,8 +120,9 @@ public class OutgoingCallHandler extends CallHandler
         /*
          * Start the call (INVITE) and wait for it to end (BYE).
          */
-        ArrayList voIPGateways = SipServer.getVoIPGateways();
-        String gateway = cp.getVoIPGateway();
+        ArrayList<InetSocketAddress> voIPGateways = GatewayManager.getVoIPGateways();
+
+        InetSocketAddress gateway = GatewayManager.getVoIPGateway(cp.getVoIPGateway());
         
         if (gateway != null) {
             /*
@@ -144,7 +145,9 @@ public class OutgoingCallHandler extends CallHandler
             for (int i = 0; i < voIPGateways.size(); i++) {
                 reasonCallEnded = null;
 
-                String voIPGateway = (String) voIPGateways.get(i);
+		InetSocketAddress isa = voIPGateways.get(i);
+
+                String voIPGateway = isa.getAddress().getHostAddress() + ":" + isa.getPort();
                 
                 cp.setVoIPGateway(voIPGateway);
                 

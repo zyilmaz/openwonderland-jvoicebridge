@@ -7,12 +7,9 @@ import com.sun.voip.client.connector.CallStatusListener;
 public class TreatmentSetup implements Serializable {
 
     public String treatment;
-    public double lowerLeftX;
-    public double lowerLeftY;
-    public double lowerLeftZ;
-    public double upperRightX;
-    public double upperRightY;
-    public double upperRightZ;
+    public double x;
+    public double y;
+    public double z;
 
     public CallStatusListener listener;
 
