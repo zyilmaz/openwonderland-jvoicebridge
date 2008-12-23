@@ -86,8 +86,9 @@ public class PlayerImpl implements Player, CallStatusListener {
     private AudioSource audioSource;
 
     /*
-     * The x-coordinate is positive to the left.
-     * I don't think this matters but we'll see!
+     * We would like to use the Cartesian Coordinate system.
+     * However, with Darkstar, x is positive to the left in stead of the right.
+     * Also, y and z are reversed.
      */
     private double x;
  
@@ -122,18 +123,14 @@ public class PlayerImpl implements Player, CallStatusListener {
 	this.id = id;
 	this.setup = setup;
 
-        logger.info("creating player for " + id
+	setup.x = -setup.x;
+
+	logger.info("creating player for " + id
             + " at (" + setup.x + ", " + setup.y + ", " + setup.z + ": "
 	    + setup.orientation + ")" + " setup.isOutworlder " + setup.isOutworlder);
 
-        if (setup.isOutworlder) {
-            logger.fine(id + " outworlder");
-        } else {
-            logger.fine(id + " inworlder");
-        }
-
-	setPosition(x, y, z);
-	setOrientation(orientation);
+	setPosition(setup.x, setup.y, setup.z);
+	setOrientation(setup.orientation);
 
 	AppContext.getManager(VoiceManager.class).addCallStatusListener(this, id);
     }
@@ -223,6 +220,8 @@ public class PlayerImpl implements Player, CallStatusListener {
     public void moved(double x, double y, double z, double orientation) {
 	boolean positionChanged;
 
+	x = -x;
+
 	positionChanged = getX() != x || getY() != y || getZ() != z;
 
 	logger.finest("Player " + this + " moved to " + x + ":" + y + ":" + z
@@ -234,9 +233,6 @@ public class PlayerImpl implements Player, CallStatusListener {
     }
 
     private void setPosition(double x, double y, double z) {
-	/*
-	 * The x coordinate is positive to the left instead of the right!
-	 */
     	this.x = Util.round100(x / scale);
 	this.y = Util.round100(y / scale);
 	this.z = Util.round100(z / scale);
@@ -608,10 +604,6 @@ public class PlayerImpl implements Player, CallStatusListener {
 	    Spatializer spatializer = getPrivateSpatializer(p);
 
 	    if (spatializer != null) {
-		/*
-		 * The x-coordinate is positive in the opposite direction of what we need
-		 * for our calculations.  Change the sign of x here.
-                 */
 	        privateMixParameters = spatializer.spatialize(
 	            p.getX(), p.getY(), p.getZ(), p.getOrientation(), 
 		    getX(), getY(), getZ(), getOrientation());
