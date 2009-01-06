@@ -32,6 +32,9 @@ import com.sun.sgs.app.TaskManager;
 
 import com.sun.sgs.auth.Identity;
 
+import com.sun.sgs.impl.sharedutil.LoggerWrapper;
+import com.sun.sgs.impl.util.AbstractService;
+
 import com.sun.sgs.kernel.ComponentRegistry;
 import com.sun.sgs.kernel.KernelRunnable;
 import com.sun.sgs.kernel.RecurringTaskHandle;
@@ -41,7 +44,6 @@ import com.sun.sgs.kernel.TransactionScheduler;
 import com.sun.sgs.service.DataService;
 import com.sun.sgs.service.NonDurableTransactionParticipant;
 import com.sun.sgs.service.Service;
-import com.sun.sgs.service.TaskService;
 import com.sun.sgs.service.Transaction;
 import com.sun.sgs.service.TransactionProxy;
 
@@ -89,10 +91,8 @@ import com.sun.voip.client.connector.CallStatusListener;
  * @since 1.0
  * @author Joe Provino
  */
-public class VoiceServiceImpl implements VoiceService, Service,
+public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	CallStatusListener, NonDurableTransactionParticipant {
-
-   private final Identity identity;
 
    private ThreadLocal<ArrayList<Work>> localWorkToDo =
        new ThreadLocal<ArrayList<Work>>() {
@@ -107,7 +107,8 @@ public class VoiceServiceImpl implements VoiceService, Service,
     public static final String NAME = VoiceServiceImpl.class.getName();
 
     // logger for this class
-    private static final Logger logger = Logger.getLogger(NAME);
+    private static final LoggerWrapper logger = 
+	new LoggerWrapper(Logger.getLogger(NAME));
 
     /**
      * The name prefix used to bind all service-level objects associated
@@ -127,22 +128,11 @@ public class VoiceServiceImpl implements VoiceService, Service,
     // the system's task scheduler, where tasks actually run
     private TransactionScheduler transactionScheduler;
 
-    // a proxy providing access to the transaction state
-    private static TransactionProxy transactionProxy = null;
-
-    // the data service used in the same context
-    private DataService dataService = null;
-
-    // the task serviced using in the same context
-    private TaskService taskService = null;
-
     // the state map for each active transaction
     private ConcurrentHashMap<Transaction,TxnState> txnMap;
 
     // the transient map for all recurring tasks' handles
     private ConcurrentHashMap<String, RecurringTaskHandle> recurringMap;
-
-    private Properties properties;
 
     private BridgeManager bridgeManager;
 
@@ -158,23 +148,18 @@ public class VoiceServiceImpl implements VoiceService, Service,
      */
     public VoiceServiceImpl(Properties properties,
                             ComponentRegistry systemRegistry,
-			    TransactionProxy transactionProxy) {
+			    TransactionProxy txnProxy) {
 
-	this.properties = properties;
-	this.transactionProxy = transactionProxy;
+	super(properties, systemRegistry, txnProxy, logger);
 
         txnMap = new ConcurrentHashMap<Transaction,TxnState>();
         recurringMap = new ConcurrentHashMap<String,RecurringTaskHandle>();
 
         // the scheduler is the only system component that we use
         transactionScheduler = systemRegistry.getComponent(TransactionScheduler.class);
-	dataService = transactionProxy.getService(DataService.class);
-        taskService = transactionProxy.getService(TaskService.class);
 
 	bridgeManager = new BridgeManager(this);
 	bridgeManager.configure(properties);
-
-	identity = transactionProxy.getCurrentOwner();
     }
 
     public String getTypeName() {
@@ -256,13 +241,13 @@ public class VoiceServiceImpl implements VoiceService, Service,
 	try {
 	    bridgeManager.getBridgeConnection(callId);
 	} catch (IOException e) {
-	    logger.info("can't find connection for " + callId
+	    logger.log(Level.INFO, "can't find connection for " + callId
 		+ " " + e.getMessage());
 
 	    return;	// nothing to do
 	}
 
-	logger.info("ending call " + callId);
+	logger.log(Level.INFO, "ending call " + callId);
 
 	getTxnState();
 
@@ -284,7 +269,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 	    throw new IOException("Invalid fromCallId " + fromCallId);
 	}
 
-	logger.finest("setPrivateMix for " + targetCallId 
+	logger.log(Level.FINEST, "setPrivateMix for " + targetCallId 
 	    + " from " + fromCallId
 	    + " privateMixParameters: " + privateMixParameters[0] 
 	    + "," + privateMixParameters[1] + "," + privateMixParameters[2]
@@ -304,7 +289,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
     }
 
     public void setLogLevel(Level level) {
-	logger.setLevel(level);
+	logger.getLogger().setLevel(level);
     }
 
     public void setSpatialAudio(boolean enabled) throws IOException {
@@ -373,7 +358,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
     }
 
     public void pauseRecording(String callId, String recordingFile) throws IOException {
-	logger.warning("pauseRecording is not yet implemented");
+	logger.log(Level.WARNING, "pauseRecording is not yet implemented");
     }
 
     public void stopRecording(String callId, String recordingFile) throws IOException {
@@ -390,7 +375,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
     }
 
     public void pausePlayingRecording(String callId, String recordingFile) throws IOException {
-	logger.warning("pausePlayingRecording is not yet implemented");
+	logger.log(Level.WARNING, "pausePlayingRecording is not yet implemented");
     }
 
 
@@ -399,7 +384,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
     }
 
     public void addCallStatusListener(ManagedCallStatusListener mcsl) {
-	logger.warning("addCallStatusListener " + mcsl);
+	logger.log(Level.WARNING, "addCallStatusListener " + mcsl);
 
         CallStatusListeners listeners = getCallStatusListeners();
 
@@ -408,12 +393,12 @@ public class VoiceServiceImpl implements VoiceService, Service,
 	 */
         synchronized (listeners) {
 	    listeners.add(dataService.createReference(mcsl));
-	    logger.warning("VS:  listeners size " + listeners.size());
+	    logger.log(Level.WARNING, "VS:  listeners size " + listeners.size());
 	}
     }
 
     public void removeCallStatusListener(ManagedCallStatusListener mcsl) {
-	logger.warning("removeCallStatusListener " + mcsl);
+	logger.log(Level.WARNING, "removeCallStatusListener " + mcsl);
 
         CallStatusListeners listeners = getCallStatusListeners();
 
@@ -425,40 +410,23 @@ public class VoiceServiceImpl implements VoiceService, Service,
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getName() {
         return NAME;
     }
 
-    public void ready() {
-	logger.info("Voice Service is ready.");
+    @Override
+    public void doReady() {
+	logger.log(Level.INFO, "Voice Service is ready.");
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void xxxconfigure(ComponentRegistry systemRegistry,
-                          TransactionProxy transactionProxy) {
-
-        if (isConfigured) {
-            throw new IllegalStateException("Voice Service already configured");
-	}
-
-        isConfiguring = true;
-
-        logger.finer("configure");
-
-        if (transactionProxy == null) {
-            throw new NullPointerException("null proxy not allowed");
-	}
-
-        // keep track of the proxy, the data service, and the task service
-        this.transactionProxy = transactionProxy;
-        dataService = systemRegistry.getComponent(DataService.class);
-        taskService = systemRegistry.getComponent(TaskService.class);
-
-	logger.fine("Done configuring voice.");
+    @Override
+    protected void handleServiceVersionMismatch(Version oldVersion,
+                                                Version currentVersion) {
+        throw new IllegalStateException(
+                    "unable to convert version:" + oldVersion +
+                    " to current version:" + currentVersion);
     }
-
 
     /*
      * Get voice bridge notification and pass it along.
@@ -467,7 +435,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
      * The work here must be done in a transaction.
      */
     public void callStatusChanged(CallStatus status) {
-	logger.finest("Call status changed:  " + status);
+	logger.log(Level.FINEST, "Call status changed:  " + status);
 
 	/*
 	 * Treat bridge shutdown as a failed bridge which
@@ -487,21 +455,21 @@ public class VoiceServiceImpl implements VoiceService, Service,
             }
 	}
 
-        transactionScheduler.scheduleTask(new CallStatusNotifier(status), identity); 
+        transactionScheduler.scheduleTask(new CallStatusNotifier(status), taskOwner); 
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean prepare(Transaction txn) throws Exception {
-        logger.finest("prepare");
+        logger.log(Level.FINEST, "prepare");
 
         // resolve the current transaction and the local state
         TxnState txnState = txnMap.get(txn);
 
         // make sure that we're still actively participating
         if (txnState == null) {
-            logger.finer("not participating in txn: " + txn);
+            logger.log(Level.FINER, "not participating in txn: " + txn);
 
             throw new IllegalStateException("VoiceService " + NAME + "is no " +
                                             "longer participating in this " +
@@ -510,7 +478,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 
         // make sure that we haven't already been called to prepare
         if (txnState.prepared) {
-            logger.finer("already prepared for txn: " + txn);
+            logger.log(Level.FINER, "already prepared for txn: " + txn);
 
             throw new IllegalStateException("VoiceService " + NAME + " has " +
                                             "already been prepared");
@@ -519,7 +487,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
         // mark ourselves as being prepared
         txnState.prepared = true;
 
-        logger.finest("prepare txn succeeded " + txn);
+        logger.log(Level.FINEST, "prepare txn succeeded " + txn);
         
         // if we joined the transaction it's because we have reserved some
         // task(s) or have to cancel some task(s) so always return false
@@ -531,7 +499,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
      * {@inheritDoc}
      */
     public void commit(Transaction txn) {
-        logger.finest("VS:  committing txn: " + txn);
+        logger.log(Level.FINEST, "VS:  committing txn: " + txn);
 
         // see if we we're committing the configuration transaction
         if (isConfiguring) {
@@ -545,7 +513,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 
         // make sure that we're still actively participating
         if (txnState == null) {
-            logger.warning("not participating in txn: " + txn);
+            logger.log(Level.WARNING, "not participating in txn: " + txn);
 
             throw new IllegalStateException("VoiceService " + NAME + "is no " +
                                             "longer participating in this " +
@@ -554,7 +522,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 
         // make sure that we were already called to prepare
         if (! txnState.prepared) {
-            logger.warning("were not prepared for txn: " + txn);
+            logger.log(Level.WARNING, "were not prepared for txn: " + txn);
 
             throw new IllegalStateException("VoiceService " + NAME + " has " +
                                             "not been prepared");
@@ -564,7 +532,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 
         workToDo = localWorkToDo.get();
 
-	logger.finest("workToDo size " + workToDo.size());
+	logger.log(Level.FINEST, "workToDo size " + workToDo.size());
 
 	for (int i = 0; i < workToDo.size(); i++) {
 	    Work work = workToDo.get(i);
@@ -572,11 +540,11 @@ public class VoiceServiceImpl implements VoiceService, Service,
 	    switch (work.command) {
 	    case Work.SETUPCALL:
 		if (work.cp.getPhoneNumber() != null) {
-		    logger.finer("VS:  Setting up call to "
+		    logger.log(Level.FINER, "VS:  Setting up call to "
 			+ work.cp.getPhoneNumber() + " on bridge " 
 			+ work.bridgeInfo);
 		} else {
-		    logger.finer("VS:  Setting up call to "
+		    logger.log(Level.FINER, "VS:  Setting up call to "
 			+ work.cp.getInputTreatment());
 		}
 
@@ -585,7 +553,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		try {
 		    bridgeManager.initiateCall(work.cp, work.bridgeInfo);
 		} catch (IOException e) {
-		    logger.info(e.getMessage());
+		    logger.log(Level.INFO, e.getMessage());
 
 		    /*
 		     * TODO:  There's needs to be a way to tell the difference
@@ -594,7 +562,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		    bridgeManager.addToRecoveryList(work.cp.getCallId(), 
 			work.cp);
 		} catch (ParseException e) {
-		    logger.info("Unable to setup call:  " + e.getMessage()
+		    logger.log(Level.INFO, "Unable to setup call:  " + e.getMessage()
 			+ " " + work.cp);
 
 		    sendStatus(CallStatus.INFO, work.cp.getCallId(), 
@@ -605,7 +573,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 
 	    case Work.SETPRIVATEMIX:
 		// XXX Shouldn't get here.  Private Mixes are applied immediately
-                logger.finest("commit setting private mix for "
+                logger.log(Level.FINEST, "commit setting private mix for "
                     + work.targetCallId + " from " + work.fromCallId
                     + " privateMixParameters "
                     +  work.privateMixParameters[0] + ":"
@@ -621,7 +589,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		    bridgeManager.newInputTreatment(work.targetCallId,
 			work.treatment);
 		} catch (IOException e) {
-		    logger.warning("Unable to start input treatment "
+		    logger.log(Level.WARNING, "Unable to start input treatment "
 			+ work.treatment + " for " + work.targetCallId
 			+ " " + e.getMessage());
 	        }
@@ -631,7 +599,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		try {
 		    bridgeManager.stopInputTreatment(work.targetCallId);
 		} catch (IOException e) {
-		    logger.warning("Unable to stop input treatment for "
+		    logger.log(Level.WARNING, "Unable to stop input treatment for "
 			+ work.targetCallId + " " + e.getMessage());
 		}
 		break;
@@ -640,7 +608,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		try {
 		    bridgeManager.restartInputTreatment(work.targetCallId);
 		} catch (IOException e) {
-		    logger.warning("Unable to restart input treatment for "
+		    logger.log(Level.WARNING, "Unable to restart input treatment for "
 			+ work.targetCallId + " " + e.getMessage());
 		}
 		break;
@@ -650,7 +618,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		    bridgeManager.playTreatmentToCall(work.targetCallId, 
 		        work.treatment);
 		} catch (IOException e) {
-		    logger.info("Unable to play treatment " 
+		    logger.log(Level.INFO, "Unable to play treatment " 
 			+ work.treatment + " to call " + work.targetCallId
 			+ " " + e.getMessage());
 		}
@@ -661,7 +629,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		    bridgeManager.pauseTreatmentToCall(work.targetCallId, 
 		        work.treatment);
 		} catch (IOException e) {
-		    logger.info("Unable to pause treatment " 
+		    logger.log(Level.INFO, "Unable to pause treatment " 
 			+ work.treatment + " to call " + work.targetCallId
 			+ " " + e.getMessage());
 		}
@@ -672,7 +640,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		    bridgeManager.stopTreatmentToCall(work.targetCallId, 
 		        work.treatment);
 		} catch (IOException e) {
-		    logger.info("Unable to stop treatment " 
+		    logger.log(Level.INFO, "Unable to stop treatment " 
 			+ work.treatment + " to call " + work.targetCallId
 			+ " " + e.getMessage());
 		}
@@ -682,7 +650,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		try {
 		    bridgeManager.migrateCall(work.cp);
 		} catch (IOException e) {
-		    logger.info("Unable to migrate to call " 
+		    logger.log(Level.INFO, "Unable to migrate to call " 
 			+ work.targetCallId
 			+ " " + e.getMessage());
 
@@ -695,7 +663,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		try {
 		    bridgeManager.endCall(work.targetCallId);
 		} catch (IOException e) {
-		    logger.info("Unable to end call " + work.targetCallId
+		    logger.log(Level.INFO, "Unable to end call " + work.targetCallId
 			+ " " + e.getMessage());
 		}
 		break;
@@ -704,7 +672,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		try {
  		    bridgeManager.muteCall(work.targetCallId, work.isMuted);
 		} catch (IOException e) {
-		    logger.info("Unable to " 
+		    logger.log(Level.INFO, "Unable to " 
 			+ (work.isMuted ? " Mute " : " Unmute ")
 			+ " call " + work.targetCallId
 			+ " " + e.getMessage());
@@ -716,7 +684,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		    bridgeManager.startRecording(work.targetCallId,
 			work.recordingFile);
 		} catch (IOException e) {
-		    logger.warning("Unable to start recording "
+		    logger.log(Level.WARNING, "Unable to start recording "
 			+ work.recordingFile + " for " + work.targetCallId
 			+ " " + e.getMessage());
 	        }
@@ -726,13 +694,13 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		try {
 		    bridgeManager.stopRecording(work.targetCallId);
 		} catch (IOException e) {
-		    logger.warning("Unable to stop recording "
+		    logger.log(Level.WARNING, "Unable to stop recording "
 			+ work.targetCallId + " " + e.getMessage());
 		}
 		break;
 
 	    default:
-		logger.warning("Unknown work command " + work.command);
+		logger.log(Level.WARNING, "Unknown work command " + work.command);
 	    }
 	}
 
@@ -740,14 +708,14 @@ public class VoiceServiceImpl implements VoiceService, Service,
 
 	bridgeManager.commit();
 
-        logger.finest("commit txn succeeded " + txn);
+        logger.log(Level.FINEST, "commit txn succeeded " + txn);
     }
 
     /**
      * {@inheritDoc}
      */
     public void prepareAndCommit(Transaction txn) throws Exception {
-        logger.finest("prepareAndCommit on txn: " + txn);
+        logger.log(Level.FINEST, "prepareAndCommit on txn: " + txn);
 
         prepare(txn);
         commit(txn);
@@ -757,7 +725,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
      * {@inheritDoc}
      */
     public void abort(Transaction txn) {
-	logger.info(txn.getAbortCause().getMessage());
+	logger.log(Level.INFO, txn.getAbortCause().getMessage());
 
         localWorkToDo.get().clear();
 
@@ -767,7 +735,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 
         // make sure that we were participating
         if (txnState == null) {
-            logger.warning("not participating txn: " + txn);
+            logger.log(Level.WARNING, "not participating txn: " + txn);
 
             throw new IllegalStateException("VoiceService " + NAME + "is " +
                                             "not participating in this " +
@@ -775,9 +743,9 @@ public class VoiceServiceImpl implements VoiceService, Service,
         }
     }
 
-    public boolean shutdown() {
-	logger.info("Shutdown Voice service");
-	return true;
+    @Override
+    public void doShutdown() {
+	logger.log(Level.INFO, "Shutdown Voice service");
     }
 
     /**
@@ -786,7 +754,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
      */
     private TxnState getTxnState() {
         // resolve the current transaction and the local state
-        Transaction txn = transactionProxy.getCurrentTransaction();
+        Transaction txn = txnProxy.getCurrentTransaction();
         TxnState txnState = txnMap.get(txn);
 
         // if it didn't exist yet then create it and join the transaction
@@ -799,7 +767,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
             // it...note that this shouldn't be a problem, since the system
             // shouldn't let this case get tripped, so this is just defensive
             if (txnState.prepared) {
-                logger.warning("already prepared txn: " + txn);
+                logger.log(Level.WARNING, "already prepared txn: " + txn);
 
                 throw new IllegalStateException("Trying to access prepared " +
                                                 "transaction for scheduling");
@@ -822,7 +790,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 		dataService.setServiceBinding(DS_CALL_STATUS_LISTENERS, 
 		    listeners);
 	    }  catch (RuntimeException re) {
-                logger.warning("failed to bind pending map " + re.getMessage());
+                logger.log(Level.WARNING, "failed to bind pending map " + re.getMessage());
                 throw re;
             }
 	}
@@ -857,7 +825,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 	}
 
 	if (callStatus == null) {
-	    logger.info("Unable to parse call status:  " + s);
+	    logger.log(Level.INFO, "Unable to parse call status:  " + s);
 	    return;
 	}
 
@@ -884,7 +852,7 @@ public class VoiceServiceImpl implements VoiceService, Service,
 
 	public void run() throws Exception {
 	    /*
-	     * This runs in a transaction and the transactionProxy
+	     * This runs in a transaction and the txnProxy
 	     * is usable at this point.  It's okay to get a manager
 	     * or another service.
 	     *
@@ -903,12 +871,12 @@ public class VoiceServiceImpl implements VoiceService, Service,
 	        ManagedCallStatusListener mcsl = (ManagedCallStatusListener)
 		    listenerList[i].get();
 
-		logger.warning("Notifying listener " + i + " status " + status);
+		logger.log(Level.WARNING, "Notifying listener " + i + " status " + status);
 
 	        try {
 		    mcsl.callStatusChanged(status);
 	        } catch (IllegalStateException e) {
-		    logger.info("Can't send status:  " + status 
+		    logger.log(Level.INFO, "Can't send status:  " + status 
 		        + " " + e.getMessage() + " removed listener");
 	        }
 	    }
