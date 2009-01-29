@@ -28,7 +28,6 @@ import com.sun.sgs.app.DataManager;
 import com.sun.sgs.app.ManagedReference;
 import com.sun.sgs.app.NameNotBoundException;
 
-import com.sun.mpk20.voicelib.app.AmbientSpatializer;
 import com.sun.mpk20.voicelib.app.AudioGroup;
 import com.sun.mpk20.voicelib.app.AudioGroupPlayerInfo;
 import com.sun.mpk20.voicelib.app.Call;
@@ -113,9 +112,6 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
 	cp.setName(this.id);
 	//cp.setVoiceDetection(true);
         
-        // get a spatializer
-        Spatializer spatializer = null;
-        
 	CallSetup callSetup = new CallSetup();
 
 	callSetup.cp = cp;
@@ -164,30 +160,27 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
 
 	switch (status.getCode()) {
         case CallStatus.ESTABLISHED:
+            logger.fine("callEstablished: " + status.getCallId());
+
 	    PlayerSetup playerSetup = new PlayerSetup();
 
 	    playerSetup.x = setup.x;
 	    playerSetup.y = setup.y;
 	    playerSetup.z = setup.z;
-	    
+	    playerSetup.publicSpatializer = setup.spatializer;
+
 	    Player player = vm.createPlayer(call.getId(), playerSetup);
 	
 	    call.setPlayer(player);
 	    player.setCall(call);
 
-	    vm.getDefaultLivePlayerAudioGroup().addPlayer(player,
-                new AudioGroupPlayerInfo(true, AudioGroupPlayerInfo.ChatType.PUBLIC));
-
-            AudioGroupPlayerInfo info = new AudioGroupPlayerInfo(false,
+            AudioGroupPlayerInfo info = new AudioGroupPlayerInfo(true,
                 AudioGroupPlayerInfo.ChatType.PUBLIC);
 
-            info.defaultSpeakingAttenuation = 0;
-
             vm.getDefaultStationaryPlayerAudioGroup().addPlayer(player, info);
+	    break;
 	
         case CallStatus.MIGRATED:
-            logger.fine("callEstablished: " + status.getCallId());
-
 	    //setup.established = true;
             break;
 

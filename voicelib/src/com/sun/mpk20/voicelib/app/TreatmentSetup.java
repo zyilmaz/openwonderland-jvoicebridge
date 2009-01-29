@@ -33,6 +33,8 @@ public class TreatmentSetup implements Serializable {
     public double y;
     public double z;
 
+    public Spatializer spatializer;
+
     public CallStatusListener listener;
 
 }

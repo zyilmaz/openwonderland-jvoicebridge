@@ -34,4 +34,6 @@ public class PlayerSetup implements Serializable {
     public boolean isLivePlayer;
     public boolean isVirtualPlayer;    
 
+    public Spatializer publicSpatializer;
+
 }

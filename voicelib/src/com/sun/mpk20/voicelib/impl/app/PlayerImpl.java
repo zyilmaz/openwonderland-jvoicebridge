@@ -102,6 +102,8 @@ public class PlayerImpl implements Player, CallStatusListener {
 
     private double masterVolume = 1.0;
 
+    private Spatializer publicSpatializer;
+
     private CopyOnWriteArrayList<AudioGroup> audioGroups = new CopyOnWriteArrayList();
 
     private CopyOnWriteArrayList<VirtualPlayer> virtualPlayers = new CopyOnWriteArrayList();
@@ -124,6 +126,8 @@ public class PlayerImpl implements Player, CallStatusListener {
 	this.setup = setup;
 
 	setup.x = -setup.x;
+
+	publicSpatializer = setup.publicSpatializer;
 
 	logger.info("creating player for " + id
             + " at (" + setup.x + ", " + setup.y + ", " + setup.z + ": "
@@ -261,6 +265,14 @@ public class PlayerImpl implements Player, CallStatusListener {
 
     public boolean isRecording() {
 	return isRecording;
+    }
+
+    public void setPublicSpatializer(Spatializer spatializer) {
+	this.publicSpatializer = publicSpatializer;
+    }
+
+    public Spatializer getPublicSpatializer() {
+	return publicSpatializer;
     }
 
     public void setPrivateSpatializer(Player player, Spatializer spatializer) {
@@ -577,11 +589,17 @@ public class PlayerImpl implements Player, CallStatusListener {
 	        AudioGroupPlayerInfo info = audioGroup.getPlayerInfo(p);
 
 	        if (info.isSpeaking == false) {
-		    logger.finest(p + " not speaking in " + audioGroup);
+		    logger.fine(this + "::: " + p + " not speaking in " + audioGroup);
 		    continue;  // p is not speaking in the group
 	        }
 
-	        double[] pmp = audioGroup.getSetup().spatializer.spatialize(
+		Spatializer spatializer = audioGroup.getSetup().spatializer;
+
+		if (p.getPublicSpatializer() != null) {
+		    spatializer = p.getPublicSpatializer();
+		}
+
+	        double[] pmp = spatializer.spatialize(
 	            p.getX(), p.getY(), p.getZ(), p.getOrientation(), 
 		    getX(), getY(), getZ(), getOrientation());
 
@@ -836,7 +854,8 @@ public class PlayerImpl implements Player, CallStatusListener {
 	}
 
 	return getId() + ":(" + xR + "," + yR + "," + zR + "," + a + ")" 
-	    + " " + (setup.isLivePlayer ? "LivePlayer" : "");
+	    + " " + (setup.isLivePlayer ? "LivePlayer" : "") 
+	    + (publicSpatializer != null ? publicSpatializer.toString() : "");
     }
 
 }
