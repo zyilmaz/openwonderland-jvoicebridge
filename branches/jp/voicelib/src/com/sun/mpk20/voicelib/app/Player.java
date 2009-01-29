@@ -60,6 +60,10 @@ public interface Player extends CallStatusListener {
 
     public double spatialize(Player player);
 
+    public void setPublicSpatializer(Spatializer spatializer);
+
+    public Spatializer getPublicSpatializer();
+
     public void setPrivateSpatializer(Player player, Spatializer spatializer); 
 
     public Spatializer getPrivateSpatializer(Player player);
