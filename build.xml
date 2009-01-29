@@ -15,8 +15,8 @@
             description="Build all jar files"/>
     
     <target name="jar-common" description="Build common jar files">
-        <ant dir="${common.dir}" antfile="build.xml" target="jar"/>
         <ant dir="${stun.dir}" antfile="build.xml" target="jar"/>
+        <ant dir="${common.dir}" antfile="build.xml" target="jar"/>
     </target>
         
     <target name="jar-bridge" depends="jar-common"
@@ -46,7 +46,7 @@
 	<mkdir dir="dist"/>
 	<mkdir dir="tmp"/>
 	<mkdir dir="tmp/voicebridge"/>
-	<mkdir dir="tmp/voicebridge/bridgeModules"/>
+	<mkdir dir="tmp/voicebridge/modules"/>
 	<mkdir dir="tmp/voicebridge/nist-sip"/>
 	<mkdir dir="tmp/voicelib"/>
 	<mkdir dir="tmp/bridgemonitor"/>
@@ -82,7 +82,7 @@
 	   <fileset file="${common.dir}/lib/JainSipRi1.2.jar"/>
 	</copy>
 	
-	<copy todir="tmp/voicebridge/bridgeModules">
+	<copy todir="tmp/voicebridge/modules">
 	   <fileset file="${bridge.dir}/modules/MP3AudioSource.jar"/>
 	   <fileset file="${bridge.dir}/modules/jl1.0.jar"/>
 	</copy>
