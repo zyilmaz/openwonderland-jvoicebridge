@@ -38,10 +38,11 @@
             <jvmarg value="-Dcom.sun.voip.server.LONG_DISTANCE_PREFIX=${voicebridge.long.distance.prefix}"/>
             <jvmarg value="-Dcom.sun.voip.server.INTERNATIONAL_PREFIX=${voicebridge.international.prefix}"/>
             <jvmarg value="-Dcom.sun.voip.server.LONE_RECEIVER_PORT=${voicebridge.lone.receiver.port}"/>
-            <jvmarg value="-ms200m"/>
-            <jvmarg value="-mx200m"/>
+            <jvmarg value="-Dcom.sun.voip.server.NETWORK_AUDIO_BUFFER_SIZE=${voicebridge.network.audio.buffer.size}"/>
+            <jvmarg value="-ms300m"/>
+            <jvmarg value="-mx300m"/>
 	    <jvmarg value="-XX:NewSize=5m"/>
-            <jvmarg value="-XX:MaxNewSize=4m"/> 
+            <jvmarg value="-XX:MaxNewSize=5m"/> 
             <jvmarg value="-XX:+UseParNewGC"/> 
             <jvmarg value="-XX:+UseConcMarkSweepGC"/>
             <jvmarg value="-XX:+PrintClassHistogram"/> 

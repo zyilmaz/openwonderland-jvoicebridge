@@ -94,6 +94,25 @@ public class AudioDriverMac extends Object implements AudioDriver {
         currentOutputDevice = nGetDefaultOutputDevice();
         currentInputDevice = nGetDefaultInputDevice();
         
+	Logger.println("Default output device:  " + currentOutputDevice.verboseDescription());
+	Logger.println("Default input device:  " + currentInputDevice.verboseDescription());
+
+	AudioDevice[] inputDevices = nGetInputDevices();
+
+	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	    for (int i = 0; i < inputDevices.length; i++) {
+		println(inputDevices[i].toString());
+	    }
+	}
+
+	AudioDevice[] outputDevices = nGetOutputDevices();
+
+	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	    for (int i = 0; i < outputDevices.length; i++) {
+		println(outputDevices[i].toString());
+	    }
+	}
+
         /* not sure where these should actually go */
         nSetOutputDevice(currentOutputDevice.id);
         nSetInputDevice(currentInputDevice.id);
@@ -313,7 +332,7 @@ public class AudioDriverMac extends Object implements AudioDriver {
      */
     public AudioDevice[] getAvailableInputDevices() {
 	println("getAvailableInputDevices");
-        return nGetInputDevices();
+	return nGetInputDevices();
     }
     
     /* list all the available output devices
@@ -321,7 +340,7 @@ public class AudioDriverMac extends Object implements AudioDriver {
      */
     public AudioDevice[] getAvailableOutputDevices() {
 	println("getAvailableOutputDevices");
-        return nGetOutputDevices();
+	return nGetOutputDevices();
     }
     
     /* select which input device to use

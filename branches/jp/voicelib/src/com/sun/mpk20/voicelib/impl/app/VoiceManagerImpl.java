@@ -117,7 +117,23 @@ public class VoiceManagerImpl implements VoiceManager {
 
     public VoiceManagerImpl(VoiceService backingManager) {
 	this.backingManager = backingManager;
+    }
 
+    /*
+     * Called by the VoiceService
+     */
+    private boolean initialized;
+
+    public void ready() {
+	if (initialized == false) {
+	    initialize();
+	    initialized = true;
+	}
+
+	new WarmStart(this);
+    }
+
+    private void initialize() {
 	String s = System.getProperty(SCALE);
 
 	if (s != null) {
@@ -314,7 +330,11 @@ public class VoiceManagerImpl implements VoiceManager {
     }
 
     public Treatment createTreatment(String id, TreatmentSetup setup) throws IOException {
-	return new TreatmentImpl(id, setup);
+	Treatment treatment = new TreatmentImpl(id, setup);
+
+	treatments.put(treatment.getId(), treatment);
+
+	return treatment;
     }
 
     public Treatment getTreatment(String id) {
@@ -329,7 +349,29 @@ public class VoiceManagerImpl implements VoiceManager {
      * Recording setup and control
      */
     public Recorder createRecorder(String id, RecorderSetup setup) throws IOException {
-  	return new RecorderImpl(id, setup);
+  	Recorder recorder = new RecorderImpl(id, setup);
+
+	recorders.put(recorder.getId(), recorder);
+
+        DataManager dm = AppContext.getDataManager();
+
+        WarmStartRecorders warmStartRecorders;
+
+        try {
+            warmStartRecorders = (WarmStartRecorders) dm.getBinding(
+                WarmStartInfo.DS_WARM_START_RECORDERS);
+        } catch (NameNotBoundException e) {
+            try {
+                warmStartRecorders = new WarmStartRecorders();
+                dm.setBinding(WarmStartInfo.DS_WARM_START_RECORDERS, warmStartRecorders);
+            }  catch (RuntimeException re) {
+                logger.warning("failed to bind warm start recorders map " + re.getMessage());
+                throw re;
+            }
+        }
+
+	warmStartRecorders.put(recorder.getId(), setup);
+	return recorder;
     }
 
     public Recorder getRecorder(String id) {
@@ -516,7 +558,7 @@ public class VoiceManagerImpl implements VoiceManager {
                 dm.setBinding(DS_MANAGED_ALL_CALL_LISTENERS, 
 		    new ManagedAllCallListeners());
             }  catch (RuntimeException re) {
-                logger.warning("failed to bind pending map " + re.getMessage());
+                logger.warning("failed to bind all call listeners map " + re.getMessage());
                 throw re;
             }
         }
@@ -528,7 +570,7 @@ public class VoiceManagerImpl implements VoiceManager {
                 dm.setBinding(DS_MANAGED_CALL_STATUS_LISTENERS, 
 		    new ManagedCallStatusListeners());
             }  catch (RuntimeException re) {
-                logger.warning("failed to bind pending map " + re.getMessage());
+                logger.warning("failed to bind call listeners map " + re.getMessage());
                 throw re;
             }
         }
@@ -540,7 +582,7 @@ public class VoiceManagerImpl implements VoiceManager {
                 dm.setBinding(DS_MANAGED_CALL_BEGIN_END_LISTENERS, 
 		    new ManagedCallBeginEndListeners());
             }  catch (RuntimeException re) {
-                logger.warning("failed to bind pending map " + re.getMessage());
+                logger.warning("failed to bind begin / end listeners map " + re.getMessage());
                 throw re;
             }
         }

@@ -1,8 +1,32 @@
+/*
+ * Copyright 2007 Sun Microsystems, Inc.
+ *
+ * This file is part of jVoiceBridge.
+ *
+ * jVoiceBridge is free software: you can redistribute it and/or modify 
+ * it under the terms of the GNU General Public License version 2 as 
+ * published by the Free Software Foundation and distributed hereunder 
+ * to you.
+ *
+ * jVoiceBridge is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Sun designates this particular file as subject to the "Classpath"
+ * exception as provided by Sun in the License file that accompanied this 
+ * code. 
+ */
+
 package com.sun.mpk20.voicelib.impl.app;
 
 import com.sun.sgs.app.AppContext;
 import com.sun.sgs.app.DataManager;
 import com.sun.sgs.app.ManagedReference;
+import com.sun.sgs.app.NameNotBoundException;
 
 import com.sun.mpk20.voicelib.app.AmbientSpatializer;
 import com.sun.mpk20.voicelib.app.AudioGroup;
@@ -37,7 +61,7 @@ import com.sun.voip.CallParticipant;
 import com.sun.voip.client.connector.CallStatus;
 import com.sun.voip.client.connector.CallStatusListener;
 
-public class TreatmentImpl implements Treatment, CallStatusListener {
+public class TreatmentImpl implements Treatment, CallStatusListener, Serializable {
 
     private static final Logger logger =
         Logger.getLogger(TreatmentImpl.class.getName());
@@ -56,6 +80,29 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
 
 	logger.info("setupTreatment:  id " + this.id + " treatment " + setup.treatment);
         
+	/*
+	 * This is in a transaction and can abort.
+	 * In that case we've already created the treatment.
+	 */
+        DataManager dm = AppContext.getDataManager();
+
+	WarmStartTreatments warmStartTreatments;
+
+        try {
+            warmStartTreatments = (WarmStartTreatments) dm.getBinding(
+		WarmStartInfo.DS_WARM_START_TREATMENTS);
+        } catch (NameNotBoundException e) {
+            try {
+                warmStartTreatments = new WarmStartTreatments();
+                dm.setBinding(WarmStartInfo.DS_WARM_START_TREATMENTS, warmStartTreatments);
+            }  catch (RuntimeException re) {
+                logger.warning("failed to bind warm start treatment map " + re.getMessage());
+                throw re;
+            }
+        }
+
+	warmStartTreatments.put(this.id, setup);
+
 	VoiceManager vm = AppContext.getManager(VoiceManager.class);
 
 	CallParticipant cp = new CallParticipant();
@@ -85,11 +132,11 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
 	    logger.info("Unable to setup treatment " + setup.treatment
 		+ " " + e.getMessage());
 
+	    vm.getTreatments().remove(this.id);
+
 	    throw new IOException("Unable to setup treatment " + setup.treatment
                 + " " + e.getMessage());
 	} 
-
-	logger.finest("back from starting treatment...");
     }
 
     public String getId() {
@@ -146,6 +193,8 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
 
         case CallStatus.ENDED:
 	    logger.warning("Treatment ended:  " + status);
+
+	    vm.getTreatments().remove(this);
 
 	    try {
 	        vm.endCall(call, true);

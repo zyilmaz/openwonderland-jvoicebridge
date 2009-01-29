@@ -343,11 +343,10 @@ public class DefaultSpatializer implements Spatializer, Serializable {
     }
 
     public String toString() {
-	return "DefaultSpatializer:  "
-	    + " max volume " + getMaximumVolume()
-	    + " attenuator " + attenuator
-	    + " fvr " + getFullVolumeRadius() 
-	    + " zvr " + getZeroVolumeRadius();
+	return "DefaultSpatializer(max volume=" + getMaximumVolume()
+	    + " attenuator=" + attenuator
+	    + " fvr=" + getFullVolumeRadius() 
+	    + " zvr=" + getZeroVolumeRadius() + ")";
     }
 
 }

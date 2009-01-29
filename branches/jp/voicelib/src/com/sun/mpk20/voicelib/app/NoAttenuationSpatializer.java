@@ -45,4 +45,8 @@ public class NoAttenuationSpatializer extends DefaultSpatializer
 	return new NoAttenuationSpatializer();
     }
 
+    public String toString() {
+	return "NoAttenuationSpatializer";
+    }
+
 }

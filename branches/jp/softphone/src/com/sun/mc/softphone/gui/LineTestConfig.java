@@ -474,13 +474,21 @@ public class LineTestConfig extends JFrame {
 
 	String[] microphones = audioFactory.getMicrophoneList();
 
+	if (Utils.isMacOS() == false && microphones.length == 0) {
+	    System.out.println("THERE ARE NO AVAILABLE MICROPHONES!");
+	}
+
 	String preferredMic = Utils.getPreference(Microphone.MICROPHONE_PREFERENCE);
 
 	if (preferredMic != null) {
-	    /*
-	     * TODO:  This should only be added if it's still valid
-	     */
-	    micComboBox.addItem(preferredMic);
+	    System.out.println("Pref mic:  " + preferredMic);
+
+	    for (int i = 0; i < microphones.length; i++) {
+		if (preferredMic.equals(microphones[i])) {
+	            micComboBox.addItem(preferredMic);
+		    break;
+		}
+	    }
 	}
 
 	for (int i = 0; i < microphones.length; i++) {
@@ -493,13 +501,19 @@ public class LineTestConfig extends JFrame {
 
 	String[] speakers = audioFactory.getSpeakerList();
 
+	if (Utils.isMacOS() == false && speakers.length == 0) {
+	    System.out.println("THERE ARE NO AVAILABLE SPEAKERS!");
+	}
+
 	String preferredSpeaker = Utils.getPreference(Speaker.SPEAKER_PREFERENCE);
 
 	if (preferredSpeaker != null) {
-	    /*
-	     * TODO:  This should only be added if it's still valid
-	     */
-	    speakerComboBox.addItem(preferredSpeaker);
+	    for (int i = 0; i < speakers.length; i++) {
+		if (preferredSpeaker.equals(speakers[i])) {
+	            speakerComboBox.addItem(preferredSpeaker);
+		    break;
+		}
+	    }
 	}
 
 	for (int i = 0; i < speakers.length; i++) {

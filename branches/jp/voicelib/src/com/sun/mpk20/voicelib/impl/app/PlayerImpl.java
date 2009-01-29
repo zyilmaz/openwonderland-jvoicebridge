@@ -340,10 +340,15 @@ public class PlayerImpl implements Player, CallStatusListener {
 
 	    AudioGroupPlayerInfo info = ag.getPlayerInfo(this);
 
+	    if (info == null) {
+	  	logger.warning("info for " + this + " is null for audio group " + ag); 
+		continue;
+	    }
+
 	    if (inExclusiveAudioGroup) {
 	        info.speakingAttenuation = 0;
 	        info.listenAttenuation = 0;
-		System.out.println("group " + audioGroup + " " + this 
+		logger.finest("group " + audioGroup + " " + this 
 		    + " in exclusive group, attenuation to 0 " + ag);
 		continue;
 	    }
@@ -351,7 +356,7 @@ public class PlayerImpl implements Player, CallStatusListener {
 	    if (audioGroup != null) {
 	        info.speakingAttenuation = speakingAttenuation;
 	        info.listenAttenuation = listenAttenuation;
-		System.out.println("group " + audioGroup + " " + this 
+		logger.finest("group " + audioGroup + " " + this 
 		    + " setting listen attenuation to " 
 		    + listenAttenuation + " " + ag);
 	    } else {
@@ -522,6 +527,9 @@ public class PlayerImpl implements Player, CallStatusListener {
 		 * This is an optimization.  p2 was not in range
 		 * and we already knew that.
 		 */
+	        logger.finest("pmx for " + p1 + ": "
+	            + p2 + " is not in range."); 
+
 		skipped++;
 		return;
 	    }
@@ -556,42 +564,43 @@ public class PlayerImpl implements Player, CallStatusListener {
 
 	double[] privateMixParameters = new double[4];
 
-	for (AudioGroup audioGroup : audioGroups) {
-	    if (p.getCall().isMuted()) {
-		break;
-	    }
+	if (p.getCall().isMuted() == false) {
+	    for (AudioGroup audioGroup : audioGroups) {
 
-	    //logger.warning("ag " + audioGroup);
+	        //logger.warning("ag " + audioGroup);
 
-	    if (groups.contains(audioGroup) == false) {
-		//logger.warning(p + " not in audio group " + audioGroup + " of " + this);
-
-		continue;
-	    }
+	        if (groups.contains(audioGroup) == false) {
+		    logger.finest(p + " not in audio group " + audioGroup + " of " + this);
+		    continue;
+	        }
 	
-	    AudioGroupPlayerInfo info = audioGroup.getPlayerInfo(p);
+	        AudioGroupPlayerInfo info = audioGroup.getPlayerInfo(p);
 
-	    if (info.isSpeaking == false) {
-		continue;  // p is not speaking in the group
+	        if (info.isSpeaking == false) {
+		    logger.finest(p + " not speaking in " + audioGroup);
+		    continue;  // p is not speaking in the group
+	        }
+
+	        double[] pmp = audioGroup.getSetup().spatializer.spatialize(
+	            p.getX(), p.getY(), p.getZ(), p.getOrientation(), 
+		    getX(), getY(), getZ(), getOrientation());
+
+	        if (pmp[3] > privateMixParameters[3]) {
+	            logger.finest("group " + audioGroup + " " + this + " has pm for " + p 
+		        + " vol " + privateMixParameters[3] + " ag " + audioGroup
+		        + " la " + audioGroup.getPlayerInfo(this).listenAttenuation + " sap "
+		        + info.speakingAttenuation + " pmp[3] " + pmp[3]);
+
+		    privateMixParameters = pmp;
+	        }
+
+	        if (privateMixParameters[3] != 0) {
+	            privateMixParameters[3] *= 
+		        audioGroup.getPlayerInfo(this).listenAttenuation * info.speakingAttenuation;
+	        }
 	    }
-
-	    double[] pmp = audioGroup.getSetup().spatializer.spatialize(
-	        p.getX(), p.getY(), p.getZ(), p.getOrientation(), 
-		getX(), getY(), getZ(), getOrientation());
-
-	    if (pmp[3] > privateMixParameters[3]) {
-		privateMixParameters = pmp;
-	    }
-
-	    if (privateMixParameters[3] != 0) {
-	        logger.finest("group " + audioGroup + " " + this + " has pm for " + p 
-		    + " vol " + privateMixParameters[3] + " ag " + audioGroup
-		    + " la " + audioGroup.getPlayerInfo(this).listenAttenuation + " sap "
-		    + info.speakingAttenuation);
-
-	        privateMixParameters[3] *= 
-		    audioGroup.getPlayerInfo(this).listenAttenuation * info.speakingAttenuation;
-	    }
+	} else {
+	    logger.finest(p + " is Muted");
 	}
 
 	logger.finest("pm vol is " + privateMixParameters[3]);
