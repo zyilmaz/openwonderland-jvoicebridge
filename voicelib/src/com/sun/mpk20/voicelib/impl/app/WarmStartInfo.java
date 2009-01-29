@@ -20,27 +20,19 @@
  * exception as provided by Sun in the License file that accompanied this 
  * code. 
  */
-package com.sun.mpk20.voicelib.app;
 
-import java.io.Serializable;
+package com.sun.mpk20.voicelib.impl.app;
 
-public interface AudioSource extends Serializable {
 
-   public void setPlayer(Player player);
+public class WarmStartInfo {
 
-   // get the Player this sink is attached to
-   public Player getPlayer();
+    public static final String DS_WARM_START_TREATMENTGROUPS =
+        TreatmentGroupImpl.class.getName() + ".WARM_START_TREATMENTGROUPS";
 
-   public void setBridgeInfo(BridgeInfo bridgeInfo);
+    public static final String DS_WARM_START_TREATMENTS =
+        TreatmentImpl.class.getName() + ".WARM_START_TREATMENTS";
 
-   // get the ID of this source in the bridge
-   public BridgeInfo getBridgeInfo();
-
-   // notification that the given audio sink
-   // in range of this sink has moved.  Return
-   // the message to send to the bridge to
-   // update the mix for this source
-   public String sinkMoved(AudioSink sink,
-         double x, double y, double z, double orientation, double attenuation);
+    public static final String DS_WARM_START_RECORDERS =
+        RecorderImpl.class.getName() + ".WARM_START_RECORDERS";
 
 }

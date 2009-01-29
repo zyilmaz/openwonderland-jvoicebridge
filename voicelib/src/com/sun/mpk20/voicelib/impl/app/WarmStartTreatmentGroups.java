@@ -20,27 +20,17 @@
  * exception as provided by Sun in the License file that accompanied this 
  * code. 
  */
-package com.sun.mpk20.voicelib.app;
+package com.sun.mpk20.voicelib.impl.app;
 
-import java.io.Serializable;
+import com.sun.mpk20.voicelib.app.Treatment;
 
-public interface AudioSource extends Serializable {
+import com.sun.sgs.app.ManagedObject;
 
-   public void setPlayer(Player player);
+import java.util.concurrent.ConcurrentHashMap;
 
-   // get the Player this sink is attached to
-   public Player getPlayer();
+public class WarmStartTreatmentGroups extends ConcurrentHashMap
+    <String, ConcurrentHashMap<String, Treatment>> implements ManagedObject {
 
-   public void setBridgeInfo(BridgeInfo bridgeInfo);
-
-   // get the ID of this source in the bridge
-   public BridgeInfo getBridgeInfo();
-
-   // notification that the given audio sink
-   // in range of this sink has moved.  Return
-   // the message to send to the bridge to
-   // update the mix for this source
-   public String sinkMoved(AudioSink sink,
-         double x, double y, double z, double orientation, double attenuation);
+    private static final long serialVersionUID = 1;
 
 }

@@ -56,7 +56,7 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
     private static final Logger logger =
             Logger.getLogger(NetworkDotAuAudioSource.class.getName());
     
-    private static final int BUFFER_SIZE = 16 * 1024;
+    private static int bufferSize = 256 * 1024;
 
     private String path;
     
@@ -75,6 +75,25 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 
     private int headerLength;
 
+    static {
+	String s = System.getProperty("com.sun.voip.server.NETWORK_AUDIO_BUFFER_SIZE");
+
+	if (s != null && s.length() > 0) {
+	    try {
+	        int n = Integer.parseInt(s);
+
+		if (n <= 0) {
+		    logger.warning("Invalid NETWORK_AUDIO_BUFFER_SIZE:  " + s);
+		} else {
+		    bufferSize = n;
+		    System.out.println("SETTING NETWORK BUFFER SIZE TO " + n);
+		}
+	    } catch (NumberFormatException e) {
+		logger.warning("Invalid NETWORK_AUDIO_BUFFER_SIZE:  " + s);
+	    }
+	}
+    }
+
     private DotAuAudioSource dotAuAudioSource;
 
     /*
@@ -88,15 +107,13 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 	    return;
 	}
 
-        logger.fine("NetworkDotAuAudioSource: Load audio from " + path);
-
 	bufferTimeEnd = System.currentTimeMillis() + 500;
 
 	URL u = new URL(path);
 
 	InputStream in = u.openStream();
 
-	BufferedInputStream bis = new BufferedInputStream(in, 100*1024);
+	BufferedInputStream bis = new BufferedInputStream(in, bufferSize);
 
 	byte[] header = readHeader(bis, path);
 
@@ -145,7 +162,7 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 			+ " exists but is not readable");
 	    } else {
 		fos = new FileOutputStream(cacheFile);
-		bos = new BufferedOutputStream(fos, BUFFER_SIZE);
+		bos = new BufferedOutputStream(fos, bufferSize);
 		this.cacheFile = cacheFile;
 		logger.info("Creating cache file " + path);
 	    }
@@ -202,7 +219,8 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 		return null;
 	    }
 	    
-	    logger.fine("Not enough data " + available);
+	    logger.fine("Not enough data " + available 
+		+ " need " + byteLength);
 
 	    notEnoughDataCount++;
 
@@ -342,8 +360,6 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
         // a monitor for our parent audio source.  If the parent gets GC'd, 
         // we need to go away too
         private ReaderMonitor monitor;
-
-	private int bufferSize = 8192 * 16;
         
         public ReaderThread(NetworkDotAuAudioSource parent, BufferedInputStream bis,
 		BufferedOutputStream bos, String path) throws IOException {
@@ -386,7 +402,7 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
             try {
                 while (!quit()) {
 		    synchronized (parent) {
-			while (!quit && pipeIn.available() > 3 * bufferSize / 4 ) {
+			while (false && !quit && pipeIn.available() > 3 * bufferSize / 4 ) {
                             try {
                                 logger.finer(getName() + " waiting to write... available "
                                     + pipeIn.available());
@@ -415,7 +431,7 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 		    pipeOut.flush();
                 }
             } catch (IOException e) {
-                logger.warning("Error in reader for " + getName() + " " + e.getMessage());
+                System.out.println("Error in reader for " + getName() + " " + e.getMessage());
             } finally {
                 logger.fine(getName() + " reader thread exiting");
                  
@@ -522,7 +538,7 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 
 	    int n = super.read(b);
 
-	    if (available < buffer.length / 2) {
+	    if (false && available < buffer.length / 2) {
 		synchronized (parent) {
 		    parent.notifyAll();
 		}

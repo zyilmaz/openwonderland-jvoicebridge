@@ -33,7 +33,7 @@ public class FullVolumeSpatializer implements Spatializer, Serializable {
 
     private double fullVolumeRadius = 0;
 
-    private double attenuator;
+    private double attenuator = DefaultSpatializer.DEFAULT_MAXIMUM_VOLUME;
 
     public FullVolumeSpatializer() {
 	this(0);
@@ -81,6 +81,11 @@ public class FullVolumeSpatializer implements Spatializer, Serializable {
 	f.fullVolumeRadius = fullVolumeRadius;
 	f.attenuator = attenuator;
 	return f;
+    }
+
+    public String toString() {
+	return "FullVolumeSpatializer(fvr=" + fullVolumeRadius
+	    + " attenuator=" + attenuator + ")";
     }
 
 }

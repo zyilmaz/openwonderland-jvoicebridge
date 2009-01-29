@@ -1115,8 +1115,7 @@ if (false) {
 	    String callId = cp.getCallId();
 
 	    if (callId.indexOf(s) >= 0) {
-		logger.fine("Ending virtual call to disconnected bridge " 
-		    + callId);
+		logger.fine("Ending call to disconnected bridge " + callId);
 
 		try {
 		    endCall(callId);

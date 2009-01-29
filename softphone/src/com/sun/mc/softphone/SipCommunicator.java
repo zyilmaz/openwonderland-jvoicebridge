@@ -351,7 +351,10 @@ public class SipCommunicator extends Thread implements
 	    }
 	}
 
-	if (privateLocalAddress == null) {
+	/*
+	 * XXX sipManager is null at this point.
+	 */
+	if (false && privateLocalAddress == null) {
 	    String registrarAddress = sipManager.getRegistrarAddress();
 
 	    if (registrarAddress != null) {

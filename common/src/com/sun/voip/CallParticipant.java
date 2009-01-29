@@ -1159,6 +1159,10 @@ public class CallParticipant implements Serializable {
 
     public String toConsiseString() {
 	if (phoneNumber == null) {
+	    if (isRecorder) {
+		return name + "@Recorder";
+	    }
+
 	    if (inputTreatment == null) {
 	        return "Anonymous";
 	    }

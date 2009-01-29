@@ -59,4 +59,8 @@ public class ZeroVolumeSpatializer implements Spatializer, Serializable {
 	return new  ZeroVolumeSpatializer();
     }
 
+    public String toString() {
+	return "ZeroVolumeSpatializer";
+    }
+
 }

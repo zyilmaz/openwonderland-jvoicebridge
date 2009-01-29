@@ -23,6 +23,7 @@
 
 package com.sun.mpk20.voicelib.impl.service.voice;
 
+import com.sun.sgs.app.AppContext;
 import com.sun.sgs.app.ManagedObject;
 import com.sun.sgs.app.ManagedReference;
 import com.sun.sgs.app.NameNotBoundException;
@@ -94,7 +95,7 @@ import com.sun.voip.client.connector.CallStatusListener;
 public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	CallStatusListener, NonDurableTransactionParticipant {
 
-   private ThreadLocal<ArrayList<Work>> localWorkToDo =
+    private ThreadLocal<ArrayList<Work>> localWorkToDo =
        new ThreadLocal<ArrayList<Work>>() {
            protected ArrayList<Work> initialValue() {
                return new ArrayList<Work>();
@@ -131,9 +132,6 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     // the state map for each active transaction
     private ConcurrentHashMap<Transaction,TxnState> txnMap;
 
-    // the transient map for all recurring tasks' handles
-    private ConcurrentHashMap<String, RecurringTaskHandle> recurringMap;
-
     private BridgeManager bridgeManager;
 
     /**
@@ -153,7 +151,6 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	super(properties, systemRegistry, txnProxy, logger);
 
         txnMap = new ConcurrentHashMap<Transaction,TxnState>();
-        recurringMap = new ConcurrentHashMap<String,RecurringTaskHandle>();
 
         // the scheduler is the only system component that we use
         transactionScheduler = systemRegistry.getComponent(TransactionScheduler.class);
@@ -418,7 +415,31 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     @Override
     public void doReady() {
 	logger.log(Level.INFO, "Voice Service is ready.");
+
+        transactionScheduler.scheduleTask(new ReadyNotifier(), taskOwner); 
     }
+
+    private class ReadyNotifier implements KernelRunnable {
+        public ReadyNotifier() {
+        }
+
+        public String getBaseTaskType() {
+            return ReadyNotifier.class.getName();
+        }
+
+        public void run() throws Exception {
+            /*
+             * This runs in a transaction and the txnProxy
+             * is usable at this point.  It's okay to get a manager
+             * or another service.
+             *
+             * This method could get called multiple times if
+             * ExceptionRetryStatus is thrown.
+             */
+	    AppContext.getManager(VoiceManager.class).ready();	
+	}
+    }
+
 
     @Override
     protected void handleServiceVersionMismatch(Version oldVersion,
@@ -805,10 +826,6 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
      */
     private static final class TxnState {
 	public boolean prepared = false;
-        public HashSet<TaskReservation> reservationSet = null;
-        @SuppressWarnings("hiding")
-        public HashMap<String,RecurringTaskHandle> recurringMap = null;
-        public HashSet<String> cancelledSet = null;
     }
 
     private void sendStatus(int statusCode, String callId, String info) {
