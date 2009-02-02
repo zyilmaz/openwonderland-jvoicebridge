@@ -55,13 +55,11 @@ public class FullVolumeSpatializer implements Spatializer, Serializable {
 	parameters[2] = 0;  		 // up/down
 	parameters[3] = 1 * attenuator;  // volume
 
-	if (fullVolumeRadius != 0) {
-	    double distance = Util.getDistance(sourceX, sourceY,
-		sourceZ, destX, destY, destZ);
+	double distance = Util.getDistance(sourceX, sourceY,
+	    sourceZ, destX, destY, destZ);
 
-	    if (distance > fullVolumeRadius) {
-		parameters[3] = 0;
-	    }
+	if (distance > fullVolumeRadius) {
+	    parameters[3] = 0;
 	}
 
 	return parameters; 
