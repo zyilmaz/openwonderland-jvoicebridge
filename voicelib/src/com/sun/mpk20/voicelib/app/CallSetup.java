@@ -34,4 +34,6 @@ public class CallSetup implements Serializable {
     public BridgeInfo bridgeInfo;
     public CallStatusListener listener;
 
+    public boolean incomingCall;
+
 }

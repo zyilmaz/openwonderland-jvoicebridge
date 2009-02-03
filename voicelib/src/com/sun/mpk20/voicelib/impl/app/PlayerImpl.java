@@ -68,7 +68,7 @@ import com.sun.voip.client.connector.CallStatusListener;
 
 import java.awt.geom.Line2D;
 
-public class PlayerImpl implements Player, CallStatusListener {
+public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
     private static final Logger logger =
         Logger.getLogger(PlayerImpl.class.getName());

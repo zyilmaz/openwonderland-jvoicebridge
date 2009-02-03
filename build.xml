@@ -116,7 +116,7 @@
             </fileset>
         </zip>
 
-<!--        <delete dir="tmp"/> -->
+	<delete dir="tmp"/>
     </target>
 
     <target name="wonderland-dist" depends="jar, dist-bridge, dist-softphone, dist-voicelib" description="Build distribution zip for Wonderland">
@@ -161,6 +161,7 @@
     <target name="dist-bridge" depends="jar-bridge"
             description="Build bridge distribution directory">
         <mkdir dir="${dist.dir}/bridge"/>
+        <mkdir dir="${dist.dir}/bridge/modules"/>
         
         <copy todir="${dist.dir}/bridge">
             <fileset dir="${common.dir}/lib">
@@ -181,6 +182,12 @@
             <fileset dir="${bridge.dir}">
                 <include name="run.properties"/>
                 <include name="run.xml"/>
+            </fileset>
+        </copy>
+
+        <copy todir="${dist.dir}/bridge/modules">
+            <fileset dir="${bridge.dir}/modules">
+                <include name="**"/>
             </fileset>
         </copy>
 
