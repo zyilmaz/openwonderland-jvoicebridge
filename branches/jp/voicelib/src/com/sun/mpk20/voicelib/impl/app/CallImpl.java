@@ -90,6 +90,7 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	        setup.cp.setCallId(id);
 	    }
 	} 
+
 	String callee = setup.cp.getPhoneNumber();
 
 	logger.info("createCall:  callId " + this.id + " callee: " + callee
@@ -121,8 +122,12 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	    vm.addCallStatusListener(setup.listener, this.id);
 	}
 
-	VoiceService backingManager = AppContext.getManager(VoiceManager.class).getBackingManager();
-        backingManager.createCall(setup);
+	if (setup.incomingCall == false) {
+	    VoiceService backingManager = 
+		AppContext.getManager(VoiceManager.class).getBackingManager();
+
+            backingManager.createCall(setup);
+	}
 
 	Player p = AppContext.getManager(VoiceManager.class).getPlayer(this.id);
 

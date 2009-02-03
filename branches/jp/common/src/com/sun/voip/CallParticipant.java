@@ -83,7 +83,7 @@ public class CallParticipant implements Serializable {
     private boolean voiceDetection       	   = false;
     private boolean voiceDetectionWhileMuted       = false;
     private boolean handleSessionProgress	   = false;
-    private String remoteMediaInfo		   = null;
+    private String  remoteMediaInfo		   = null;
     
     /*
      * Second party in a two party call or target of migration
