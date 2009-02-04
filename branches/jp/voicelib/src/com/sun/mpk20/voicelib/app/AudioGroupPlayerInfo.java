@@ -22,7 +22,9 @@
  */
 package com.sun.mpk20.voicelib.app;
 
-public class AudioGroupPlayerInfo {
+import java.io.Serializable;
+
+public class AudioGroupPlayerInfo implements Serializable {
 
     public double defaultSpeakingAttenuation = 
 	AudioGroup.DEFAULT_SPEAKING_ATTENUATION;
