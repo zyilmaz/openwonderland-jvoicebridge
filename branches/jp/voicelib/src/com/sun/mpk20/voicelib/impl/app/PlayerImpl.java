@@ -816,8 +816,14 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
 	    Enumeration<String> keys = privateSpatializers.keys();
 
+	    String space = " ";
+
 	    while (keys.hasMoreElements()) {
-		s += " " + keys.nextElement();
+		String key = keys.nextElement();
+
+		s += space + key + " " + privateSpatializers.get(key) + "\n";
+
+		space = "                          ";
 	    }
 	}
 	
