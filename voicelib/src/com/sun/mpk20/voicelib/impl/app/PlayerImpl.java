@@ -588,6 +588,10 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	
 	        AudioGroupPlayerInfo info = audioGroup.getPlayerInfo(p);
 
+		if (info == null) {
+		    System.out.println("this " + this + " p null " + p + " group " + audioGroup);
+		}
+
 	        if (info.isSpeaking == false) {
 		    logger.fine(this + "::: " + p + " not speaking in " + audioGroup);
 		    continue;  // p is not speaking in the group

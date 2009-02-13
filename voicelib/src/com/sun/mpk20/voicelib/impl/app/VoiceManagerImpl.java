@@ -317,7 +317,6 @@ public class VoiceManagerImpl implements VoiceManager {
 	group = new TreatmentGroupImpl(id);
 
 	treatmentGroups.put(id, group);
-
 	return group;
     }
 
@@ -816,10 +815,28 @@ public class VoiceManagerImpl implements VoiceManager {
 	    CopyOnWriteArrayList<CallStatusListener> listeners = vm.getAllCallListeners();
 
 	    for (CallStatusListener listener : listeners) {
-		System.out.println("Notifying " + listener);
                 listener.callStatusChanged(status);
 	    }
 	
+	    if (status.getCode() == CallStatus.BRIDGE_OFFLINE) {
+		/*
+		 * We need to notify all call status listeners
+		 */
+		Collection<CopyOnWriteArrayList<CallStatusListener>> values = 
+		    vm.getCallStatusListeners().values();
+
+		Iterator<CopyOnWriteArrayList<CallStatusListener>> iterator = values.iterator();
+
+                while (iterator.hasNext()) {
+                    CopyOnWriteArrayList<CallStatusListener> listenerList = iterator.next();
+
+		    for (CallStatusListener l : listenerList) {
+			l.callStatusChanged(status);
+		    }
+		}
+		return;
+	    }
+
 	    String callId = status.getCallId();
 
 	    if (callId == null || callId.length() == 0) {
@@ -850,14 +867,43 @@ public class VoiceManagerImpl implements VoiceManager {
                 managedListener.get().callStatusChanged(status);
             }
 
+	    String callId = status.getCallId();
+
 	    ManagedCallStatusListeners managedListeners =
                 (ManagedCallStatusListeners) dm.getBinding(DS_MANAGED_CALL_STATUS_LISTENERS);
 
+	    if (status.getCode() == CallStatus.BRIDGE_OFFLINE) {
+		/*
+		 * We need to notify all call status listeners
+		 */
+		Collection<CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>>> values = 
+		    managedListeners.values();
+
+		Iterator<CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>>> iterator = 
+		    values.iterator();
+
+                while (iterator.hasNext()) {
+                    CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>> managedListenerList = 
+			iterator.next();
+
+		    for (ManagedReference<ManagedCallStatusListener> l : managedListenerList) {
+			l.get().callStatusChanged(status);
+		    }
+		}
+
+		return;
+	    }
+
+	    if (callId == null || callId.length() == 0) {
+		logger.warning("No callID:  '" + callId + "'");
+	 	return;
+	    }
+
 	    CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>> listenerList =
-		managedListeners.get(status.getCallId());
+		managedListeners.get(callId);
 
 	    if (listenerList == null) {
-	  	logger.finer("No listeners for " + status.getCallId());
+	  	logger.finer("No listeners for " + callId);
 		return;
 	    }
 
@@ -979,12 +1025,16 @@ public class VoiceManagerImpl implements VoiceManager {
 		s += dumpAudioGroups();
 		s += dumpCalls();
 		s += dumpPlayers();
+		s += dumpTreatmentGroups();
+		s += dumpTreatments();
 	    } else if (tokens[i].equalsIgnoreCase("audioGroups")) {
 		s += dumpAudioGroups();
 	    } else if (tokens[i].equalsIgnoreCase("calls")) {
 		s += dumpCalls();
 	    } else if (tokens[i].equalsIgnoreCase("players")) {
 		s += dumpPlayers();
+	    } else if (tokens[i].equalsIgnoreCase("treatmentGroups")) {
+	    } else if (tokens[i].equalsIgnoreCase("treatments")) {
 	    } else {
 		logger.warning("Unrecognized object to dump:  " + tokens[i]);
 	    }
@@ -1048,6 +1098,42 @@ public class VoiceManagerImpl implements VoiceManager {
 	    }
 	} else {
 	    s += "There are no players!\n";
+	}
+
+	return s;
+    }
+
+    private String dumpTreatmentGroups() {
+	String s = "\n";
+	s += "TreatmentGroups\n";
+	s += "---------------\n";
+
+	if (treatmentGroups.size() > 0) {
+	    Enumeration<TreatmentGroup> groups = treatmentGroups.elements();
+
+	    while (groups.hasMoreElements()) {
+		s += groups.nextElement().dump() + "\n";
+	    }
+	} else {
+	    s += "There are no treatment groups!\n";
+	}
+
+	return s;
+    }
+
+    private String dumpTreatments() {
+	String s = "\n";
+	s += "Treatments\n";
+	s += "----------\n";
+
+	if (treatments.size() > 0) {
+	    Enumeration<Treatment> t = treatments.elements();
+
+	    while (t.hasMoreElements()) {
+		s += t.nextElement().dump() + "\n";
+	    }
+	} else {
+	    s += "There are no treatments!\n";
 	}
 
 	return s;

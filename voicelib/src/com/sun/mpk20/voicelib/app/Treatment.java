@@ -36,4 +36,6 @@ public interface Treatment {
 
     public void stop();
 
+    public String dump();
+
 }

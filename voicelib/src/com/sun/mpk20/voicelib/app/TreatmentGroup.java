@@ -36,4 +36,6 @@ public interface TreatmentGroup {
 
     public ConcurrentHashMap<String, Treatment> getTreatments();
 
+    public String dump();
+
 }

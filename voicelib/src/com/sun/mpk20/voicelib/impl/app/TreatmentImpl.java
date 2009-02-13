@@ -152,7 +152,15 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
     }
 
     public void stop() {
-	// need to tell vm to remove treatment
+	VoiceManager vm = AppContext.getManager(VoiceManager.class);
+
+	vm.getTreatments().remove(this);
+
+	try {
+	    vm.endCall(call, true);
+	} catch (IOException e) {
+	    logger.warning("Unable to end call for treatment " + getId());
+	}
     }
 
     public void callStatusChanged(CallStatus status) {
@@ -203,6 +211,10 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
 	    listener.callStatusChanged(status);
 	}
 
+    }
+
+    public String dump() {
+	return "  " + id;
     }
 
     public String toString() {

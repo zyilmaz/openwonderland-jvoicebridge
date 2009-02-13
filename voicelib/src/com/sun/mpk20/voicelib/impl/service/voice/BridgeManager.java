@@ -132,15 +132,21 @@ public class BridgeManager extends Thread
 	    /*
 	     * This happens if the watchdog isn't running.
 	     */
-	    bridgeOffline(bc, bc.getCallParticipantArray());
-
 	    logger.info("Disconnected bridge is now back online: " 
 		+ bridgeServer);
+
+	    initializeBridgeConnection(bridgeServer);
+
+	    bridgeOffline(bc, bc.getCallParticipantArray());
 	} else {
 	    logger.info("Bridge " + (bridgeConnections.size() + 1) 
 	        + " came online:  '" + bridgeServer + "'");
-	}
 
+	    initializeBridgeConnection(bridgeServer);
+	}
+    }
+
+    private void initializeBridgeConnection(String bridgeServer) throws IOException {
 	String[] tokens = bridgeServer.split(":");
 	
 	if (tokens.length != 6) {
@@ -186,6 +192,8 @@ public class BridgeManager extends Thread
 	    logger.info("Invalid public SIP port " + tokens[5]
 		+ ".  Defaulting to " + publicSipPort);
 	}
+
+	BridgeConnection bc;
 
 	try {
 	    /*
@@ -507,8 +515,7 @@ public class BridgeManager extends Thread
     }
 
     public void restartInputTreatment(String callId) throws IOException {
-	BridgeConnection bc = getBridgeConnection(
-            callId);
+	BridgeConnection bc = getBridgeConnection(callId, true);
 
 	bc.restartInputTreatment(callId);
     }

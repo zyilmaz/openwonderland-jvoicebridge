@@ -168,6 +168,20 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     }
 
     public void createCall(CallSetup setup) throws IOException {
+	ArrayList<Work> localWork = localWorkToDo.get();
+
+	for (Work w : localWork) {
+	    if (w.cp == null) {
+		continue;
+	    }
+
+	    if (w.cp.getCallId().equals(setup.cp.getCallId())) {
+		logger.log(Level.FINER, "VS:  Skipping duplicate createCall for "
+		    + setup.cp.getCallId());
+		return;
+	    }
+	}
+	
 	getTxnState();
 
 	Work work = new Work(Work.SETUPCALL);
@@ -175,6 +189,8 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	work.bridgeInfo = setup.bridgeInfo;
 
         localWorkToDo.get().add(work);
+
+	//System.out.println("VS:  Scheduled createcall " + localWorkToDo.get().size());
     }
 
     public void muteCall(String callId, boolean isMuted) throws IOException {
@@ -235,6 +251,21 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     }
 
     public void endCall(String callId) throws IOException {
+	ArrayList<Work> localWork = localWorkToDo.get();
+
+	for (Work w : localWork) {
+	    if (w.targetCallId == null) {
+		continue;
+	    }
+
+	    if (w.targetCallId.equals(callId)) {
+		logger.log(Level.FINER, "VS: skipping duplicate endCall for " + callId);
+		return;
+	    }
+	}
+
+	//System.out.println("VS:  Endcall " + callId);
+
 	try {
 	    bridgeManager.getBridgeConnection(callId);
 	} catch (IOException e) {
@@ -282,6 +313,10 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     }
 
     public void monitorConference(String conferenceId) throws IOException {
+	if (conferenceId == null) {
+	    logger.log(Level.FINER, "Null conferenceId ignored.");
+	}
+
 	bridgeManager.monitorConference(conferenceId);
     }
 
@@ -340,9 +375,23 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     }
 
     public void restartInputTreatment(String callId) throws IOException {
+	ArrayList<Work> localWork = localWorkToDo.get();
+
+	for (Work w : localWork) {
+	    if (w.targetCallId == null) {
+		continue;
+	    }
+
+	    if (w.targetCallId.equals(callId)) {
+		logger.log(Level.FINER, "VS: skipping duplicate restartInputTreatment for " + callId);
+		return;
+	    }
+	}
+	     
 	getTxnState();
 
 	localWorkToDo.get().add(new Work(Work.RESTARTINPUTTREATMENT, callId));
+	//System.out.println("VS:  SCHEDULE RESTART " + callId);
     }
 
     public void startRecording(String callId, String recordingFile) throws IOException {
@@ -522,6 +571,8 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     public void commit(Transaction txn) {
         logger.log(Level.FINEST, "VS:  committing txn: " + txn);
 
+	//System.out.println("VS:  Commit");
+
         // see if we we're committing the configuration transaction
         if (isConfiguring) {
             isConfigured = true;
@@ -554,9 +605,13 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
         workToDo = localWorkToDo.get();
 
 	logger.log(Level.FINEST, "workToDo size " + workToDo.size());
+	//System.out.println("VS: WORK TO DO SIZE " + workToDo.size());
 
 	for (int i = 0; i < workToDo.size(); i++) {
 	    Work work = workToDo.get(i);
+
+	    //System.out.println("VS: Processing " + work.command 
+	    //	+ " target id " + work.targetCallId + " " + work.cp);
 
 	    switch (work.command) {
 	    case Work.SETUPCALL:
@@ -746,6 +801,8 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
      * {@inheritDoc}
      */
     public void abort(Transaction txn) {
+	//System.out.println("VS:  Abort " + txn.getAbortCause().getMessage());
+
 	logger.log(Level.INFO, txn.getAbortCause().getMessage());
 
         localWorkToDo.get().clear();
@@ -884,11 +941,11 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	        listenerList = listeners.toArray(new ManagedReference[0]);
 	    }
 
+	    //System.out.println("VS: Status " + status);
+
 	    for (int i = 0; i < listenerList.length; i++) {
 	        ManagedCallStatusListener mcsl = (ManagedCallStatusListener)
 		    listenerList[i].get();
-
-		logger.log(Level.WARNING, "Notifying listener " + i + " status " + status);
 
 	        try {
 		    mcsl.callStatusChanged(status);

@@ -106,8 +106,8 @@ public class Reconnector extends Thread {
 	    logger.info("Adding " + bc + " calls to recovery list so " 
 		+ calls.size() + " calls will be reconnected later");
 
-	    for (CallParticipant c : calls) {
-	        recoveryList.put(c.getCallId(), c);
+	    for (CallParticipant cp : calls) {
+	        recoveryList.put(cp.getCallId(), cp);
 	    }
 
 	    recoveryList.notifyAll();
@@ -160,41 +160,8 @@ public class Reconnector extends Thread {
 		    continue;
 		}
 
-		logger.fine("Reconnecting " + cp);
-
-		/*
-	 	 * Only input treatments need to be restarted here.
-	 	 * Softphones will be sent a message telling them
-	 	 * to request a new bridge and reconnect.
-	 	 */
-		if (cp.getInputTreatment() != null) {
-		    /*
-		     * XXX timing issue here.  
-		     * The call may not be ended by
-		     * the time we try to restart it in which case 
-		     * there is a duplicate callId.
-		     *
-		     * We'll get an exception here then go back to the
-		     * top and retry unless there are no bridgeConnections
-		     * in which case we wait for a bridge to come online.
-	 	     */
-		    try {
-	     		bridgeManager.initiateCall(cp);
-	            	sendOfflineStatus(cp);
-	 	    } catch (IOException e) {
-	     	 	logger.info(e.getMessage());
-
-			bridgeManager.waitForBridge();
-			break;
-		    } catch (ParseException e) {
-			logger.info("Something is very wrong!  "
-			    + "This call cannot be restarted. "
-			    + e.getMessage() + " " + cp);
-		    }
-		} else {
-		    BridgeConnection bc = bridgeManager.waitForBridge();
-		    sendOfflineStatus(cp, bc);
-		}
+		BridgeConnection bc = bridgeManager.waitForBridge();
+		sendOfflineStatus(cp, bc);
 
 		recoveryList.remove(callId);
 	    }
