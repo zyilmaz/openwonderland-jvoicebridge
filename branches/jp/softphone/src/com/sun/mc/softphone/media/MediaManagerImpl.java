@@ -561,9 +561,17 @@ if (false) {
 
         AudioFactory audioFactory = AudioFactory.getInstance();
 
-	audioFactory.initialize(speakerSampleRate, speakerChannels, 
-	    microphoneSampleRate, microphoneChannels, microphoneBufferSize,
-	    speakerBufferSize);
+	try {
+	    audioFactory.initialize(speakerSampleRate, speakerChannels, 
+	        microphoneSampleRate, microphoneChannels, microphoneBufferSize,
+	        speakerBufferSize);
+	} catch (IOException e) {
+	    Console.showErrorUI("Softphone Error!",
+		   "The softphone couldn't initialize the audio system.\n"
+		   + "The softphone will not work!",
+		   e.getMessage());
+	    throw e;
+	}
 
         microphone = audioFactory.getMicrophone();
         speaker = audioFactory.getSpeaker();

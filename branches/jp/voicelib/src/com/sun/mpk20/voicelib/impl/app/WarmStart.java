@@ -68,6 +68,10 @@ public class WarmStart implements Serializable {
      * This needs to be broken up into individual transactions.
      */
     public WarmStart(VoiceManager vm) {
+	//System.out.println("WARM START");
+
+	//System.out.println(vm.dump("all"));
+
 	if (treatmentGroupsRestarted == false) {
 	    restartTreatmentGroups(vm);
 	}
@@ -79,8 +83,10 @@ public class WarmStart implements Serializable {
 	restartRecorders(vm);
 
 	if (taskList.size() > 0) {
-	    System.out.println("Warm start sheduling tasks...");
+	    logger.fine("Warm start sheduling tasks...");
 	}
+
+	//System.out.println("WARM START FINISHED SCHEDULING WORK...");
 
 	scheduleNextTask();
     }
@@ -123,6 +129,7 @@ public class WarmStart implements Serializable {
 	}
 
 	for (String groupId : keyList) {
+	    //System.out.println("Adding TG to task list " + groupId);
 	    taskList.add(new TreatmentGroupTask(groupId));
 
 	    keys = warmStartTreatmentGroups.get(groupId).keys();
@@ -131,6 +138,7 @@ public class WarmStart implements Serializable {
 		String treatmentId = keys.nextElement();
 
 	        if (vm.getTreatment(treatmentId) == null) {
+		    //System.out.println("Adding T to TG " + treatmentId);
 		    taskList.add(new TreatmentTask(groupId, treatmentId,
 			warmStartTreatments.get(treatmentId)));
 		} else {
@@ -156,6 +164,8 @@ public class WarmStart implements Serializable {
 	    //System.out.println("There are no treatments to restart...");
 	    return;
 	}
+
+	//System.out.println("Treatments to restart:  " + warmStartTreatments.size());
 
 	Enumeration<String> keys = warmStartTreatments.keys();
 
@@ -213,13 +223,19 @@ public class WarmStart implements Serializable {
 	private String groupId;
 
 	public TreatmentGroupTask(String groupId) {
+	    //System.out.println("NEW TG TASK For " + groupId);
 	    this.groupId = groupId;
  	}
 
 	public void run() {
+	    //System.out.println("RUN TG Task " + groupId);
+
 	    AppContext.getManager(VoiceManager.class).createTreatmentGroup(groupId);
 
+	    //System.out.println("Created TG " + groupId);
 	    scheduleNextTask();
+
+	    AppContext.getManager(VoiceManager.class).dump("all");
 	}
 
     }
@@ -241,22 +257,30 @@ public class WarmStart implements Serializable {
 	}
 
  	public void run() {
-	    //System.out.println("Creating treatment " + treatmentId);
+	    //System.out.println("RUN TREATMENT TASK FOR " + treatmentId);
 
 	    VoiceManager vm = AppContext.getManager(VoiceManager.class);
 
 	    if (vm.getTreatment(treatmentId) == null) {
 	        try {
-		    vm.createTreatment(treatmentId, setup);
+		    Treatment treatment = vm.createTreatment(treatmentId, setup);
+
+		    if (groupId != null) {
+		        TreatmentGroup group = vm.getTreatmentGroup(groupId);
+
+		        group.addTreatment(treatment);
+		    }
 	        } catch (IOException e) {
-		    logger.warning("Unable to create treatment " + treatmentId + " " 
-		        + e.getMessage());
+		    System.out.println("Unable to create treatment " + treatmentId + " " 
+		    + e.getMessage());
 	        }
 	    } else {
 		//System.out.println("Treatment is already started:  " + treatmentId);
 	    }
 
 	    scheduleNextTask();
+
+	    //System.out.println("Done restarting treatment " + treatmentId);
 	}
 
     }
@@ -272,7 +296,7 @@ public class WarmStart implements Serializable {
 	}
 
 	public void run() {
-	    //System.out.println("Creating recorder " + recorderId);
+	    //System.out.println("RUN TASK Creating recorder " + recorderId);
 
 	    try {
 	        AppContext.getManager(VoiceManager.class).createRecorder(recorderId, setup);

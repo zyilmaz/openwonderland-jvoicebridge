@@ -52,12 +52,18 @@ public class DotAuAudioSource extends FileAudioSource {
      * Read an audio file.  Pad with linear silence.
      */
     public DotAuAudioSource(String path) throws IOException {
+	initialize(path);
+    }
+
+    public void initialize(String path) throws IOException {
 	this.path = path;
 	initialize();
     }
 
     private void initialize() throws IOException {
-	done();
+	if (in != null) {
+	    done();
+	}
 
 	in = getInputStream(path);
 

@@ -73,15 +73,15 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 	players.put(player, playerInfo);
 	player.addAudioGroup(this);
 
-	logger.info("Adding " + player + " to " + this + " call info " + playerInfo);
+	logger.finer("Adding " + player + " to " + this + " call info " + playerInfo);
     }
 
     public void removePlayer(Player player) {
-	if (players.remove(player) != null) {
-	    logger.warning("Removed " + player + " from " + this);
-	}
-
 	player.removeAudioGroup(this);
+
+	if (players.remove(player) != null) {
+	    logger.finer("Removed " + player + " from " + this);
+	}
     }
 
     public ConcurrentHashMap<Player, AudioGroupPlayerInfo> getPlayers() {

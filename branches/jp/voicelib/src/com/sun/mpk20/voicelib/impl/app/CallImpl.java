@@ -93,7 +93,7 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 
 	String callee = setup.cp.getPhoneNumber();
 
-	logger.info("createCall:  callId " + this.id + " callee: " + callee
+	logger.finer("createCall:  callId " + this.id + " callee: " + callee
 	    + " Bridge: " + setup.bridgeInfo);
 
 	String name = this.id;
@@ -300,7 +300,7 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
     }
 
     public String dump() {
-	return "  " + setup.cp + (isMuted ? " MUTED" : "");
+	return setup.cp + (isMuted ? " MUTED" : "");
     }
 
 }

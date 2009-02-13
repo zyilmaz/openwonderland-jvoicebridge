@@ -960,6 +960,10 @@ if (false) {
 	    return false;
 	}
 
+	if (socket.isOutputShutdown() || socket.isInputShutdown()) {
+	    return false;
+	}
+
 	return true;
     }
 
