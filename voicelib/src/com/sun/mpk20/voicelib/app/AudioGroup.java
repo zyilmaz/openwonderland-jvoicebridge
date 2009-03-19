@@ -24,8 +24,6 @@ package com.sun.mpk20.voicelib.app;
 
 import java.io.Serializable;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 public interface AudioGroup extends Serializable {
 
     public final double FULL_VOLUME = 1.0;
@@ -44,7 +42,9 @@ public interface AudioGroup extends Serializable {
 
     public void removePlayer(Player player);
 
-    public ConcurrentHashMap<Player, AudioGroupPlayerInfo> getPlayers();
+    public Player[] getPlayers();
+
+    public int getNumberOfPlayers();
 
     public void removePlayers();
 

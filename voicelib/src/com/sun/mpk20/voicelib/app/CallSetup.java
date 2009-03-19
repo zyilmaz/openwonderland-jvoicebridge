@@ -22,6 +22,10 @@
  */
 package com.sun.mpk20.voicelib.app;
 
+import com.sun.mpk20.voicelib.app.ManagedCallStatusListener;
+
+import com.sun.sgs.app.ManagedReference;
+
 import java.io.Serializable;
 
 import com.sun.voip.CallParticipant;
@@ -33,6 +37,7 @@ public class CallSetup implements Serializable {
     public CallParticipant cp;
     public BridgeInfo bridgeInfo;
     public CallStatusListener listener;
+    public ManagedReference<ManagedCallStatusListener> managedListenerRef;
 
     public boolean incomingCall;
 

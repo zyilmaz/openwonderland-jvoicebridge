@@ -410,7 +410,7 @@ public class TreatmentManager implements MixDataSource {
                 AudioSource as = FileAudioSource.getAudioSource(path);
 
 		if (as == null) {
-		    throw new IOException("Invalid treatment: " + path);
+		    throw new IOException("Invalid treatment, audio source null: " + path);
 		}
 
 		treatments.add(as);
@@ -429,7 +429,7 @@ public class TreatmentManager implements MixDataSource {
 		}
 	    }
 
-	    throw new IOException("Invalid treatment: " + path);
+	    throw new IOException("Invalid treatment, no audio source: " + path);
 	}
     }
 

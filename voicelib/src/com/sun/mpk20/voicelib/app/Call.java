@@ -47,9 +47,16 @@ public interface Call extends CallStatusListener {
 
     public void transferToConference(String conferenceId) throws IOException;
 
+    public void newInputTreatment(String treatmentgroup) throws IOException;
+
+    public void restartInputTreatment() throws IOException;
+
+    public void stopInputTreatment() throws IOException;
+
     public void playTreatment(String treatment) throws IOException;
 
-    public void pauseTreatment(String treatment) throws IOException;
+    public void pauseTreatment(String treatment, boolean isPaused) 
+	throws IOException;
 
     public void stopTreatment(String treatment) throws IOException;
 

@@ -31,20 +31,32 @@ import java.io.Serializable;
 public class VoiceManagerParameters implements Serializable {
 
     public int logLevel;
+    public double scale;
+    public String conferenceId;
     public DefaultSpatializer livePlayerSpatializer;
     public DefaultSpatializer stationarySpatializer;
+    public DefaultSpatializer outworlderSpatializer;
+    public AudioGroup livePlayerAudioGroup;
+    public AudioGroup stationaryPlayerAudioGroup;
 
     public VoiceManagerParameters() {
     }
 
-    public VoiceManagerParameters(int logLevel, 
+    public VoiceManagerParameters(int logLevel, double scale, String conferenceId,
 	     DefaultSpatializer livePlayerSpatializer,
-	     DefaultSpatializer stationarySpatializer) {
+	     DefaultSpatializer stationarySpatializer,
+	     DefaultSpatializer outworlderSpatializer,
+	     AudioGroup livePlayerAudioGroup,
+	     AudioGroup stationaryPlayerAudioGroup) {
 
 	this.logLevel = logLevel;
-
+	this.scale = scale;
+	this.conferenceId = conferenceId;
 	this.livePlayerSpatializer = livePlayerSpatializer;
 	this.stationarySpatializer = stationarySpatializer;
+	this.outworlderSpatializer = outworlderSpatializer;
+	this.livePlayerAudioGroup = livePlayerAudioGroup;
+	this.stationaryPlayerAudioGroup = stationaryPlayerAudioGroup;
     }
 
 }

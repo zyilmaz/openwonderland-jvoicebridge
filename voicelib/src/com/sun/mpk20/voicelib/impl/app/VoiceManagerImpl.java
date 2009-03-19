@@ -23,12 +23,6 @@
 
 package com.sun.mpk20.voicelib.impl.app;
 
-import com.sun.sgs.app.AppContext;
-import com.sun.sgs.app.DataManager;
-import com.sun.sgs.app.ManagedObject;
-import com.sun.sgs.app.ManagedReference;
-import com.sun.sgs.app.NameNotBoundException;
-
 import com.sun.mpk20.voicelib.app.AudioGroup;
 import com.sun.mpk20.voicelib.app.AudioGroupSetup;
 import com.sun.mpk20.voicelib.app.BridgeInfo;
@@ -37,8 +31,6 @@ import com.sun.mpk20.voicelib.app.CallSetup;
 import com.sun.mpk20.voicelib.app.DefaultSpatializer;
 import com.sun.mpk20.voicelib.app.DefaultSpatializers;
 import com.sun.mpk20.voicelib.app.CallBeginEndListener;
-import com.sun.mpk20.voicelib.app.ManagedCallStatusListener;
-import com.sun.mpk20.voicelib.app.ManagedCallBeginEndListener;
 import com.sun.mpk20.voicelib.app.Player;
 import com.sun.mpk20.voicelib.app.PlayerSetup;
 import com.sun.mpk20.voicelib.app.Recorder;
@@ -58,20 +50,8 @@ import com.sun.voip.client.connector.CallStatusListener;
 import java.io.IOException;
 import java.io.Serializable;
 
-import java.math.BigInteger;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Iterator;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import java.util.prefs.Preferences;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class VoiceManagerImpl implements VoiceManager {
 
@@ -81,141 +61,44 @@ public class VoiceManagerImpl implements VoiceManager {
     private static final Logger logger =
         Logger.getLogger(VoiceManagerImpl.class.getName());
 
-    // the voice manager that this manager calls through to
     private VoiceService backingManager;
-
-    private static final String SCALE = 
-	"org.jdesktop.lg3d.wonderland.darkstar.server.VoiceManagerImpl.SCALE";
-
-    private static final double LIVE_PLAYER_MAXIMUM_VOLUME = .8;
-    private static final double LIVE_PLAYER_ZERO_VOLUME_RADIUS = 22;
-    private static final double LIVE_PLAYER_FULL_VOLUME_RADIUS = 8;
-    private static final double LIVE_PLAYER_FALLOFF = .95;
-
-    private static final double STATIONARY_MAXIMUM_VOLUME = .6;
-    private static final double STATIONARY_ZERO_VOLUME_RADIUS = 16;
-    private static final double STATIONARY_FULL_VOLUME_RADIUS = 6;
-    private static final double STATIONARY_FALLOFF = .94;
-
-    private static final double OUTWORLDER_MAXIMUM_VOLUME = .4;
-    private static final double OUTWORLDER_ZERO_VOLUME_RADIUS = 26;
-    private static final double OUTWORLDER_FULL_VOLUME_RADIUS = 10;
-    private static final double OUTWORLDER_FALLOFF = .94;
-
-    private double scale = 1.;
-
-    private String conferenceId;
-
-    private VoiceManagerParameters voiceManagerParameters;
-
-    private ConcurrentHashMap<String, AudioGroup> audioGroups = new ConcurrentHashMap();
-    private ConcurrentHashMap<String, Call> calls = new ConcurrentHashMap();
-    private ConcurrentHashMap<String, Player> players = new ConcurrentHashMap();
-    private ConcurrentHashMap<String, Recorder> recorders = new ConcurrentHashMap();
-    private ConcurrentHashMap<String, TreatmentGroup> treatmentGroups = new ConcurrentHashMap();
-    private ConcurrentHashMap<String, Treatment> treatments = new ConcurrentHashMap();
 
     public VoiceManagerImpl(VoiceService backingManager) {
 	this.backingManager = backingManager;
     }
 
     /*
-     * Called by the VoiceService
+     * VoiceManager
      */
-    private boolean initialized;
+    public void setLogLevel(Level level) {
+	logger.setLevel(level);
 
-    public void ready() {
-	if (initialized == false) {
-	    initialize();
-	    initialized = true;
+        logger.info("level " + level + " set log level to "
+            + logger.getLevel() + " int " + logger.getLevel().intValue());
+
+        if (backingManager != null) {
+	    backingManager.setLogLevel(level);
 	}
-
-	new WarmStart(this);
     }
 
-    private void initialize() {
-	String s = System.getProperty(SCALE);
-
-	if (s != null) {
-	    try {
-		scale = Double.parseDouble(s);
-	    } catch (NumberFormatException e) {
-		logger.info("Invalid scale factor:  " + s);
-	    }
-	}
-
-	try {
-	    conferenceId = System.getProperty(
-	        "com.sun.sgs.impl.app.voice.DEFAULT_CONFERENCE");
-
-	    if (conferenceId == null || conferenceId.length() == 0) {
-		conferenceId = VoiceManager.DEFAULT_CONFERENCE;
-	    }
-
-	    backingManager.monitorConference(conferenceId);
-	} catch (IOException e) {
-	    logger.severe("Unable to communicate with voice bridge:  " 
-		+ e.getMessage());
-	    return;
-	} 
-
-	DefaultSpatializer livePlayerSpatializer = new DefaultSpatializer();
-	livePlayerSpatializer.setMaximumVolume(
-	    getPreference("LIVE_PLAYER_MAXIMUM_VOLUME", 
-	    LIVE_PLAYER_MAXIMUM_VOLUME));
-
-	livePlayerSpatializer.setZeroVolumeRadius(
-	    getPreference("LIVE_PLAYER_ZERO_VOLUME_RADIUS", 
-	    LIVE_PLAYER_ZERO_VOLUME_RADIUS / scale));
-
-	livePlayerSpatializer.setFullVolumeRadius(
-	    getPreference("LIVE_PLAYER_FULL_VOLUME_RADIUS", 
-	    LIVE_PLAYER_FULL_VOLUME_RADIUS / scale));
-
-	livePlayerSpatializer.setFalloff(
-	    getPreference("LIVE_PLAYER_FALLOFF", LIVE_PLAYER_FALLOFF));
-
-	DefaultSpatializer stationarySpatializer = new DefaultSpatializer();
-	stationarySpatializer.setMaximumVolume(
-	    getPreference("STATIONARY_MAXIMUM_VOLUME", STATIONARY_MAXIMUM_VOLUME));
-	stationarySpatializer.setZeroVolumeRadius(
-	    getPreference("STATIONARY_ZERO_VOLUME_RADIUS", 
-	    STATIONARY_ZERO_VOLUME_RADIUS / scale));
-	stationarySpatializer.setFullVolumeRadius(
-	    getPreference("STATIONARY_FULL_VOLUME_RADIUS", 
-	    STATIONARY_FULL_VOLUME_RADIUS / scale));
-	stationarySpatializer.setFalloff(
-	    getPreference("STATIONARY_FALLOFF", STATIONARY_FALLOFF));
-
-	voiceManagerParameters = new VoiceManagerParameters(getLogLevel().intValue(), 
-	    livePlayerSpatializer, stationarySpatializer);
-
-        AudioGroupSetup setup = new AudioGroupSetup();
-
-        setup.spatializer = getVoiceManagerParameters().livePlayerSpatializer;
-
-        createAudioGroup(DEFAULT_LIVE_PLAYER_AUDIO_GROUP_ID, setup);
-
-	setup = new AudioGroupSetup();
-        setup.spatializer = getVoiceManagerParameters().stationarySpatializer;
-
-        createAudioGroup(DEFAULT_STATIONARY_PLAYER_AUDIO_GROUP_ID, setup);
-
-        logger.warning("Created default audio groups...");
+    public Level getLogLevel() {
+	return logger.getLevel();
     }
 
-    public double getScale() {
-	return scale;
+    public void setVoiceManagerParameters(VoiceManagerParameters parameters) {
+	backingManager.setVoiceManagerParameters(parameters);
     }
 
-    public String getConferenceId() {
-	return conferenceId;
+    public VoiceManagerParameters getVoiceManagerParameters() {
+	return backingManager.getVoiceManagerParameters();
     }
 
-    public VoiceService getBackingManager() {
-	return backingManager;
+    /*
+     * Voice bridge parameters.
+     */
+    public void setVoiceBridgeParameters(VoiceBridgeParameters parameters) {
     }
-
+	
     /*
      * Call Setup
      */
@@ -231,912 +114,192 @@ public class VoiceManagerImpl implements VoiceManager {
      * Initiate a call
      */
     public Call createCall(String id, CallSetup setup) throws IOException {
-	Call call = new CallImpl(id, setup);
-
-	logger.warning("Created call " + call);
-	return call;
+	return backingManager.createCall(id, setup);
     }
 
     public Call getCall(String id) {
-	return calls.get(id);
+	return backingManager.getCall(id);
+    }
+
+    public Call[] getCalls() {
+	return backingManager.getCalls();
     }
 
     public void endCall(Call call, boolean removePlayer) throws IOException {
-	if (logger.isLoggable(Level.FINE)) {
-	    System.out.println(dump("all"));
-	}
-
- 	call.end(removePlayer);	
-
-	if (calls.remove(call.getId()) == null) {
-	    logger.warning("Call " + call + " not in list of calls");
-	} 
-
-	if (logger.isLoggable(Level.FINE)) {
-	    System.out.println(dump("all"));
-	}
+	backingManager.endCall(call, removePlayer);
     }
 
-    public ConcurrentHashMap<String, Call> getCalls() {
-	return calls;    
+    public void addCallStatusListener(CallStatusListener listener) {
+	addCallStatusListener(listener, null);
+    }
+
+    public void addCallStatusListener(CallStatusListener listener, 
+	    String callId) {
+
+	backingManager.addCallStatusListener(listener, callId);
+    }
+    
+    public void removeCallStatusListener(CallStatusListener listener) {
+	removeCallStatusListener(listener, null);
+    }
+
+    public void removeCallStatusListener(CallStatusListener listener, 
+	    String callId) {
+
+	backingManager.removeCallStatusListener(listener, callId);
+    }
+  
+    public void addCallBeginEndListener(CallBeginEndListener listener) {
+	backingManager.addCallBeginEndListener(listener);
+    }
+
+    public void removeCallBeginEndListener(CallBeginEndListener listener) {
+	removeCallBeginEndListener(listener);
+    }
+  
+    /*
+     * Player Control
+     */
+    public Player createPlayer(String id, PlayerSetup setup) {
+	return backingManager.createPlayer(id, setup);
+    }
+
+    public Player getPlayer(String id) {
+	return backingManager.getPlayer(id);
+    }
+
+    public Player[] getPlayers() {
+	return backingManager.getPlayers();
+    }
+
+    public void removePlayer(Player player) {
+	backingManager.removePlayer(player);
+    }
+
+    public void addVirtualPlayerListener(VirtualPlayerListener listener) {
+	backingManager.addVirtualPlayerListener(listener);
+    }
+
+    public void removeVirtualPlayerListener(VirtualPlayerListener listener) {
+	backingManager.removeVirtualPlayerListener(listener);
+    }
+
+    public int getNumberOfPlayersInRange(double x, double y, double z) {
+	return backingManager.getNumberOfPlayersInRange(x, y, z);
     }
 
     /*
      * Group management
      */
     public AudioGroup createAudioGroup(String id, AudioGroupSetup setup) {
-	AudioGroup audioGroup = audioGroups.get(id);
-
-	if (audioGroup != null) {
-	    return audioGroup;
-	}
-
-	audioGroup = new AudioGroupImpl(id, setup);
-	audioGroups.put(id, audioGroup);
-	return audioGroup;
+	return backingManager.createAudioGroup(id, setup);
     }
 
     public AudioGroup getAudioGroup(String id) {
-	return audioGroups.get(id);
+	return backingManager.getAudioGroup(id);
     }
 
-    public AudioGroup getDefaultLivePlayerAudioGroup() {
-        return getAudioGroup(DEFAULT_LIVE_PLAYER_AUDIO_GROUP_ID);
-    }
-
-    public AudioGroup getDefaultStationaryPlayerAudioGroup() {
-	return getAudioGroup(DEFAULT_STATIONARY_PLAYER_AUDIO_GROUP_ID);
-    }
-
-    public ConcurrentHashMap<String, AudioGroup> getAudioGroups() {
-	return audioGroups;
-    }
-
-    public void removeAudioGroup(String id) {
-	AudioGroup audioGroup = audioGroups.get(id);
-
-	if (audioGroup == null) {
-	    logger.warning("Nonexistent audio group:  " + id);
-	    return;
-	}
-
-	audioGroup.removePlayers();
-	audioGroups.remove(id);
+    public void removeAudioGroup(AudioGroup audioGroup) {
+	backingManager.removeAudioGroup(audioGroup);
     }
 
     /*
      * Treatments
      */
     public TreatmentGroup createTreatmentGroup(String id) {
-	TreatmentGroup group = treatmentGroups.get(id);
-
-	if (group != null) {
-	    return group;
-	}
-
-	group = new TreatmentGroupImpl(id);
-
-	treatmentGroups.put(id, group);
-	return group;
+	return backingManager.createTreatmentGroup(id);
     }
 
-    public void removeTreatmentGroup(TreatmentGroup group) {
-	treatmentGroups.remove(group);
+    public void removeTreatmentGroup(TreatmentGroup group) throws IOException {
+	backingManager.removeTreatmentGroup(group);
     }
 	
     public TreatmentGroup getTreatmentGroup(String id) {
-	return treatmentGroups.get(id);
+	return backingManager.getTreatmentGroup(id);
     }
 
-    public Treatment createTreatment(String id, TreatmentSetup setup) throws IOException {
-	Treatment treatment = new TreatmentImpl(id, setup);
+    public Treatment createTreatment(String id, TreatmentSetup setup) 
+	    throws IOException {
 
-	treatments.put(treatment.getId(), treatment);
-
-	return treatment;
+	return backingManager.createTreatment(id, setup);
     }
 
-    public Treatment getTreatment(String id) {
-	return treatments.get(id);
-    }
-
-    public ConcurrentHashMap<String, Treatment> getTreatments() {
-	return treatments;
+    public Treatment getTreatment(String id) throws IOException {
+	return backingManager.getTreatment(id);
     }
 
     /*
      * Recording setup and control
      */
-    public Recorder createRecorder(String id, RecorderSetup setup) throws IOException {
-  	Recorder recorder = new RecorderImpl(id, setup);
+    public Recorder createRecorder(String id, RecorderSetup setup) 
+	    throws IOException {
 
-	recorders.put(recorder.getId(), recorder);
-
-        DataManager dm = AppContext.getDataManager();
-
-        WarmStartRecorders warmStartRecorders;
-
-        try {
-            warmStartRecorders = (WarmStartRecorders) dm.getBinding(
-                WarmStartInfo.DS_WARM_START_RECORDERS);
-        } catch (NameNotBoundException e) {
-            try {
-                warmStartRecorders = new WarmStartRecorders();
-                dm.setBinding(WarmStartInfo.DS_WARM_START_RECORDERS, warmStartRecorders);
-            }  catch (RuntimeException re) {
-                logger.warning("failed to bind warm start recorders map " + re.getMessage());
-                throw re;
-            }
-        }
-
-	warmStartRecorders.put(recorder.getId(), setup);
-	return recorder;
+	return backingManager.createRecorder(id, setup);
     }
 
     public Recorder getRecorder(String id) {
-	return recorders.get(id);
-    }
-
-    public ConcurrentHashMap<String, Recorder> getRecorders() {
-	return recorders;
-    }
-
-    /*
-     * VoiceManager
-     */
-    public Player createPlayer(String id, PlayerSetup setup) {
-	Player p = players.get(id);
-
-	if (p == null) {
-	    p = new PlayerImpl(id, setup);
-
-            players.put(id, p);
-
-            logger.info("Created player for " + p + " number of players "
-                + players.size());
-	} else {
-	    p.moved(setup.x, setup.y, setup.z, setup.orientation);
-	}
-
-	return p;
-    }
-
-    public Player getPlayer(String id) {
-	return players.get(id);
-    }
-
-    public void removePlayer(String id) {
-	Player player = players.remove(id);
-
-	if (player != null) {
-	    removeCallStatusListener(player);
-	    player.removePlayer();
-	    logger.warning("Removed Player " + id);
-	} else {
-	    logger.warning("Player " + id + " not found");
-	}
-    }
-
-    private ArrayList<VirtualPlayerListener> virtualPlayerListeners = new ArrayList();
-
-    public void addVirtualPlayerListener(VirtualPlayerListener listener) {
-	virtualPlayerListeners.add(listener);
-    }
-
-    public void removeVirtualPlayerListener(VirtualPlayerListener listener) {
-	virtualPlayerListeners.remove(listener);
-    }
-
-    private void notifyPlayerChangeListeners(Player player, boolean created) {
-	for (VirtualPlayerListener listener : virtualPlayerListeners) {
-	    if (created) {
-		listener.virtualPlayerCreated(player);
-	    } else {
-		listener.virtualPlayerRemoved(player);
-	    }
-	}
-    }
-
-    public ConcurrentHashMap<String, Player> getPlayers() {
-	return players;
+	return backingManager.getRecorder(id);
     }
 
     public void addWall(double startX, double startY, double endX, double endY,
             double characteristic) {
     }
 
-    public void setDefaultSpatializers(DefaultSpatializers defaultSpatializers) {
-    }
-
-    public DefaultSpatializers getDefaultSpatializers() {
-	return null;
-    }
-
-    public void setDefaultSpatializers(DefaultSpatializers defaultSpatializers,
-        double startX, double startY, double endX, double endY) {
-    }
-
-    public DefaultSpatializers getDefaultSpatializers(
-        double startX, double startY, double endX, double endY) {
-
-	return null;
-    }
-
-    public int getNumberOfPlayersInRange(double x, double y, double z) {
-	/*
-	 * Create a player at the specified location so we can easily
-	 * determine the other players we can hear.
-	 */
-	PlayerSetup setup = new PlayerSetup();
-        setup.x = x / scale;
-        setup.y = y / scale;
-        setup.z = z / scale;
-        setup.isLivePlayer = true;
-
-	Player p1 = new PlayerImpl("NoCallID", setup);
-
-	int n = 0;
-
-	logger.finest("location " + x + ":" + y + ":" + z);
-
-	//synchronized (players) {
-	    Collection<Player> values = players.values();
-
-	    Iterator<Player> iterator = values.iterator();
-
-	    while (iterator.hasNext()) {
-		Player p2 = iterator.next();
-
-		if (p2.getSetup().isLivePlayer == false) {
-		    continue;  // skip recordings
-		}
-
-		double volume = p1.spatialize(p2);
-
-		if (volume == 0) {
-		    continue;
-		}
-
-		logger.finest("volume for " + p2 + " " + volume);
-
-	        if (volume > 0) {
-		    logger.finest(p2 + " is in range");
-		    n++;
-		}
-	    }
-	//}
-
-	return n;
-    }
-
-    /*
-     * Voice bridge parameters.
-     */
-    public void setVoiceBridgeParameters(VoiceBridgeParameters parameters) {
-    }
-	
-    public void setVoiceManagerParameters(VoiceManagerParameters parameters) {
-	//setLogLevel(parameters.logLevel);
-	
-	logger.fine("logLevel set to " + parameters.logLevel);
-
-	voiceManagerParameters = parameters;
-    }
-
-    public VoiceManagerParameters getVoiceManagerParameters() {
-	return voiceManagerParameters;
-    }
-
-    private CopyOnWriteArrayList<CallStatusListener> allCallListeners = new CopyOnWriteArrayList();
-
-    private ConcurrentHashMap<String, CopyOnWriteArrayList<CallStatusListener>> callStatusListeners =
-	new ConcurrentHashMap();
-
-    private CopyOnWriteArrayList<CallBeginEndListener> callBeginEndListeners =
-	new CopyOnWriteArrayList();
-
-    public CopyOnWriteArrayList<CallStatusListener> getAllCallListeners() {
-	return allCallListeners;
-    }
-
-    public ConcurrentHashMap<String, CopyOnWriteArrayList<CallStatusListener>> getCallStatusListeners() {
-	return callStatusListeners;
-    }
-
-    public CopyOnWriteArrayList<CallBeginEndListener> getCallBeginEndListeners() {
-	return callBeginEndListeners;
-    }
-
-    private void initializeBindings() {
-        DataManager dm = AppContext.getDataManager();
-
-        try {
-            dm.getBinding(DS_MANAGED_ALL_CALL_LISTENERS);
-        } catch (NameNotBoundException e) {
-            try {
-                dm.setBinding(DS_MANAGED_ALL_CALL_LISTENERS, 
-		    new ManagedAllCallListeners());
-            }  catch (RuntimeException re) {
-                logger.warning("failed to bind all call listeners map " + re.getMessage());
-                throw re;
-            }
-        }
-
-        try {
-            dm.getBinding(DS_MANAGED_CALL_STATUS_LISTENERS);
-        } catch (NameNotBoundException e) {
-            try {
-                dm.setBinding(DS_MANAGED_CALL_STATUS_LISTENERS, 
-		    new ManagedCallStatusListeners());
-            }  catch (RuntimeException re) {
-                logger.warning("failed to bind call listeners map " + re.getMessage());
-                throw re;
-            }
-        }
-
-        try {
-            dm.getBinding(DS_MANAGED_CALL_BEGIN_END_LISTENERS);
-        } catch (NameNotBoundException e) {
-            try {
-                dm.setBinding(DS_MANAGED_CALL_BEGIN_END_LISTENERS, 
-		    new ManagedCallBeginEndListeners());
-            }  catch (RuntimeException re) {
-                logger.warning("failed to bind begin / end listeners map " + re.getMessage());
-                throw re;
-            }
-        }
-    }
-
-    private boolean bindingsInitialized = false;
-
-    public void addCallStatusListener(CallStatusListener listener) {
-	addCallStatusListener(listener, null);
-    }
-
-    public void addCallStatusListener(CallStatusListener listener, String callId) {
-	if (bindingsInitialized == false) {
-	    bindingsInitialized = true;
-
-	    initializeBindings();
-
-	    backingManager.addCallStatusListener(new CallStatusNotifier());
-	}
-
-	if (listener instanceof ManagedCallStatusListener) {
-	    addManagedCallStatusListener((ManagedCallStatusListener) listener, callId);
-	    return;
-	}
-
-	if (callId == null) {
-	    if (allCallListeners.contains(listener)) {
-		logger.warning("listener " + listener + " is already in the list.");
-		return;
-	    }
-
-	    allCallListeners.add(listener);
-	    return;
-	}
-
-	CopyOnWriteArrayList<CallStatusListener> listeners = callStatusListeners.get(callId);
-
-	if (listeners == null) {
-	    listeners = new CopyOnWriteArrayList<CallStatusListener>();
-	    callStatusListeners.put(callId, listeners);
-	} else if (listeners.contains(listener)) {
-	    logger.fine("listener " + listener + " is already in the list.");
-	    return;
-	}
-
-	listeners.add(listener);
-    }
-    
-    private void addManagedCallStatusListener(ManagedCallStatusListener listener, String callId) {
-	DataManager dm = AppContext.getDataManager();
-
-        ManagedReference<ManagedCallStatusListener> mr = dm.createReference(listener);
-
-	if (callId == null) {
-            ManagedAllCallListeners managedListeners = (ManagedAllCallListeners) dm.getBinding(
-	        DS_MANAGED_ALL_CALL_LISTENERS);
-
-	    if (managedListeners.contains(mr)) {
-		logger.warning("listener " + listener + " is already in the list.");
-		return;
-	    }
-
-	    managedListeners.add(mr);
-	    return;
-	}
-
-        ManagedCallStatusListeners managedListeners = (ManagedCallStatusListeners) dm.getBinding(
-	        DS_MANAGED_CALL_STATUS_LISTENERS);
-
-	CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>> listeners = managedListeners.get(callId);
-
-	if (listeners == null) {
-	    listeners = new CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>>();
-	    managedListeners.put(callId, listeners);
-	} else if (listeners.contains(listener)) {
-	    logger.warning("listener " + listener + " is already in the list.");
-	    return;
-	}
-
-	listeners.add(mr);
-    }
-
-    public void removeCallStatusListener(CallStatusListener listener) {
-	removeCallStatusListener(listener, null);
-    }
-
-    public void removeCallStatusListener(CallStatusListener listener, String callId) {
-	if (listener instanceof ManagedCallStatusListener) {
-	    removeManagedCallStatusListener((ManagedCallStatusListener) listener, callId);
-	    return;
-	}
-
-	if (callId == null) {
-            callStatusListeners.remove(listener);
-	} else {
-	    CopyOnWriteArrayList<CallStatusListener> listeners = callStatusListeners.get(callId);
-
-	    if (listeners == null) {
-	        logger.warning("Can't find listener for " + callId);
-	        return;
-	    }
-
-	    if (listeners.contains(listener)) {
-	    	listeners.remove(listener);
-
-		if (listeners.isEmpty()) {
-		    callStatusListeners.remove(callId);
-		}
-	    }
-	}
-    }
-  
-    private void removeManagedCallStatusListener(ManagedCallStatusListener listener,
-	    String callId) {
-
-	DataManager dm = AppContext.getDataManager();
-
-	if (callId == null) {
-            ManagedCallStatusListeners allCallManagedListeners =
-                (ManagedCallStatusListeners) dm.getBinding(
-		DS_MANAGED_ALL_CALL_LISTENERS);
-	
-            ManagedReference<ManagedCallStatusListener> mr = dm.createReference(listener);
-
-	    allCallManagedListeners.remove(mr);
-	    return;
-	}
-
-        ManagedCallStatusListeners managedListeners =
-            (ManagedCallStatusListeners) dm.getBinding(
-	    DS_MANAGED_CALL_STATUS_LISTENERS);
-	
-	ManagedCallStatusListener ml = (ManagedCallStatusListener) listener;
-
-        ManagedReference<ManagedCallStatusListener> mr = dm.createReference(ml);
-
-	CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>> listeners = managedListeners.get(callId);
-
-	if (listeners == null) {
-	    logger.warning("Can't find listener for " + callId);
-	    return;
-	}
-
-	if (listeners.contains(mr)) {
-	    listeners.remove(mr);
-
-	    if (listeners.isEmpty()) {
-		managedListeners.remove(callId);
-	    }
-	}
-    }
-
-    public void addCallBeginEndListener(CallBeginEndListener listener) {
-	if (listener instanceof ManagedCallBeginEndListener) {
-            DataManager dm = AppContext.getDataManager();
-
-            ManagedCallBeginEndListeners managedListeners =
-                (ManagedCallBeginEndListeners) dm.getBinding(
-		DS_MANAGED_CALL_BEGIN_END_LISTENERS);
-
-            /*
-             * Create a reference to listener and keep that.
-             */
-	    ManagedCallBeginEndListener ml = (ManagedCallBeginEndListener) listener;
-
-            ManagedReference<ManagedCallBeginEndListener> mr = dm.createReference(ml);
-
-	    if (managedListeners.contains(mr) == false) {
-                managedListeners.add(mr);
-	    }
-	    return;
-	}
-
-	if (callBeginEndListeners.contains(listener) == false) {
-            callBeginEndListeners.add(listener);
-	}
-    }
-
-    public void removeCallBeginEndListener(CallBeginEndListener listener) {
-	if (listener instanceof ManagedCallBeginEndListener) {
-            DataManager dm = AppContext.getDataManager();
-
-            ManagedCallBeginEndListeners managedListeners =
-                (ManagedCallBeginEndListeners) dm.getBinding(
-		DS_MANAGED_CALL_BEGIN_END_LISTENERS);
-
-	    ManagedCallBeginEndListener ml = (ManagedCallBeginEndListener) listener;
-
-            ManagedReference<ManagedCallBeginEndListener> mr = dm.createReference(ml);
-
-            managedListeners.remove(mr);
-	    return;
-	}
-
-        callBeginEndListeners.remove(listener);
-    }
-
-    static class CallStatusNotifier implements ManagedCallStatusListener {
-
-	public CallStatusNotifier() {
-	}
-
-        public void callStatusChanged(CallStatus callStatus) {
-            int code = callStatus.getCode();
-
-            String callId = callStatus.getCallId();
-
-	    logger.finer("Got status " + callStatus);
-
-	    if (code == CallStatus.INFO) {
-	        VoiceManagerImpl vm = AppContext.getManager(VoiceManagerImpl.class);
-	        System.out.println(vm.dump(callStatus.getOption("Info")));
-		return;
-	    }
-
-	    if (code == CallStatus.ESTABLISHED ||
-		    code == CallStatus.MIGRATED ||
-		    code == CallStatus.ENDED) {
-
-	        notifyCallBeginEndListeners(callStatus);
-	        notifyManagedCallBeginEndListeners(callStatus);
-	    }
-	
-	    notifyCallStatusListeners(callStatus);
-	    notifyManagedCallStatusListeners(callStatus);
-        }
-
-        private void notifyCallStatusListeners(CallStatus status) {
-	    VoiceManagerImpl vm = AppContext.getManager(VoiceManagerImpl.class);
-
-	    CopyOnWriteArrayList<CallStatusListener> listeners = vm.getAllCallListeners();
-
-	    for (CallStatusListener listener : listeners) {
-                listener.callStatusChanged(status);
-	    }
-	
-	    if (status.getCode() == CallStatus.BRIDGE_OFFLINE) {
-		/*
-		 * We need to notify all call status listeners
-		 */
-		Collection<CopyOnWriteArrayList<CallStatusListener>> values = 
-		    vm.getCallStatusListeners().values();
-
-		Iterator<CopyOnWriteArrayList<CallStatusListener>> iterator = values.iterator();
-
-                while (iterator.hasNext()) {
-                    CopyOnWriteArrayList<CallStatusListener> listenerList = iterator.next();
-
-		    for (CallStatusListener l : listenerList) {
-			l.callStatusChanged(status);
-		    }
-		}
-		return;
-	    }
-
-	    String callId = status.getCallId();
-
-	    if (callId == null || callId.length() == 0) {
-		logger.warning("No callID:  '" + callId + "'");
-	 	return;
-	    }
-
-	    listeners = vm.getCallStatusListeners().get(callId);
-
-	    if (listeners == null) {
-		logger.finer("No listeners for " + callId);
-		return;
-	    }
-
-	    for (CallStatusListener listener : listeners) {
-		logger.finer("Notifiying " + listener + " callId " + callId);
-                listener.callStatusChanged(status);
-            }
-        }
-
-        private void notifyManagedCallStatusListeners(CallStatus status) {
-            DataManager dm = AppContext.getDataManager();
-
-            ManagedAllCallListeners managedAllListeners = (ManagedAllCallListeners) dm.getBinding(
-		DS_MANAGED_ALL_CALL_LISTENERS);
-
-	    for (ManagedReference<ManagedCallStatusListener> managedListener : managedAllListeners) {
-                managedListener.get().callStatusChanged(status);
-            }
-
-	    String callId = status.getCallId();
-
-	    ManagedCallStatusListeners managedListeners =
-                (ManagedCallStatusListeners) dm.getBinding(DS_MANAGED_CALL_STATUS_LISTENERS);
-
-	    if (status.getCode() == CallStatus.BRIDGE_OFFLINE) {
-		/*
-		 * We need to notify all call status listeners
-		 */
-		Collection<CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>>> values = 
-		    managedListeners.values();
-
-		Iterator<CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>>> iterator = 
-		    values.iterator();
-
-                while (iterator.hasNext()) {
-                    CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>> managedListenerList = 
-			iterator.next();
-
-		    for (ManagedReference<ManagedCallStatusListener> l : managedListenerList) {
-			l.get().callStatusChanged(status);
-		    }
-		}
-
-		return;
-	    }
-
-	    if (callId == null || callId.length() == 0) {
-		logger.warning("No callID:  '" + callId + "'");
-	 	return;
-	    }
-
-	    CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>> listenerList =
-		managedListeners.get(callId);
-
-	    if (listenerList == null) {
-	  	logger.finer("No listeners for " + callId);
-		return;
-	    }
-
-	    for (ManagedReference<ManagedCallStatusListener> listener : listenerList) {
-                listener.get().callStatusChanged(status);
-            }
-	}
- 
-        private void notifyCallBeginEndListeners(CallStatus status) {
-	    VoiceManagerImpl vm = AppContext.getManager(VoiceManagerImpl.class);
-
-            CopyOnWriteArrayList<CallBeginEndListener> listenerList = 
-	        vm.getCallBeginEndListeners();
-
-	    for (CallBeginEndListener listener : listenerList) {
-                listener.callBeginEndNotification(status);
-            }
-        }
-
-        private void notifyManagedCallBeginEndListeners(CallStatus status) {
-            DataManager dm = AppContext.getDataManager();
-
-            ManagedCallBeginEndListeners managedCallBeginEndListeners =
-                (ManagedCallBeginEndListeners) dm.getBinding(
-		DS_MANAGED_CALL_BEGIN_END_LISTENERS);
-
-            CopyOnWriteArrayList<ManagedReference<ManagedCallBeginEndListener>> listenerList = 
-    	        managedCallBeginEndListeners;
-
-	    for (ManagedReference<ManagedCallBeginEndListener> listener : listenerList) {
-                listener.get().callBeginEndNotification(status);
-            }
-        }
-    }
-
-    public static final class CallStatusListeners extends ConcurrentHashMap
-	    <CallStatusListener, CopyOnWriteArrayList> {
-
-         private static final long serialVersionUID = 1;
-    }
-
-    private static final class CallBeginEndListeners extends CopyOnWriteArrayList
-	    <CallBeginEndListener> {
-
-         private static final long serialVersionUID = 1;
-    }
-
-    public static final class ManagedAllCallListeners extends CopyOnWriteArrayList
-	    <ManagedReference<ManagedCallStatusListener>> implements ManagedObject {
-
-         private static final long serialVersionUID = 1;
-    }
-
-    public static final class ManagedCallStatusListeners extends ConcurrentHashMap
-	    <String, CopyOnWriteArrayList<ManagedReference<ManagedCallStatusListener>>> implements ManagedObject {
-
-         private static final long serialVersionUID = 1;
-    }
-
-    private static final class ManagedCallBeginEndListeners extends CopyOnWriteArrayList
-	    <ManagedReference<ManagedCallBeginEndListener>> implements ManagedObject {
-
-         private static final long serialVersionUID = 1;
-    }
-
-    public Level getLogLevel() {
-	Level logLevel;
-
-	Logger l = logger;
-
-	while ((logLevel = l.getLevel()) == null) {
-	    l = l.getParent();
-	}
-
-	return logLevel;
-    }
-
-    public void setLogLevel(Level level) {
-	logger.setLevel(level);
-
-        logger.info("level " + level + " set log level to "
-            + logger.getLevel() + " int " + logger.getLevel().intValue());
-
-        if (backingManager != null) {
-	    backingManager.setLogLevel(level);
-	}
-    }
-
-    private double getPreference(String preference, double defaultValue) {
-        Preferences prefs = Preferences.userNodeForPackage(VoiceManagerImpl.class);
-
-	String s = prefs.get(VOICEMANAGER_PREFIX + preference, null);
-
-	if (s == null) {
-	    return defaultValue;
-	}
-
+    public void setSpatialAudio(boolean enabled) {
 	try {
-	    return Double.parseDouble(s);    
-	} catch (NumberFormatException e) {
-	    logger.warning("Invalid value '" + s + "' for " + preference
-		+ ".   Using " + defaultValue);
-	    return defaultValue;
+	    backingManager.setSpatialAudio(enabled);
+	} catch (IOException e) {
+	    logger.warning("Unable to set spatial audio: " + e.getMessage());
 	}
     }
 
-    private static void setPreference(String preference, double value) {
-        Preferences prefs = Preferences.userNodeForPackage(VoiceManagerImpl.class);
-	prefs.put(VOICEMANAGER_PREFIX + preference, String.valueOf(value));
+    public void setSpatialMinVolume(double spatialMinVolume) {
+	try {
+	    backingManager.setSpatialMinVolume(spatialMinVolume);
+	} catch (IOException e) {
+	    logger.warning("Unable to set spatial audio min volume: " 
+		+ e.getMessage());
+	}
+    }
+
+    public void setSpatialFalloff(double spatialFalloff) {
+	try {
+	    backingManager.setSpatialFalloff(spatialFalloff);
+	} catch (IOException e) {
+	    logger.warning("Unable to set spatial audio fall off: " 
+		+ e.getMessage());
+	}
+    }
+
+    public void setSpatialEchoDelay(double spatialEchoDelay) {
+        try {
+            backingManager.setSpatialEchoDelay(spatialEchoDelay);
+        } catch (IOException e) {
+            logger.warning("Unable to set spatial audio echo delay: "
+                + e.getMessage());
+        }
+    }
+
+    public void setSpatialEchoVolume(double spatialEchoVolume) {
+        try {
+            backingManager.setSpatialEchoVolume(spatialEchoVolume);
+        } catch (IOException e) {
+            logger.warning("Unable to set spatial audio echo volume: "
+                + e.getMessage());
+        }
+    }
+
+    public void setSpatialBehindVolume(double spatialBehindVolume) {
+        try {
+            backingManager.setSpatialBehindVolume(spatialBehindVolume);
+        } catch (IOException e) {
+            logger.warning("Unable to set spatial audio behind volume: "
+                + e.getMessage());
+        }
     }
 
     public String dump(String command) {
-	String[] tokens = command.split("[+]");
-
-	String s = "";
-
-	for (int i = 0; i < tokens.length; i++) {
-	    if (tokens[i].equalsIgnoreCase("all")) {
-		s += dumpAudioGroups();
-		s += dumpCalls();
-		s += dumpPlayers();
-		s += dumpTreatmentGroups();
-		s += dumpTreatments();
-	    } else if (tokens[i].equalsIgnoreCase("audioGroups")) {
-		s += dumpAudioGroups();
-	    } else if (tokens[i].equalsIgnoreCase("calls")) {
-		s += dumpCalls();
-	    } else if (tokens[i].equalsIgnoreCase("players")) {
-		s += dumpPlayers();
-	    } else if (tokens[i].equalsIgnoreCase("treatmentGroups")) {
-	    } else if (tokens[i].equalsIgnoreCase("treatments")) {
-	    } else {
-		logger.warning("Unrecognized object to dump:  " + tokens[i]);
-	    }
-	}
-
-	if (s.length() == 0) {
-	    return "";
-	}
-
-	s += "\n";
-
-	return s;
-    }
-
-    private String dumpAudioGroups() {
-	String s = "\n";
-	s += "Audio Groups\n";
-	s += "------------\n";
-
-	if (audioGroups.size() > 0) {
-            Enumeration<AudioGroup> ae = audioGroups.elements();
-
-	    while (ae.hasMoreElements()) {
-		s += ae.nextElement().dump() + "\n";
-	    }
-	} else {
-	    s += "There are no audio groups!\n";
-	}
-
-	return s;
-    }
-	
-    private String dumpCalls() {
-	String s = "\n";
-	s += "Calls\n";
-	s += "-----\n";
-
-	if (calls.size() > 0) {
-	    Enumeration<Call> ce = calls.elements();
-
-	    while (ce.hasMoreElements()) {
-		s += ce.nextElement().dump() + "\n";
-	    }
-	} else {
-	    s += "There are no calls!\n";
-	}
-
-	return s;
-    }
-
-    private String dumpPlayers() {
-	String s = "\n";
-	s += "Players\n";
-	s += "-------\n";
-
-	if (players.size() > 0) {
-	    Enumeration<Player> pe = players.elements();
-
-	    while (pe.hasMoreElements()) {
-		s += pe.nextElement().dump() + "\n";
-	    }
-	} else {
-	    s += "There are no players!\n";
-	}
-
-	return s;
-    }
-
-    private String dumpTreatmentGroups() {
-	String s = "\n";
-	s += "TreatmentGroups\n";
-	s += "---------------\n";
-
-	if (treatmentGroups.size() > 0) {
-	    Enumeration<TreatmentGroup> groups = treatmentGroups.elements();
-
-	    while (groups.hasMoreElements()) {
-		s += groups.nextElement().dump() + "\n";
-	    }
-	} else {
-	    s += "There are no treatment groups!\n";
-	}
-
-	return s;
-    }
-
-    private String dumpTreatments() {
-	String s = "\n";
-	s += "Treatments\n";
-	s += "----------\n";
-
-	if (treatments.size() > 0) {
-	    Enumeration<Treatment> t = treatments.elements();
-
-	    while (t.hasMoreElements()) {
-		s += t.nextElement().dump() + "\n";
-	    }
-	} else {
-	    s += "There are no treatments!\n";
-	}
-
-	return s;
+	return backingManager.dump(command);
     }
 
 }
