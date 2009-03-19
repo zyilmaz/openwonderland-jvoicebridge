@@ -597,10 +597,6 @@ public class VoiceImpl implements Serializable {
     }
 
     public void addCallStatusListener(CallStatusListener listener, String callId) {
-	if (bindingsInitialized == false) {
-	    initializeBindings();
-	}
-
         if (listener instanceof ManagedCallStatusListener) {
             addManagedCallStatusListener((ManagedCallStatusListener) listener, callId);
             return;
@@ -652,16 +648,13 @@ public class VoiceImpl implements Serializable {
         DataManager dm = AppContext.getDataManager();
 
         try {
-	    System.out.println("About to create binding to " + DS_MANAGED_ALL_CALL_LISTENERS);
             dm.getBinding(DS_MANAGED_ALL_CALL_LISTENERS);
         } catch (NameNotBoundException e) {
             try {
                 dm.setBinding(DS_MANAGED_ALL_CALL_LISTENERS, 
 		    new ManagedAllCallListeners());
-	        System.out.println("Successfully created binding to " + DS_MANAGED_ALL_CALL_LISTENERS);
             }  catch (RuntimeException re) {
                 logger.warning("failed to bind all call listeners map " + re.getMessage());
-                System.out.println("failed to bind all call listeners map " + re.getMessage());
                 throw re;
             }
         }
@@ -689,9 +682,6 @@ public class VoiceImpl implements Serializable {
                 throw re;
             }
         }
-
-	System.out.println("BINDINGS SUCCESSFULLY INITIALIZED");
-	bindingsInitialized = true;
     }
 
     private void addManagedCallStatusListener(
@@ -707,11 +697,9 @@ public class VoiceImpl implements Serializable {
 	    dm.createReference(listener);
 
 	if (callId == null) {
-	    System.out.println("Trying to get binding for " + DS_MANAGED_ALL_CALL_LISTENERS);
             ManagedAllCallListeners managedListeners = 
 		(ManagedAllCallListeners) dm.getBinding(
 	        DS_MANAGED_ALL_CALL_LISTENERS);
-	    System.out.println("Got binding for " + DS_MANAGED_ALL_CALL_LISTENERS);
 
 	    if (managedListeners.contains(mr)) {
 		logger.warning("listener " + listener 
@@ -1088,6 +1076,8 @@ public class VoiceImpl implements Serializable {
     }
 
     public void commit(ListenerWork work) {
+	bindingsInitialized = true;
+
 	if (work instanceof AddCallBeginEndListenerWork) {
 	    addCallBeginEndListenerCommit(((AddCallBeginEndListenerWork) work).listener);
 	    return;
