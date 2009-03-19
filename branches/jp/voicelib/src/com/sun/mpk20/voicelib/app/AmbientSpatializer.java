@@ -36,11 +36,7 @@ public class AmbientSpatializer implements Spatializer, Serializable {
 
     double attenuator = 1.0;
 
-    private static double scale;
-
-    static {
-        scale =  AppContext.getManager(VoiceManager.class).getScale();
-    }
+    private double scale;
 
     public AmbientSpatializer() {
     }
@@ -51,6 +47,8 @@ public class AmbientSpatializer implements Spatializer, Serializable {
 
 	setBounds(lowerLeftX, lowerLeftY, lowerLeftZ,
 	    upperRightX, upperRightY, upperRightZ);
+
+        scale =  AppContext.getManager(VoiceManager.class).getVoiceManagerParameters().scale;
     }
         
     public void setBounds(double lowerLeftX, double lowerLeftY,

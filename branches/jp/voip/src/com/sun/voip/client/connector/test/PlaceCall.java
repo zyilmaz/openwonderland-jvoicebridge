@@ -88,6 +88,7 @@ public class PlaceCall implements CallStatusListener {
         control = bridge.createCallControl(callId, conference);
         control.addCallStatusListener(this);
         
+	System.out.println("Place call to " + cp);
         // now place the call
         control.placeCall(cp);
     }
@@ -118,8 +119,8 @@ public class PlaceCall implements CallStatusListener {
     
     public static void main(String args[]) {
         if (args.length < 4) {
-            System.err.println("Usage: PlaceCall <bridge host> <bridge port>" +
-                               "<confefence name> <phone number> [<callId>]");
+            System.err.println("Usage: PlaceCall <bridge host> <bridge port> " +
+                               "<conference name> <phone number> [<callId>]");
             System.exit(-1);
         }
         

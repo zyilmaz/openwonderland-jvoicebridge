@@ -23,11 +23,14 @@
 
 package com.sun.mpk20.voicelib.impl.service.voice;
 
+import com.sun.mpk20.voicelib.impl.service.voice.work.player.SetPrivateMixWork;
+
 import com.sun.mpk20.voicelib.app.BridgeInfo;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.Serializable;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -151,6 +154,10 @@ public class BridgeManager extends Thread
 	
 	if (tokens.length != 6) {
 	    throw new IOException("Invalid bridge server:  " + bridgeServer);
+	}
+
+	if (conferenceId == null) {
+	    conferenceId = voiceService.getConferenceId();
 	}
 
 	String privateHost = tokens[0];
@@ -520,8 +527,11 @@ public class BridgeManager extends Thread
 	bc.restartInputTreatment(callId);
     }
 
-    public void setPrivateMix(Work work) {
-	privateMixManager.setPrivateMix(work);
+    public void setPrivateMix(String targetCallId, String sourceCallId,
+	    double[] privateMixParameters) {
+
+	privateMixManager.setPrivateMix(new SetPrivateMixWork(null, targetCallId,
+	    sourceCallId, privateMixParameters));
     }
 
     public void commit() {

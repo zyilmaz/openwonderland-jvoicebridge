@@ -41,7 +41,9 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 
 import java.nio.ShortBuffer;
 
@@ -59,7 +61,9 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
     private static int bufferSize = 256 * 1024;
 
     private String path;
-    
+
+    private URL url;
+ 
     // a thread to read the data from the web
     private ReaderThread readerThread;
     
@@ -100,6 +104,8 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
      * Read audio data from a URL.
      */
     public NetworkDotAuAudioSource(String path) throws IOException {
+	url = new URL(path);
+
 	try {
 	    if ((useCachedFile = useCachedFile(path)) == true) {
 	        return;
@@ -108,11 +114,9 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 	    logger.warning(path + " Can't use cache file:  " + e.getMessage());
 	}
 
-	bufferTimeEnd = System.currentTimeMillis() + 500;
+	bufferTimeEnd = System.currentTimeMillis() + 2000;
 
-	URL u = new URL(path);
-
-	InputStream in = u.openStream();
+	InputStream in = url.openStream();
 
 	BufferedInputStream bis = new BufferedInputStream(in, bufferSize);
 
@@ -149,8 +153,26 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 
 	try {
 	    super.initialize(path);
-	    return true;
+
+            try {
+		File cacheFile = new File(path);
+
+                URLConnection urlConnection = url.openConnection();
+
+		urlConnection.setIfModifiedSince(cacheFile.lastModified());
+
+		urlConnection.connect();
+
+		int response = ((HttpURLConnection) urlConnection).getResponseCode();
+
+		if (response == HttpURLConnection.HTTP_NOT_MODIFIED) {
+		    return true;
+		}
+            } catch (Exception e) {
+                logger.warning("Unable to open connection to " + url);
+	    }
 	} catch (IOException e) {
+	    logger.warning("Couldn't open super:  " + e.getMessage());
 	}
 
 	path += ".part";
@@ -277,20 +299,16 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
     private boolean done;
 
     public void done() {
+	if (done) {
+	    return;
+	}
+
 	if (useCachedFile == true) {
 	    super.done(); 
 	    return;
 	}
 
 	done = true;
-
-	if (bos != null) {
-	    try {
-	        bos.close();
-	    } catch (IOException e) {
-		logger.warning("Unable to close buffered output writer for " + path);
-	    }
-	}
 
 	if (fos != null) {
 	    try {
@@ -300,9 +318,18 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 	    }
 	}
 
+	if (bos != null) {
+	    try {
+	        bos.close();
+	    } catch (IOException e) {
+		logger.warning("Unable to close buffered output writer for " + path);
+	    }
+	}
+
 	if (cacheFile != null) {
 	    if (cacheFileOK == false || cacheFile.length() <= headerLength) {
-		logger.info("Removing invalid cache file");
+		logger.info("Removing invalid cache file, ok " + cacheFileOK
+		    + " len " + cacheFile.length());
 		cacheFile.delete();
 	    } else {
 	        String path = cacheFile.getAbsolutePath();
@@ -314,6 +341,8 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 	        File file = new File(path); 
 
 	        cacheFile.renameTo(file);
+	
+		logger.info("Renamed to " + path + " len " + file.length());
 	    }
 	}
 
@@ -383,6 +412,8 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
         public void run() {
             long startTime = System.currentTimeMillis();
             
+	    int total = 0;
+
             try {
                 while (!quit()) {
 		    synchronized (parent) {
@@ -401,16 +432,30 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 			break;
 		    }
 
-		    byte[] buf = new byte[bis.available()];
+		    int available = bis.available();
 
-		    if (bis.read(buf, 0, buf.length) <= 0) {
+		    byte[] buf;
+
+		    if (available > 0) {
+		        buf = new byte[bis.available()];
+		    } else {
+			/*
+			 * We have to read at least one byte to get end of stream notification
+			 */
+			buf = new byte[1];
+		    }
+
+		    if (bis.read(buf, 0, buf.length) < 0) {
 			parent.setCacheFileOK();
+			logger.fine("END OF STREAM!");
 			break;  // end of stream
 		    }
 
 		    if (bos != null) {
 	    		bos.write(buf, 0, buf.length);
 		    }
+
+		    total += buf.length;
 
 		    pipeOut.write(buf, 0, buf.length);
 		    pipeOut.flush();
@@ -425,7 +470,7 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
                 }
 
 		new Closer(bis);
-		quit = true;
+		setQuit();
 	    }
         }
         

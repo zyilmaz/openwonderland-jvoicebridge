@@ -31,7 +31,7 @@ public class FullVolumeSpatializer implements Spatializer, Serializable {
 
     private static final long serialVersionUID = 1;
 
-    private double fullVolumeRadius = 0;
+    private double fullVolumeRadius = 0;  // zero means infinite
 
     private double attenuator = DefaultSpatializer.DEFAULT_MAXIMUM_VOLUME;
 
@@ -55,11 +55,13 @@ public class FullVolumeSpatializer implements Spatializer, Serializable {
 	parameters[2] = 0;  		 // up/down
 	parameters[3] = 1 * attenuator;  // volume
 
-	double distance = Util.getDistance(sourceX, sourceY,
-	    sourceZ, destX, destY, destZ);
+	if (fullVolumeRadius != 0) {
+	    double distance = Util.getDistance(sourceX, sourceY,
+	        sourceZ, destX, destY, destZ);
 
-	if (distance > fullVolumeRadius) {
-	    parameters[3] = 0;
+	    if (distance > fullVolumeRadius) {
+	        parameters[3] = 0;
+	    }
 	}
 
 	return parameters; 

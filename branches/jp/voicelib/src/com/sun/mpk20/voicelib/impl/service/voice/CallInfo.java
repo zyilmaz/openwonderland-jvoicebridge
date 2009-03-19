@@ -23,6 +23,8 @@
 
 package com.sun.mpk20.voicelib.impl.service.voice;
 
+import java.io.Serializable;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.sun.voip.CallParticipant;
@@ -30,7 +32,7 @@ import com.sun.voip.CallParticipant;
 /*
  * This most likely has to be kept in a persistent database for recovery!
  */
-class CallInfo {
+class CallInfo implements Serializable {
 
     public CallParticipant cp; 
     public BridgeConnection bridgeConnection;
