@@ -664,7 +664,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
 	double[] privateMixParameters = new double[4];
 
-	if (p.getCall().isMuted() == false) {
+	if (p.getCall() == null || p.getCall().isMuted() == false) {
 	    for (AudioGroup audioGroup : audioGroups) {
 
 	        //logger.warning("ag " + audioGroup);

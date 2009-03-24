@@ -323,7 +323,7 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
     public void playTreatment(String treatment) throws IOException {
 	if (VoiceImpl.getInstance().addWork(new PlayTreatmentWork(this, treatment)) == false) {
 	    playTreatmentCommit(treatment);
-	}
+	} 
     }
 
     private void playTreatmentCommit(String treatment) {
@@ -482,6 +482,11 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 
 	if (work instanceof StopInputTreatmentWork) {
 	    stopInputTreatmentCommit();
+	    return;
+	}
+
+	if (work instanceof PlayTreatmentWork) {
+	    playTreatmentCommit(((PlayTreatmentWork) work).treatment);
 	    return;
 	}
 
