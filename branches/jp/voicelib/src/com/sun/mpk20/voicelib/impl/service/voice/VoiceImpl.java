@@ -369,6 +369,10 @@ public class VoiceImpl implements Serializable {
     }
 
     public Call[] getCalls() {
+	if (calls.size() == 0) {
+	    return new Call[0];
+	}
+
 	return calls.values().toArray(new Call[0]);
     }
 
@@ -417,6 +421,10 @@ public class VoiceImpl implements Serializable {
     }
 
     public AudioGroup[] getAudioGroups() {
+	if (audioGroups.size() == 0) {
+	    return new AudioGroup[0];
+	}
+
     	return audioGroups.values().toArray(new AudioGroup[0]);
     }
 
@@ -498,6 +506,10 @@ public class VoiceImpl implements Serializable {
     }
 
     public Player[] getPlayers() {
+	if (players.size() == 0) {
+	    return new Player[0];
+	}
+
 	return players.values().toArray(new Player[0]);
     }
 
@@ -953,7 +965,14 @@ public class VoiceImpl implements Serializable {
 	CallStatusListener[] listeners;
 
 	synchronized (callStatusListeners) {
-	    listeners = callStatusListeners.get(callId).toArray(new CallStatusListener[0]);
+	    CopyOnWriteArrayList<CallStatusListener> listenerList = callStatusListeners.get(callId);
+
+	    if (listenerList == null) {
+	        logger.finer("No listeners for " + callId);
+		return;
+	    }
+	
+	    listeners = listenerList.toArray(new CallStatusListener[0]);
 	}
 
 	if (listeners.length == 0) {
