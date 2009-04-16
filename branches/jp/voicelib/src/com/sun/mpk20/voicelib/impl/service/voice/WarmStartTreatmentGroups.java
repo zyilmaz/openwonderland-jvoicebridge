@@ -26,10 +26,9 @@ import com.sun.mpk20.voicelib.app.Treatment;
 
 import com.sun.sgs.app.ManagedObject;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
 
-public class WarmStartTreatmentGroups extends ConcurrentHashMap
-    <String, ConcurrentHashMap<String, Treatment>> implements ManagedObject {
+public class WarmStartTreatmentGroups extends ArrayList<String> implements ManagedObject {
 
     private static final long serialVersionUID = 1;
 

@@ -23,10 +23,12 @@
 
 package com.sun.mpk20.voicelib.app;
 
-public interface VirtualPlayerListener {
+import java.io.Serializable; 
 
-    public void virtualPlayerCreated(Player player);
+public interface VirtualPlayerListener extends Serializable {
 
-    public void virtualPlayerRemoved(Player player);
+    public void virtualPlayerAdded(AudioGroup audioGroup, VirtualPlayer player);
+
+    public void virtualPlayersRemoved(AudioGroup audioGroup, VirtualPlayer[] players);
 
 }

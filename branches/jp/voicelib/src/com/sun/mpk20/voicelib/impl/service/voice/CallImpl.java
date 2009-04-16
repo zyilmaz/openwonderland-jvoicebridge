@@ -102,7 +102,7 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 
         int end;
 
-        if (callee != null && (end = callee.indexOf("@")) >= 0) {
+        if (name == null && callee != null && (end = callee.indexOf("@")) >= 0) {
             name = callee.substring(0, end);
 
             int start;

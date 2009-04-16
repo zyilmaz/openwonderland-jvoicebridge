@@ -32,6 +32,10 @@ import com.sun.sgs.app.ManagedObject;
 import com.sun.sgs.app.ManagedReference;
 import com.sun.sgs.app.NameNotBoundException;
 
+import com.sun.sgs.kernel.KernelRunnable;
+
+import com.sun.sgs.service.NonDurableTransactionParticipant;
+
 import com.sun.mpk20.voicelib.app.AudioGroup;
 import com.sun.mpk20.voicelib.app.AudioGroupSetup;
 import com.sun.mpk20.voicelib.app.BridgeInfo;
@@ -513,39 +517,6 @@ public class VoiceImpl implements Serializable {
 	return players.values().toArray(new Player[0]);
     }
 
-    private CopyOnWriteArrayList<VirtualPlayerListener> virtualPlayerListeners = 
-	new CopyOnWriteArrayList();
-
-    public void addVirtualPlayerListener(VirtualPlayerListener listener) {
-	if (addWork(new AddVirtualPlayerListenerWork(listener)) == false) {
-	    addVirtualPlayerListenerCommit(listener);
-	}
-    }
-
-    private void addVirtualPlayerListenerCommit(VirtualPlayerListener listener) {
-	virtualPlayerListeners.add(listener);
-    }
-
-    public void removeVirtualPlayerListener(VirtualPlayerListener listener) {
-	if (addWork(new RemoveVirtualPlayerListenerWork(listener)) == false) {
-	    removeVirtualPlayerListenerCommit(listener);
-	}
-    }
-
-    private void removeVirtualPlayerListenerCommit(VirtualPlayerListener listener) {
-	virtualPlayerListeners.remove(listener);
-    }
-
-    private void notifyPlayerChangeListeners(Player player, boolean created) {
-	for (VirtualPlayerListener listener : virtualPlayerListeners) {
-	    if (created) {
-		listener.virtualPlayerCreated(player);
-	    } else {
-		listener.virtualPlayerRemoved(player);
-	    }
-	}
-    }
-
     public int getNumberOfPlayersInRange(double x, double y, double z) {
 	/*
 	 * Create a player at the specified location so we can easily
@@ -987,6 +958,10 @@ public class VoiceImpl implements Serializable {
     }
 
     public void notifyManagedCallStatusListeners(CallStatus status) {
+	if (bindingsInitialized == false) {
+	    initializeBindings();
+	}
+
         DataManager dm = AppContext.getDataManager();
 
         ManagedAllCallListeners managedAllListeners = (ManagedAllCallListeners) dm.getBinding(
@@ -1050,6 +1025,10 @@ public class VoiceImpl implements Serializable {
     }
 
     private void notifyManagedCallBeginEndListeners(CallStatus status) {
+	if (bindingsInitialized == false) {
+	    initializeBindings();
+	}
+
         DataManager dm = AppContext.getDataManager();
 
         ManagedCallBeginEndListeners managedCallBeginEndListeners =
@@ -1059,9 +1038,43 @@ public class VoiceImpl implements Serializable {
         CopyOnWriteArrayList<ManagedReference<ManagedCallBeginEndListener>> listenerList = 
     	    managedCallBeginEndListeners;
 
+	if (status.getCode() == CallStatus.ESTABLISHED && listenerList.size() == 0) {
+	    endIncomingCall(status);
+	    return;
+	}
+	
 	for (ManagedReference<ManagedCallBeginEndListener> listener : listenerList) {
             listener.get().callBeginEndNotification(status);
         }
+    }
+
+    private void endIncomingCall(CallStatus status) {
+	String  incomingCall = status.getOption("IncomingCall");
+
+        if (incomingCall == null || incomingCall.equals("true") == false) {
+	    return;
+	}
+
+	String callId = status.getCallId();
+
+	BridgeManager bm = getBridgeManager();
+
+	try {
+	    bm.playTreatmentToCall(callId,
+	        "tts:There are no phones to answer your call.  Good Bye.");
+	} catch (IOException e) {
+	    logger.warning("Unable to play message to call " + callId
+		+ ": " + e.getMessage());
+	}
+
+	try {
+	    bm.endCall(callId);
+	} catch (IOException e) {
+	    logger.warning("Unable to end call " + callId
+		+ ": " + e.getMessage());
+	}
+
+	logger.warning("There are no incoming call handlers.");
     }
 
     public static final class CallStatusListeners extends ConcurrentHashMap
@@ -1119,17 +1132,15 @@ public class VoiceImpl implements Serializable {
 	    return;
 	} 
 
-	if (work instanceof AddVirtualPlayerListenerWork) {
-	    addVirtualPlayerListenerCommit(((AddVirtualPlayerListenerWork) work).listener);
-	    return;
-	}
-
-	if (work instanceof RemoveVirtualPlayerListenerWork) {
-	    removeVirtualPlayerListenerCommit(((RemoveVirtualPlayerListenerWork) work).listener);
-	    return;
-	}
-
 	logger.warning("Unknown ListenerWork:  " + work);
+    }
+
+    public void scheduleTask(KernelRunnable runnable) {
+	VoiceServiceImpl.getInstance().scheduleTask(runnable);
+    }
+
+    public void joinTransaction(NonDurableTransactionParticipant participant) {
+	VoiceServiceImpl.getInstance().joinTransaction(participant);
     }
 
     public String dump(String command) {

@@ -322,14 +322,6 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	addWork(new RemovePlayerWork(player));
     }
 
-    public void addVirtualPlayerListener(VirtualPlayerListener listener) {
-	VoiceImpl.getInstance().addVirtualPlayerListener(listener);
-    }
-
-    public void removeVirtualPlayerListener(VirtualPlayerListener listener) {
-	VoiceImpl.getInstance().removeVirtualPlayerListener(listener);
-    }
-
     public int getNumberOfPlayersInRange(double x, double y, double z) {
 	return VoiceImpl.getInstance().getInstance().getNumberOfPlayersInRange(x, y, z);
     }
@@ -369,6 +361,24 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	    return treatmentGroup;
 	}
 
+        DataManager dm = AppContext.getDataManager();
+
+        WarmStartTreatmentGroups warmStartTreatmentGroups = null;
+
+        try {
+            warmStartTreatmentGroups = (WarmStartTreatmentGroups)
+                dm.getBinding(WarmStartInfo.DS_WARM_START_TREATMENTGROUPS);
+        } catch (NameNotBoundException e) {
+            try {
+                warmStartTreatmentGroups = new WarmStartTreatmentGroups();
+                dm.setBinding(WarmStartInfo.DS_WARM_START_TREATMENTGROUPS, warmStartTreatmentGroups);
+            }  catch (RuntimeException re) {
+                logger.log(Level.WARNING, "failed to bind map for warm starting treatments "
+                    + re.getMessage());
+            }
+        }
+
+        warmStartTreatmentGroups.add(id);
 	return new TreatmentGroupImpl(id);
     }
 
@@ -381,6 +391,26 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     }
 
     public Treatment createTreatment(String id, TreatmentSetup setup) throws IOException {
+	DataManager dm = AppContext.getDataManager();
+
+        WarmStartTreatments warmStartTreatments;
+
+        try {
+            warmStartTreatments = (WarmStartTreatments)
+		dm.getBinding(WarmStartInfo.DS_WARM_START_TREATMENTS);
+        } catch (NameNotBoundException e) {
+            try {
+                warmStartTreatments = new WarmStartTreatments();
+                dm.setBinding(WarmStartInfo.DS_WARM_START_TREATMENTS, warmStartTreatments);
+            }  catch (RuntimeException re) {
+                logger.log(Level.WARNING, "failed to bind map for warm starting treatments " 
+		    + re.getMessage());
+		throw new IOException("failed to bind map for warm starting treatments " 
+                    + re.getMessage());
+            }
+        }
+
+        warmStartTreatments.put(id, new WarmStartTreatmentInfo(setup));
 	return new TreatmentImpl(id, setup);
     }
 
@@ -392,6 +422,27 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
      * Recorder control
      */
     public Recorder createRecorder(String id, RecorderSetup setup) throws IOException {
+        DataManager dm = AppContext.getDataManager();
+
+        WarmStartRecorders warmStartRecorders;
+
+        try {
+            warmStartRecorders = (WarmStartRecorders)
+                dm.getBinding(WarmStartInfo.DS_WARM_START_RECORDERS);
+        } catch (NameNotBoundException e) {
+            try {
+                warmStartRecorders = new WarmStartRecorders();
+                dm.setBinding(WarmStartInfo.DS_WARM_START_RECORDERS, warmStartRecorders);
+            }  catch (RuntimeException re) {
+                logger.log(Level.WARNING, "failed to bind map for warm starting Recorders "
+                    + re.getMessage());
+                throw new IOException("failed to bind map for warm starting Recorders "
+                    + re.getMessage());
+            }
+        }
+
+        warmStartRecorders.put(id, setup);
+
 	return new RecorderImpl(id, setup);
     }
 
@@ -451,7 +502,11 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     public void doReady() {
 	logger.log(Level.INFO, "Voice Service is ready.");
 
-	//transactionScheduler.scheduleTask(new ReadyNotifier(), taskOwner);
+	try {
+	    transactionScheduler.runTask(new ReadyNotifier(), taskOwner);
+	} catch (Exception e) {
+	    System.out.println("Exception trying to warm start:  " + e.getMessage());
+	}
     }
 
     private class ReadyNotifier implements KernelRunnable {
@@ -471,7 +526,31 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
              * This method could get called multiple times if
              * ExceptionRetryStatus is thrown.
              */
-            //new WarmStart();
+            boolean warmStart = false;
+
+	    DataManager dm = AppContext.getDataManager();
+
+            try {
+                dm.getBinding(WarmStartInfo.DS_WARM_START_TREATMENTGROUPS);
+	        warmStart = true;
+            } catch (NameNotBoundException e) {
+	    }
+
+            try {
+                dm.getBinding(WarmStartInfo.DS_WARM_START_TREATMENTS);
+	        warmStart = true;
+            } catch (NameNotBoundException e) {
+	    }
+
+            try {
+                dm.getBinding(WarmStartInfo.DS_WARM_START_RECORDERS);
+	        warmStart = true;
+            } catch (NameNotBoundException e) {
+	    }
+
+	    if (warmStart) {
+                new WarmStart(VoiceImpl.getInstance());
+	    }
         }
     }
 
@@ -720,6 +799,14 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
      */
     private static final class TxnState {
 	public boolean prepared = false;
+    }
+
+    public void scheduleTask(KernelRunnable runnable) {
+        transactionScheduler.scheduleTask(runnable, taskOwner); 
+    }
+
+    public void joinTransaction(NonDurableTransactionParticipant participant) {
+	txnProxy.getCurrentTransaction().join(participant);
     }
 
     private class CallStatusNotifier implements KernelRunnable, NonDurableTransactionParticipant {

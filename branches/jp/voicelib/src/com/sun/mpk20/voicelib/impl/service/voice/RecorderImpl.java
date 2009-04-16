@@ -1,4 +1,5 @@
 /*
+
  * Copyright 2007 Sun Microsystems, Inc.
  *
  * This file is part of jVoiceBridge.
@@ -149,7 +150,7 @@ public class RecorderImpl implements Recorder, Serializable {
 
 	this.recordingFile = recordingFile;
 
-	System.out.println("RECORDING TO " + this.recordingFile);
+	logger.info("RECORDING TO " + this.recordingFile);
     }
 
     public void pauseRecording() throws IOException {
@@ -167,7 +168,7 @@ public class RecorderImpl implements Recorder, Serializable {
     }
 
     public void stopRecording() throws IOException {
-	System.out.println("STOP RECORDING " + recordingFile);
+	logger.info("STOP RECORDING " + recordingFile);
 
 	if (recordingFile == null) {
 	    throw new IOException("Not recording");

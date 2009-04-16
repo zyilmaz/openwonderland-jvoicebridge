@@ -26,15 +26,20 @@ package com.sun.mpk20.voicelib.impl.service.voice;
 import com.sun.mpk20.voicelib.impl.service.voice.work.audiogroup.*;
 
 import com.sun.sgs.app.AppContext;
+import com.sun.sgs.kernel.KernelRunnable;
+import com.sun.sgs.service.NonDurableTransactionParticipant;
+import com.sun.sgs.service.Transaction;
+import com.sun.sgs.service.TransactionProxy;
 
 import com.sun.mpk20.voicelib.app.AudioGroup;
 import com.sun.mpk20.voicelib.app.AudioGroupPlayerInfo;
+import com.sun.mpk20.voicelib.app.AudioGroupListener;
 import com.sun.mpk20.voicelib.app.AudioGroupSetup;
 import com.sun.mpk20.voicelib.app.Call;
 import com.sun.mpk20.voicelib.app.Player;
 import com.sun.mpk20.voicelib.app.PlayerSetup;
-import com.sun.mpk20.voicelib.app.VirtualPlayer;
 import com.sun.mpk20.voicelib.app.Util;
+import com.sun.mpk20.voicelib.app.VirtualPlayerListener;
 import com.sun.mpk20.voicelib.app.VoiceManager;
 
 import java.io.Serializable;
@@ -45,6 +50,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import java.util.logging.Logger;
 
@@ -59,6 +65,10 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 
     private ConcurrentHashMap<Player, AudioGroupPlayerInfo> players = new ConcurrentHashMap();
 
+    private CopyOnWriteArrayList<AudioGroupListener> listeners = new CopyOnWriteArrayList();
+
+    private VirtualPlayerHandler virtualPlayerHandler;
+
     public AudioGroupImpl(String id, AudioGroupSetup setup) {
 	this.id = Util.generateUniqueId(id);
 	this.setup = setup;
@@ -70,6 +80,14 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 
     private void audioGroupImplCommit() {
 	VoiceImpl.getInstance().putAudioGroup(this);
+
+	if (setup.audioGroupListener != null) {
+	    listeners.add(setup.audioGroupListener);
+	}
+
+	if (setup.virtualPlayerListener != null) {
+	    virtualPlayerHandler = new VirtualPlayerHandler(this, setup.virtualPlayerListener);
+	}
     }
 
     private void removeAudioGroupCommit() {
@@ -96,7 +114,15 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 
 	((PlayerImpl) player).addAudioGroupCommit(this);
 
-	logger.finer("Adding " + player + " to " + this + " call info " + info);
+	for (AudioGroupListener listener : listeners) {
+	    VoiceImpl.getInstance().scheduleTask(new Notifier(listener, this, player, info, true));
+	}
+
+	if (virtualPlayerHandler != null) {
+	    virtualPlayerHandler.playerAdded(player, info);
+	}
+
+	logger.info("Adding " + player + " to " + this + " call info " + info);
     }
 
     public void removePlayer(Player player) {
@@ -108,8 +134,14 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
     private void removePlayerCommit(Player player) {
 	player.removeAudioGroup(this);
 
-	if (players.remove(player) != null) {
-	    logger.finer("Removed " + player + " from " + this);
+	AudioGroupPlayerInfo info = players.remove(player);
+
+	for (AudioGroupListener listener : listeners) {
+	    VoiceImpl.getInstance().scheduleTask(new Notifier(listener, this, player, info, false));
+	}
+
+	if (virtualPlayerHandler != null) {
+	    virtualPlayerHandler.playerRemoved(player, info);
 	}
     }
 
@@ -233,6 +265,67 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 	} 
 
 	logger.warning("Unknown AudioGroupWork:  " + work);
+    }
+
+    private class Notifier implements KernelRunnable, NonDurableTransactionParticipant {
+
+	private AudioGroupListener listener;
+	private AudioGroup audioGroup;
+	private Player player;
+	private AudioGroupPlayerInfo info;
+	private boolean add;
+
+	public Notifier(AudioGroupListener listener, AudioGroup audioGroup, Player player, 
+	 	AudioGroupPlayerInfo info, boolean add) {
+
+	    this.listener = listener;
+	    this.audioGroup = audioGroup;
+	    this.player = player;
+	    this.info = info;
+	    this.add = add;
+	}
+
+	public String getBaseTaskType() {
+	    return Notifier.class.getName();
+	}
+
+	public void run() throws Exception {
+            VoiceImpl.getInstance().joinTransaction(this);
+
+	    /*
+	     * This runs in a transaction and the txnProxy
+	     * is usable at this point.  It's okay to get a manager
+	     * or another service.
+	     *
+	     * This method could get called multiple times if
+	     * ExceptionRetryStatus is thrown.
+	     */
+	    if (add == true) {
+		listener.playerAdded(audioGroup, player, info);
+	    } else {
+		listener.playerRemoved(audioGroup, player, info);
+	    }
+        }
+
+        public boolean prepare(Transaction txn) throws Exception {
+            return false;
+	}
+
+        public void abort(Transaction t) {
+	}
+
+	public void prepareAndCommit(Transaction txn) throws Exception {
+            prepare(txn);
+            commit(txn);
+	}
+
+	public void commit(Transaction t) {
+	}
+
+        public String getTypeName() {
+	    return "AudioGroupNotifier";
+	}
+
     }
 
     public String dump() {

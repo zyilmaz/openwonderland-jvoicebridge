@@ -20,22 +20,14 @@
  * exception as provided by Sun in the License file that accompanied this 
  * code. 
  */
-package com.sun.mpk20.voicelib.impl.service.voice;
-
-import com.sun.mpk20.voicelib.app.TreatmentSetup;
+package com.sun.mpk20.voicelib.app;
 
 import java.io.Serializable;
 
-public class WarmStartTreatmentInfo implements Serializable {
-    public String groupId;
-    public TreatmentSetup setup;
+public interface AudioGroupListener extends Serializable {
 
-    public WarmStartTreatmentInfo(TreatmentSetup setup) {
-	this(null, setup);
-    }
+    public void playerAdded(AudioGroup audioGroup, Player player, AudioGroupPlayerInfo info);
 
-    public WarmStartTreatmentInfo(String groupId, TreatmentSetup setup) {
-	this.groupId = groupId;
-	this.setup = setup;
-    }
+    public void playerRemoved(AudioGroup audioGroup, Player player, AudioGroupPlayerInfo info);
+
 }

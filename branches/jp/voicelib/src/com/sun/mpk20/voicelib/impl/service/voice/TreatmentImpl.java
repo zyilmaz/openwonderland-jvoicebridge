@@ -83,7 +83,7 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
 	if (VoiceImpl.getInstance().addWork(new CreateTreatmentWork(this)) == false) {
 	    treatmentImplCommit();
 	    return;
-	}
+	} 
     }
         
     private void treatmentImplCommit() {
@@ -190,11 +190,13 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
 
 	    VoiceImpl.getInstance().removeTreatment(this);
 
-	    try {
-	        call.end(true);
-	    } catch (IOException e) {
-		logger.warning("Unable to end call:  " + call + " "
-		    + e.getMessage());
+	    if (call != null) {
+	        try {
+	            call.end(true);
+	        } catch (IOException e) {
+		    logger.warning("Unable to end call:  " + call + " "
+		        + e.getMessage());
+	        }
 	    }
 	
 	    break;

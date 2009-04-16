@@ -753,12 +753,7 @@ public class BridgeManager extends Thread
     public BridgeInfo getVoiceBridge() throws IOException {
 	BridgeConnection bc;
 
-	try {
-	    bc = getBridgeConnection();
-	} catch (IOException e) {
-	    logger.warning(e.getMessage());
-	    return null;
-	}
+	bc = getBridgeConnection();
 
 	BridgeInfo bridgeInfo = new BridgeInfo();
 	bridgeInfo.privateHostName = bc.getPrivateHost();

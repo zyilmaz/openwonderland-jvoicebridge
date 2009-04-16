@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import java.util.logging.Logger;
@@ -68,15 +69,6 @@ public class TreatmentGroupImpl implements TreatmentGroup, CallStatusListener, S
     }
 
     private void treatmentGroupImplCommit() {
-	Iterator<Treatment> it = treatments.values().iterator();
-
-	while (it.hasNext()) {
-	    Treatment treatment = it.next();
-	
-	    removeTreatmentCommit(treatment, false);
-	    treatment.stop();
-	}
-
 	VoiceImpl.getInstance().putTreatmentGroup(this);
     }
 	
@@ -91,6 +83,16 @@ public class TreatmentGroupImpl implements TreatmentGroup, CallStatusListener, S
     public void addTreatment(Treatment treatment) {
 	if (VoiceImpl.getInstance().addWork(new AddTreatmentWork(this, treatment)) == false) {
 	    addTreatmentCommit(treatment);
+	} else {
+	    DataManager dm = AppContext.getDataManager();
+
+            WarmStartTreatments warmStartTreatments;
+
+            warmStartTreatments = (WarmStartTreatments) dm.getBinding(
+                WarmStartInfo.DS_WARM_START_TREATMENTS);
+
+	    warmStartTreatments.put(treatment.getId(), 
+	        new WarmStartTreatmentInfo(id, treatment.getSetup()));
 	}
     }
 
@@ -127,10 +129,14 @@ public class TreatmentGroupImpl implements TreatmentGroup, CallStatusListener, S
     }
 
     private void removeTreatmentCommit(Treatment treatment, boolean restartTreatments) {
-	String callId = treatment.getCall().getId();
+	Call call = treatment.getCall();
 
-	VoiceImpl.getInstance().removeCallStatusListener(this, callId);
-	treatments.remove(callId);
+	if (call != null) {
+	    String callId = treatment.getCall().getId();
+
+	    VoiceImpl.getInstance().removeCallStatusListener(this, callId);
+	    treatments.remove(callId);
+	}
 
 	if (restartTreatments) {
 	    restartTreatments(true);

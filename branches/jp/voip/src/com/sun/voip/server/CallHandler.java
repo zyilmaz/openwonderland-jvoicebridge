@@ -717,6 +717,7 @@ public abstract class CallHandler extends Thread {
 	MemberReceiver memberReceiver = getMemberReceiver();
 
 	if (memberReceiver != null) {
+	    muteChanged(isMuted);
 	    memberReceiver.setMuted(isMuted);
 	}
     }
@@ -745,11 +746,20 @@ public abstract class CallHandler extends Thread {
 		    MemberReceiver memberReceiver = call.getMemberReceiver();
 
 		    if (memberReceiver != null) {
+			memberReceiver.getMember().getCallHandler().muteChanged(isMuted);
 			memberReceiver.setMuted(isMuted);
 		    }
                 }
 	    }
         }
+    }
+
+    public void muteChanged(boolean isMuted) {
+	if (isMuted) {
+	    sendCallEventNotification(new CallEvent(CallEvent.MUTED));
+	} else {
+	    sendCallEventNotification(new CallEvent(CallEvent.UNMUTED));
+	}
     }
 
     public void setRemoteMediaInfo(String sdp) throws ParseException {

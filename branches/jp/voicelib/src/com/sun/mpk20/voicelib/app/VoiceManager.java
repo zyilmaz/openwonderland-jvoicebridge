@@ -90,10 +90,6 @@ public interface VoiceManager extends Serializable {
 
     public void removePlayer(Player player);
     
-    public void addVirtualPlayerListener(VirtualPlayerListener listener);
-
-    public void removeVirtualPlayerListener(VirtualPlayerListener listener);
-
     public int getNumberOfPlayersInRange(double x, double y, double z);
 
     /*
