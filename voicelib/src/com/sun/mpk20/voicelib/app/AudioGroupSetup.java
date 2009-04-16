@@ -28,4 +28,8 @@ public class AudioGroupSetup implements Serializable {
 
     public Spatializer spatializer;
 
+    public AudioGroupListener audioGroupListener;
+
+    public VirtualPlayerListener virtualPlayerListener;
+
 }

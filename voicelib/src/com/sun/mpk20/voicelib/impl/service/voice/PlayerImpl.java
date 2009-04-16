@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -107,12 +108,12 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
     private ArrayList<AudioGroup> audioGroups = new ArrayList();
 
-    private ArrayList<VirtualPlayer> virtualPlayers = new ArrayList();
+    private CopyOnWriteArrayList<VirtualPlayer> virtualPlayers = new CopyOnWriteArrayList();
 
     private ConcurrentHashMap<String, Spatializer> privateSpatializers =
 	new ConcurrentHashMap<String, Spatializer>();
 
-    private ArrayList<Player> playersInRange = new ArrayList<Player>();
+    private CopyOnWriteArrayList<Player> playersInRange = new CopyOnWriteArrayList<Player>();
 
     private static double scale;
 
@@ -253,18 +254,23 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
 	x = -x;
 
-	positionChanged = getX() != x || getY() != y || getZ() != z;
+	double prevX = getX();
+	double prevY = getY();
+	double prevZ = getZ();
+
+	setPosition(x, y, z);
+	setOrientation(orientation);
+
+	positionChanged = getX() != prevX || getY() != prevY || getZ() != prevZ;
 
 	logger.finest("Player " + this + " moved to " + x + ":" + y + ":" + z
 	    + " orientation " + orientation + " positionChanged = " + positionChanged);
 
-	setPosition(x, y, z);
-	setOrientation(orientation);
 	setPrivateMixes(positionChanged);
     }
 
     private void setPosition(double x, double y, double z) {
-    	this.x = Util.round100(x / scale);
+	this.x = Util.round100(x / scale);
 	this.y = Util.round100(y / scale);
 	this.z = Util.round100(z / scale);
     }
@@ -356,6 +362,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
     private void setMasterVolumeCommit(double masterVolume) {
 	this.masterVolume = masterVolume;
+	setPrivateMixes(false);
     }
 
     public double getMasterVolume() {
@@ -836,7 +843,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	}
 	
 	if (virtualPlayers.size() > 0) {
-	    s = "\n    Virtual Players:  ";
+	    s += "\n    Virtual Players:  ";
 
 	    for (VirtualPlayer vp : virtualPlayers) {
 		s += " " + vp.player.getId();

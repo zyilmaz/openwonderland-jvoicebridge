@@ -63,6 +63,8 @@ public class CallStatus implements Serializable {
     public static final int ENDED           = 299;
     public static final int BUSY            = 486;
     public static final int BRIDGE_OFFLINE  = 666;
+    public static final int MUTED	    = 937;
+    public static final int UNMUTED	    = 938;
     public static final int INFO	    = 888;
     public static final int UNKNOWN         = 999;
     
@@ -216,6 +218,10 @@ public class CallStatus implements Serializable {
 		return "BridgeOffline";
             case BUSY:
                 return "Busy";
+	    case MUTED:
+		return "Muted";
+	    case UNMUTED:
+		return "Unmuted";
 	    case INFO:
 		return "Info";
             default:

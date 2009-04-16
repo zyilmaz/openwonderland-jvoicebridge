@@ -176,14 +176,6 @@ public class VoiceManagerImpl implements VoiceManager {
 	backingManager.removePlayer(player);
     }
 
-    public void addVirtualPlayerListener(VirtualPlayerListener listener) {
-	backingManager.addVirtualPlayerListener(listener);
-    }
-
-    public void removeVirtualPlayerListener(VirtualPlayerListener listener) {
-	backingManager.removeVirtualPlayerListener(listener);
-    }
-
     public int getNumberOfPlayersInRange(double x, double y, double z) {
 	return backingManager.getNumberOfPlayersInRange(x, y, z);
     }

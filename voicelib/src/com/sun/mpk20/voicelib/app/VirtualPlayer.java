@@ -27,17 +27,24 @@ import java.util.ArrayList;
 public class VirtualPlayer {
 
     public Player player;
-    public String cellName;
     public Player realPlayer;
+    public Player playerWithVirtualPlayer;
 
-    public VirtualPlayer(Player player, String cellName, Player realPlayer) {
+    public VirtualPlayer(Player player, Player realPlayer,
+	    Player playerWithVirtualPlayer) {
+
 	this.player = player;
-	this.cellName = cellName;
 	this.realPlayer = realPlayer;
+	this.playerWithVirtualPlayer = playerWithVirtualPlayer;
     }
 	
+    public String getUsername() {
+	return realPlayer.getCall().getSetup().cp.getName();
+    }
+
     public String toString() {
-	return player.getId();
+	return getUsername() + ", real player " + realPlayer 
+	+ " player with virtual player " + playerWithVirtualPlayer;
     }
 
 }

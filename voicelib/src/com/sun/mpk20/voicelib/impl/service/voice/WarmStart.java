@@ -20,20 +20,12 @@
  * exception as provided by Sun in the License file that accompanied this 
  * code. 
  */
-
 package com.sun.mpk20.voicelib.impl.service.voice;
 
 import com.sun.sgs.app.AppContext;
 import com.sun.sgs.app.DataManager;
-import com.sun.sgs.app.ManagedObject;
 import com.sun.sgs.app.NameNotBoundException;
 
-import com.sun.sgs.service.Transaction;
-import com.sun.sgs.service.TransactionProxy;
-import com.sun.sgs.service.NonDurableTransactionParticipant;
-
-import com.sun.mpk20.voicelib.app.AudioGroup;
-import com.sun.mpk20.voicelib.app.AudioGroupSetup;
 import com.sun.mpk20.voicelib.app.Recorder;
 import com.sun.mpk20.voicelib.app.RecorderSetup;
 import com.sun.mpk20.voicelib.app.Treatment;
@@ -42,53 +34,70 @@ import com.sun.mpk20.voicelib.app.TreatmentSetup;
 
 import java.io.IOException;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Enumeration;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import java.util.concurrent.ConcurrentHashMap;
-
-public class WarmStart extends Thread {
-
-    /** The serialVersionUID for this class. */
-    private final static long serialVersionUID = 1L;
+public class WarmStart {
 
     private static final Logger logger =
         Logger.getLogger(WarmStart.class.getName());
 
-    private static boolean started;
+    private boolean treatmentGroupsRestarted;
+    private boolean treatmentsRestarted;
+    private boolean recordersRestarted = true;
 
-    private ArrayList<String> treatmentGroups = new ArrayList();
+    VoiceImpl voiceImpl;
 
-    private HashMap<String, WarmStartTreatmentInfo> treatments = new HashMap();
+    private HashMap<String, TreatmentGroup> treatmentGroups = new HashMap();
 
-    private HashMap<String, RecorderSetup> recorders = new HashMap();
+    public WarmStart(VoiceImpl voiceImpl) {
+	this.voiceImpl = voiceImpl;
 
-    /*
-     * TODO
-     *
-     * This needs to be broken up into individual transactions.
-     */
-    public WarmStart() {
-	System.out.println("WARM START");
+	logger.info("WARM START");
 
-	getTreatments();
+	if (treatmentGroupsRestarted == false) {
+	    restartTreatmentGroups();
+	}
 
-	getRecorders();
+	if (treatmentsRestarted == false) {
+	    restartTreatments();
+	}
 
-	start();
-
-	System.out.println("WARM START FINISHED SCHEDULING WORK...");
-
-	started = true;
+	restartRecorders();
     }
 
-    private void getTreatments() {
-	//System.out.println("getting treatments...");
+    private void restartTreatmentGroups() {
+	logger.fine("Restarting treatmentGroups...");
+
+        WarmStartTreatmentGroups warmStartTreatmentGroups;
+
+	DataManager dm = AppContext.getDataManager();
+
+        try {
+            warmStartTreatmentGroups = (WarmStartTreatmentGroups) dm.getBinding(
+		WarmStartInfo.DS_WARM_START_TREATMENTGROUPS);
+        } catch (NameNotBoundException e) {
+	    logger.fine("There are no treatment groups to restart...");
+	    return;
+	}
+
+	for (String groupId : warmStartTreatmentGroups) {
+	    if (voiceImpl.getTreatmentGroup(groupId) == null) {
+		treatmentGroups.put(groupId, voiceImpl.createTreatmentGroup(groupId));
+		logger.fine("Restarted treatment group " + groupId);
+	    } else {
+		logger.fine("Treatment group is already started:  " + groupId);
+	    }
+	}
+
+	treatmentGroupsRestarted = true;
+    }
+
+    private void restartTreatments() {
+	logger.fine("Restarting treatments...");
 
         WarmStartTreatments warmStartTreatments;
 
@@ -98,27 +107,47 @@ public class WarmStart extends Thread {
             warmStartTreatments = (WarmStartTreatments) dm.getBinding(
 		WarmStartInfo.DS_WARM_START_TREATMENTS);
         } catch (NameNotBoundException e) {
-	    //System.out.println("There are no treatments to restart...");
+	    logger.fine("There are no treatments to restart...");
 	    return;
 	}
 
-	//System.out.println("Treatments to restart:  " + warmStartTreatments.size());
+	logger.fine("Treatments to restart:  " + warmStartTreatments.size());
 
 	Enumeration<String> keys = warmStartTreatments.keys();
 
 	while (keys.hasMoreElements()) {
 	    String treatmentId = keys.nextElement();
 
-	    if (VoiceImpl.getInstance().getTreatment(treatmentId) == null) {
-		treatments.put(treatmentId, warmStartTreatments.get(treatmentId));
+	    if (voiceImpl.getTreatment(treatmentId) == null) {
+		WarmStartTreatmentInfo info = warmStartTreatments.get(treatmentId);
+                try {
+                    Treatment treatment = voiceImpl.createTreatment(treatmentId, info.setup);
+
+                    if (info.groupId != null) {
+                        logger.fine("Looking for group " + info.groupId);
+                        TreatmentGroup group = treatmentGroups.get(info.groupId);
+
+			if (group == null) {
+			    logger.warning("Unable to find treatmentGroup " + info.groupId);
+			} else {
+                            group.addTreatment(treatment);
+			}
+                    }
+		    logger.fine("Created treatment " + treatmentId);
+                } catch (IOException e) {
+                    logger.warning("Unable to create treatment " + treatmentId + " "
+                    + e.getMessage());
+                }
 	    } else {
-		//System.out.println("Treatment is already started:  " + treatmentId);
+		logger.fine("Treatment is already started:  " + treatmentId);
 	    }
 	}
+
+	treatmentsRestarted = true;
     }
 
-    private void getRecorders() {
-	//System.out.println("getting recorders...");
+    private void restartRecorders() {
+	logger.fine("Restarting recorders...");
 
         WarmStartRecorders warmStartRecorders;
 
@@ -128,7 +157,7 @@ public class WarmStart extends Thread {
             warmStartRecorders = (WarmStartRecorders) dm.getBinding(
 		WarmStartInfo.DS_WARM_START_RECORDERS);
         } catch (NameNotBoundException e) {
-	    //System.out.println("There are no recorders to restart...");
+	    logger.fine("There are no recorders to restart...");
 	    return;
 	}
 
@@ -137,72 +166,19 @@ public class WarmStart extends Thread {
 	while (keys.hasMoreElements()) {
 	    String recorderId = keys.nextElement();
 
-	    if (VoiceImpl.getInstance().getRecorder(recorderId) == null) {
-		recorders.put(recorderId, warmStartRecorders.get(recorderId));
+	    if (voiceImpl.getRecorder(recorderId) == null) {
+		try {
+		    voiceImpl.createRecorder(recorderId, warmStartRecorders.get(recorderId));
+		    logger.fine("Restarted recorder " + recorderId);
+            	} catch (IOException e) {
+                    logger.warning("Unable to restart recorder:  " + recorderId);
+                }
 	    } else {
-		//System.out.println("Recorder is already started:  " + recorderId);
+		logger.fine("Recorder is already started:  " + recorderId);
 	    }
 	}
-    }
 
-    public void run() {
-	restartTreatments();
-	restartRecorders();
-    }
-
-    private void restartTreatments() {
-	Iterator<String> it = treatments.keySet().iterator();
-
-	while (it.hasNext()) {
-	    String treatmentId = it.next();
-
-	    WarmStartTreatmentInfo info = treatments.get(treatmentId);
-
-	    if (VoiceImpl.getInstance().getTreatment(treatmentId) != null) {
-		System.out.println("Treatment is already started:  " + treatmentId);
-		continue;
-	    }
-
-	    System.out.println("Restarting treatment:  " + treatmentId + " group " + info.groupId);
-
-	    Treatment treatment;
-
-	    try {
-	        treatment = new TreatmentImpl(treatmentId, info.setup);
-	    } catch (IOException e) {
-		System.out.println("Unable to create treatment " + treatmentId + " " 
-		    + e.getMessage());
-		continue;
-	    }
-
-	    if (info.groupId == null) {
-		continue;
-	    }
-
-	    TreatmentGroup group = VoiceImpl.getInstance().getTreatmentGroup(info.groupId);
-			
-	    if (group == null) {
-		group = new TreatmentGroupImpl(info.groupId);
-	    }
-
-	    group.addTreatment(treatment);
-	}
-    }
-
-    private void restartRecorders() {
-	Iterator<String> it = recorders.keySet().iterator();
-	
-	while (it.hasNext()) {
-	    String recorderId = it.next();
-
-	    System.out.println("Restarting recorder " + recorderId);
-
-	    try {
-	        new RecorderImpl(recorderId, recorders.get(recorderId));
-	    } catch (IOException e) {
-		logger.warning("Unable to restart recorder:  " + recorderId);
-	    }
-	}
+	recordersRestarted = true;
     }
 
 }

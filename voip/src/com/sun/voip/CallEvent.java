@@ -44,9 +44,11 @@ public class CallEvent {
     public static final int CANT_START_CONFERENCE = 14;
     public static final int CANT_CREATE_MEMBER    = 15;
     public static final int H323_NOT_IMPLEMENTED  = 16;
-    public static final int INFO                  = 17;
+    public static final int MUTED		  = 17;
+    public static final int UNMUTED		  = 18;
+    public static final int INFO                  = 19;
 
-    private static final int LAST_EVENT = 17;
+    private static final int LAST_EVENT = 19;
 
     private static String[] eventString = {
         "000 New Connection",
@@ -66,6 +68,8 @@ public class CallEvent {
         "900 Can't start conference",
         "910 Can't create member",
         "920 H323 is not implemented",
+	"937 MUTED",
+	"938 UNMUTED",
 	""
     };
 
