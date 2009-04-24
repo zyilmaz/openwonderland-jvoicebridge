@@ -42,6 +42,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+import com.sun.sgs.kernel.KernelRunnable;
+import com.sun.sgs.service.NonDurableTransactionParticipant;
+import com.sun.sgs.service.Transaction;
 
 import com.sun.mpk20.voicelib.app.AudioGroup;
 import com.sun.mpk20.voicelib.app.AudioGroupPlayerInfo;
@@ -55,6 +58,7 @@ import com.sun.mpk20.voicelib.app.DefaultSpatializers;
 import com.sun.mpk20.voicelib.app.FullVolumeSpatializer;
 import com.sun.mpk20.voicelib.app.ManagedCallStatusListener;
 import com.sun.mpk20.voicelib.app.Player;
+import com.sun.mpk20.voicelib.app.PlayerInRangeListener;
 import com.sun.mpk20.voicelib.app.PlayerSetup;
 import com.sun.mpk20.voicelib.app.Spatializer;
 import com.sun.mpk20.voicelib.app.Util;
@@ -488,6 +492,25 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	return audioGroups;
     }
 
+    private CopyOnWriteArrayList<PlayerInRangeListener> playersInRangeListeners =
+	new CopyOnWriteArrayList();
+
+    public void addPlayerInRangeListener(PlayerInRangeListener listener) {
+	if (playersInRangeListeners.contains(listener)) {
+	    return;
+	}
+
+	for (Player playerInRange : playersInRange) {
+	    listener.playerInRange(this, playerInRange, true);
+	}
+
+	playersInRangeListeners.add(listener);
+    }
+
+    public void removePlayerInRangeListener(PlayerInRangeListener listener) {
+	playersInRangeListeners.remove(listener);
+    }
+
     public boolean isInRange(Player p) {
 	return playersInRange.contains(p);
     }
@@ -498,6 +521,8 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    return;
 	}
 	playersInRange.add(p);
+
+	notifyPlayerInRangeListeners(this, p, true);
     }
 
     public void removePlayerInRange(Player p) {
@@ -506,6 +531,14 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    return;
 	}
 	playersInRange.remove(p);
+
+	notifyPlayerInRangeListeners(this, p, false);
+    }
+
+    private void notifyPlayerInRangeListeners(Player p, Player playerInRange, boolean isInRange) {
+	for (PlayerInRangeListener listener : playersInRangeListeners) {
+	     new Notifier(listener, p, playerInRange, isInRange);
+	}
     }
 
     private long timeToSpatialize;
@@ -672,7 +705,10 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	double[] privateMixParameters = new double[4];
 
 	if (p.getCall() == null || p.getCall().isMuted() == false) {
-	    for (AudioGroup audioGroup : audioGroups) {
+	    AudioGroup[] audioGroupList = audioGroups.toArray(new AudioGroup[0]);
+
+	    for (int i = 0; i < audioGroupList.length; i++) {
+		AudioGroup audioGroup = audioGroupList[i];
 
 	        //logger.warning("ag " + audioGroup);
 
@@ -968,4 +1004,58 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    + (publicSpatializer != null ? publicSpatializer.toString() : "");
     }
 
+    private class Notifier implements KernelRunnable, NonDurableTransactionParticipant {
+
+	private PlayerInRangeListener listener;
+	private Player player;
+	private Player playerInRange;
+	private boolean isInRange;
+
+	public Notifier(PlayerInRangeListener listener, Player player, 
+	 	Player playerInRange, boolean isInRange) {
+
+	    this.listener = listener;
+	    this.player = player;
+	    this.playerInRange = playerInRange;
+	    this.isInRange = isInRange;
+	}
+
+	public String getBaseTaskType() {
+	    return Notifier.class.getName();
+	}
+
+	public void run() throws Exception {
+            VoiceImpl.getInstance().joinTransaction(this);
+
+	    /*
+	     * This runs in a transaction and the txnProxy
+	     * is usable at this point.  It's okay to get a manager
+	     * or another service.
+	     *
+	     * This method could get called multiple times if
+	     * ExceptionRetryStatus is thrown.
+	     */
+	    listener.playerInRange(player, playerInRange, isInRange);
+        }
+
+        public boolean prepare(Transaction txn) throws Exception {
+            return false;
+	}
+
+        public void abort(Transaction t) {
+	}
+
+	public void prepareAndCommit(Transaction txn) throws Exception {
+            prepare(txn);
+            commit(txn);
+	}
+
+	public void commit(Transaction t) {
+	}
+
+        public String getTypeName() {
+	    return "PlayerInRangeNotifier";
+	}
+
+    }
 }
