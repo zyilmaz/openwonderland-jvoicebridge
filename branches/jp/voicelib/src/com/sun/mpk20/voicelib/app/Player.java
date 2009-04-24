@@ -94,6 +94,10 @@ public interface Player extends CallStatusListener {
 
     public int getNumberOfPlayersInRange();
 
+    public void addPlayerInRangeListener(PlayerInRangeListener listener);
+
+    public void removePlayerInRangeListener(PlayerInRangeListener listener);
+
     public void setCall(Call call);
 
     public Call getCall();

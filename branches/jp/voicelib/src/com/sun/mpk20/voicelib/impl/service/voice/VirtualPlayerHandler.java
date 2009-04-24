@@ -86,7 +86,6 @@ public class VirtualPlayerHandler implements Serializable {
 	}
 
 	if (info.chatType != AudioGroupPlayerInfo.ChatType.PUBLIC) {
-	    logger.info("Removing virtual players for " + player);
 	    removeVirtualPlayers(player);
 	}
     }
@@ -97,7 +96,7 @@ public class VirtualPlayerHandler implements Serializable {
 	VoiceImpl voiceImpl = VoiceImpl.getInstance();
 
 	if (voiceImpl.getPlayer(id) != null) {
-	    logger.warning("Player " + id + " already exists");
+	    logger.fine("Player " + id + " already exists");
 	    return;
 	}
 

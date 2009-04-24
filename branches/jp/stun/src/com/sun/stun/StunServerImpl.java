@@ -270,7 +270,7 @@ public class StunServerImpl implements StunServer {
 
 	InetSocketAddress isa = (InetSocketAddress) packet.getSocketAddress();
 
-	logger.fine("Got UDP Stun request on socket " 
+	logger.warning("Got UDP Stun request on socket " 
 	    + socket.getLocalAddress() + ":" + socket.getLocalPort()
 	    + " length " + length + " bytes " + " from " + isa);
 
@@ -347,7 +347,7 @@ public class StunServerImpl implements StunServer {
     }
 
     public void processStunRequest(Socket socket) {
-	logger.finer("Got TCP Stun request from " + socket.getInetAddress()
+	logger.warning("Got TCP Stun request from " + socket.getInetAddress()
 	    + ":" + socket.getPort());
 		
 	try {
