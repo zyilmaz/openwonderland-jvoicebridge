@@ -704,7 +704,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
 	double[] privateMixParameters = new double[4];
 
-	if (p.getCall() == null || p.getCall().isMuted() == false) {
+	if (p.getCall() != null && p.getCall().isMuted() == false) {
 	    AudioGroup[] audioGroupList = audioGroups.toArray(new AudioGroup[0]);
 
 	    for (int i = 0; i < audioGroupList.length; i++) {
@@ -780,6 +780,15 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    }
 	}
 
+	/*
+	 * Debug
+	 */
+	if (privateMixParameters[0] == 0 && privateMixParameters[1] == 0 &&
+	        privateMixParameters[2] == 0 && privateMixParameters[3] == 0) {
+
+	     dumpEverything(p);
+	}
+
         if (privateMixParameters[3] > .1) {
             logger.finest("this=" + this + " p=" + p + " mix "
                 + Util.round100(privateMixParameters[0]) + ", "
@@ -794,6 +803,118 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	numberOfPrivateMixesSet++;
 
 	return privateMixParameters[3];
+    }
+
+    private void dumpEverything(Player p) {
+	System.out.println("=======");
+	     
+	System.out.println(VoiceImpl.getInstance().dump("all"));
+
+	spatializeDebug(p);
+
+	System.out.println("=======");
+    }
+
+    /*
+     * For each AudioGroup in which this Player is a member,
+     * determine if we need to set a private mix for other
+     * players in the AudioGroup.
+     */
+    public void spatializeDebug(Player p) {
+	ArrayList<AudioGroup> groups = p.getAudioGroups();
+
+	System.out.println("groups size " + audioGroups.size() + " for " + this);
+	System.out.println("groups size " + groups.size() + " for " + p);
+
+	double[] privateMixParameters = new double[4];
+
+	if (p.getCall() != null && p.getCall().isMuted() == false) {
+	    AudioGroup[] audioGroupList = audioGroups.toArray(new AudioGroup[0]);
+
+	    System.out.println("audioGroupList length " + audioGroupList.length);
+
+	    for (int i = 0; i < audioGroupList.length; i++) {
+		AudioGroup audioGroup = audioGroupList[i];
+
+	        System.out.println("ag " + audioGroup);
+
+                if (groups.contains(audioGroup) == false) {
+                    System.out.println(p + " not in audio group " + audioGroup + " of " + this);
+                    continue;
+                }
+
+	        AudioGroupPlayerInfo info = audioGroup.getPlayerInfo(p);
+
+		if (info == null) {
+		    System.out.println("this " + this + " p null " + p + " group " + audioGroup);
+		}
+
+	        if (info.isSpeaking == false) {
+		    System.out.println(this + "::: " + p + " not speaking in " + audioGroup);
+		    continue;  // p is not speaking in the group
+	        }
+
+		Spatializer spatializer = audioGroup.getSetup().spatializer;
+
+		if (p.getPublicSpatializer() != null) {
+		    spatializer = p.getPublicSpatializer();
+		}
+
+	        double[] pmp = spatializer.spatialize(
+	            p.getX(), p.getY(), p.getZ(), p.getOrientation(), 
+		    getX(), getY(), getZ(), getOrientation());
+
+	        if (pmp[3] > privateMixParameters[3]) {
+	            System.out.println("group " + audioGroup + " " + this + " has pm for " + p 
+		        + " vol " + privateMixParameters[3] + " ag " + audioGroup
+		        + " la " + audioGroup.getPlayerInfo(this).listenAttenuation + " sap "
+		        + info.speakingAttenuation + " pmp[3] " + pmp[3]);
+
+		    privateMixParameters = pmp;
+	        }
+
+	        if (privateMixParameters[3] != 0) {
+	            privateMixParameters[3] *= 
+		        audioGroup.getPlayerInfo(this).listenAttenuation * info.speakingAttenuation;
+	        }
+	    }
+	} else {
+	    System.out.println(p + " is Muted");
+	}
+
+	System.out.println ("pm vol is " + privateMixParameters[3]);
+
+	if (privateMixParameters[3] != 0) {
+	    /*
+	     * Only use a private spatializer if we would have heard something
+	     * from p.
+	     */
+	    Spatializer spatializer = getPrivateSpatializer(p);
+
+	    if (spatializer != null) {
+		System.out.println("Using private spatializer");
+	        privateMixParameters = spatializer.spatialize(
+	            p.getX(), p.getY(), p.getZ(), p.getOrientation(), 
+		    getX(), getY(), getZ(), getOrientation());
+	    } else {
+		privateMixParameters[3] *= getWallAttenuation(p);
+	    }
+
+	    privateMixParameters[3] *= masterVolume;
+	} else {
+	    if (isInRange(p) == false) {
+		System.out.println("Not in range and we knew it");
+		return;	// it's not in range and we already knew it
+	    }
+	}
+
+        if (privateMixParameters[3] > .1) {
+            System.out.println("this=" + this + " p=" + p + " mix "
+                + Util.round100(privateMixParameters[0]) + ", "
+                + Util.round100(privateMixParameters[1]) + ", "
+                + Util.round100(privateMixParameters[2]) + ", "
+                + Util.round100(privateMixParameters[3]));
+        }
     }
 
     private double getWallAttenuation(Player p2) {
@@ -852,16 +973,16 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
     }
 
     public String dump() {
-	String s = "  " + toString() + " masterVolume " + masterVolume;
+	String s = toString() + " masterVolume " + masterVolume;
 	
-	s += "\n    Audio Groups: ";
+	s += "\n  Audio Groups: ";
 
 	for (AudioGroup audioGroup : audioGroups) {
 	    s += " " + audioGroup.getId();
 	}
 
 	if (privateSpatializers.size() > 0) {
-	    s += "\n    Private Spatializers:";
+	    s += "\n  Private Spatializers:";
 
 	    Set<String> keys = privateSpatializers.keySet();
 
@@ -869,23 +990,36 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
 	    String space = " ";
 
+	    int i = 0;
+
 	    while (it.hasNext()) {
+		if (i > 0) {
+		    space = "\n                          ";
+		}
 		String key = it.next();
 
-		s += space + key + " " + privateSpatializers.get(key) + "\n";
-
-		space = "                          ";
+		s += space + key + " " + privateSpatializers.get(key);
 	    }
 	}
 	
 	if (virtualPlayers.size() > 0) {
-	    s += "\n    Virtual Players:  ";
+	    s += "\n  Virtual Players:  ";
 
 	    for (VirtualPlayer vp : virtualPlayers) {
 		s += " " + vp.player.getId();
 	    }
 	}
 
+	if (playersInRange.size() == 0) {
+	    s += "\n  There are no players in range.";
+	} else {
+	    s += "\n  Players in Range: ";
+
+	    for (Player p : playersInRange) {
+	        s += p.getId() + " ";
+	    }
+	}
+	
 	return s;
     }
 

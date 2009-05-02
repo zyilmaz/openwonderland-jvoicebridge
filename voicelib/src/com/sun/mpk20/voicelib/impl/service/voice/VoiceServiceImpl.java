@@ -256,7 +256,42 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     }
 
     public Call createCall(String id, CallSetup setup) throws IOException {
-	return new CallImpl(id, setup);
+	DataManager dm = AppContext.getDataManager();
+
+        WarmStartCalls warmStartCalls;
+
+        try {
+            warmStartCalls = (WarmStartCalls)
+		dm.getBinding(WarmStartInfo.DS_WARM_START_CALLS);
+        } catch (NameNotBoundException e) {
+            try {
+                warmStartCalls = new WarmStartCalls();
+                dm.setBinding(WarmStartInfo.DS_WARM_START_CALLS, warmStartCalls);
+            }  catch (RuntimeException re) {
+                logger.log(Level.WARNING, "failed to bind map for warm starting calls " 
+		    + re.getMessage());
+		throw new IOException("failed to bind map for warm starting calls " 
+                    + re.getMessage());
+            }
+        }
+
+	Call call = new CallImpl(id, setup);
+        warmStartCalls.put(id, setup.bridgeInfo);
+	return call;
+    }
+
+    public void endCall(Call call) {
+	DataManager dm = AppContext.getDataManager();
+
+	try {
+            WarmStartCalls warmStartCalls = (WarmStartCalls)
+                dm.getBinding(WarmStartInfo.DS_WARM_START_CALLS);
+
+	    warmStartCalls.remove(call.getId());
+        } catch (NameNotBoundException e) {
+	    logger.log(Level.WARNING, "failed to bind map for warm starting calls "
+                + e.getMessage());
+	}
     }
 
     public Call getCall(String id) {
@@ -529,6 +564,12 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
             boolean warmStart = false;
 
 	    DataManager dm = AppContext.getDataManager();
+
+            try {
+                dm.getBinding(WarmStartInfo.DS_WARM_START_CALLS);
+	        warmStart = true;
+            } catch (NameNotBoundException e) {
+	    }
 
             try {
                 dm.getBinding(WarmStartInfo.DS_WARM_START_TREATMENTGROUPS);
