@@ -115,10 +115,6 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
     private boolean done = false;
 
-    private int myMemberNumber;
-    private static int memberNumber;
-    private static Object memberNumberLock = new Object();
-
     /*
      * Statistics
      */
@@ -167,10 +163,6 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	this.member = member;
 	this.cp = cp;
 	this.datagramChannel = datagramChannel;
-
-	synchronized (memberNumberLock) {
-	    myMemberNumber = memberNumber++;
-	}
 
 	encryptionKey = cp.getEncryptionKey();
 	encryptionAlgorithm = cp.getEncryptionAlgorithm();
@@ -2244,11 +2236,11 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
     }
 
     public String toString() {
-	return myMemberNumber + " ===> " + cp.toString();
+	return cp.toString();
     }
 
     public String toAbbreviatedString() {
-	String callId = myMemberNumber + " ===> " + cp.getCallId();
+	String callId = cp.getCallId();
 
 	if (callId.length() < 14) {
 	    return callId;

@@ -179,6 +179,7 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 	AudioGroupPlayerInfo info = players.get(player);
 
 	info.speakingAttenuation = speakingAttenuation;
+	player.setPrivateMixes(true);
     }
 
     public void setListenAttenuation(Player player, double listenAttenuation) {
@@ -193,6 +194,7 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 	AudioGroupPlayerInfo info = players.get(player);
 
 	info.listenAttenuation = listenAttenuation;
+	player.setPrivateMixes(true);
     }
 
     public void setSpeaking(Player player, boolean isSpeaking) {

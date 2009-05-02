@@ -189,9 +189,11 @@ public class VoiceImpl implements Serializable {
     private ConcurrentHashMap<String, AudioGroup> audioGroups = new ConcurrentHashMap();
     private ConcurrentHashMap<String, Call> calls = new ConcurrentHashMap();
     private ConcurrentHashMap<String, Player> players = new ConcurrentHashMap();
-    private ConcurrentHashMap<String, Recorder> recorders = new ConcurrentHashMap();
+    private ConcurrentHashMap<String, RecorderInfo> recorders = new ConcurrentHashMap();
     private ConcurrentHashMap<String, TreatmentGroup> treatmentGroups = new ConcurrentHashMap();
     private ConcurrentHashMap<String, Treatment> treatments = new ConcurrentHashMap();
+
+    private ConcurrentHashMap<String, RecorderInfo> recorderInfoMap = new ConcurrentHashMap();
     
     private static VoiceImpl voiceImpl;
 
@@ -402,6 +404,7 @@ public class VoiceImpl implements Serializable {
 
     public void removeCall(Call call) {
 	calls.remove(call.getId());
+	VoiceServiceImpl.getInstance().endCall(call);
     }
 
     public void putPlayer(Player player) {
@@ -484,15 +487,25 @@ public class VoiceImpl implements Serializable {
   	return new RecorderImpl(id, setup);
     }
 
-    public void putRecorder(Recorder recorder) {
-	recorders.put(recorder.getId(), recorder);
+    public void putRecorder(String id, RecorderInfo info) {
+	recorders.put(id, info);
     }
 
-    public void removeRecorder(Recorder recorder) {
-	recorders.remove(recorder.getId());
+    public void removeRecorder(String id) {
+	recorders.remove(id);
     }
 
     public Recorder getRecorder(String id) {
+	RecorderInfo info = recorders.get(id);
+
+	if (info == null) {
+	    return null;
+	}
+
+	return info.recorder;
+    }
+
+    public RecorderInfo getRecorderInfo(String id) {
 	return recorders.get(id);
     }
 
@@ -1144,7 +1157,13 @@ public class VoiceImpl implements Serializable {
     }
 
     public String dump(String command) {
-	String[] tokens = command.split("[+]");
+	String[] tokens = command.split(":");
+
+	if (tokens.length > 1) {
+	    System.out.println("DUMP:  " + tokens[1]);
+	}
+
+	tokens = tokens[0].split("[+]");
 
 	String s = "";
 

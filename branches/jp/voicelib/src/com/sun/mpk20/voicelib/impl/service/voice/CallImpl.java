@@ -120,6 +120,20 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 
 	setup.cp.setName(name);
 
+	if (setup.bridgeInfo == null) {
+            BridgeConnection bc = VoiceImpl.getInstance().getBridgeManager().getBridgeConnection();
+
+            BridgeInfo bridgeInfo = new BridgeInfo();
+
+	    bridgeInfo.privateHostName = bc.getPrivateHost();
+	    bridgeInfo.privateControlPort = bc.getPrivateControlPort();
+            bridgeInfo.publicHostName = bc.getPublicHost();
+	    bridgeInfo.publicControlPort = bc.getPublicControlPort();
+            bridgeInfo.publicSipPort = bc.getPublicSipPort();
+
+	    setup.bridgeInfo = bridgeInfo;
+	}
+
 	//if (setup.managedListenerRef != null) {
         //    VoiceImpl.getInstance().addCallStatusListener(setup.managedListenerRef, id);
         //}
@@ -378,6 +392,8 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
             VoiceImpl.getInstance().getBridgeManager().endCall(id);
         } catch (IOException e) {
             logger.log(Level.INFO, "Unable to end call " + id
+                + " " + e.getMessage());
+            System.out.println("Unable to end call " + id
                 + " " + e.getMessage());
         }
 

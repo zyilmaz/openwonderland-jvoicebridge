@@ -104,7 +104,7 @@ public class VirtualPlayerHandler implements Serializable {
 
 	PlayerSetup setup = new PlayerSetup();
 	double scale = voiceImpl.getVoiceManagerParameters().scale;
-	setup.x = playerWithVp.getX() * scale;
+	setup.x = -playerWithVp.getX() * scale;
 	setup.y = playerWithVp.getY() * scale;
 	setup.z = playerWithVp.getZ() * scale;
 	setup.orientation = playerWithVp.getOrientation();

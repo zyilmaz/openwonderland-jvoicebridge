@@ -47,8 +47,6 @@ import com.sun.voip.CallParticipant;
 import java.io.IOException;
 import java.io.Serializable;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -58,10 +56,6 @@ public class RecorderImpl implements Recorder, Serializable {
 
     private String id;
     private RecorderSetup setup;
-
-    private String recordingFile;
-
-    private Call call;
 
     public RecorderImpl(String id, RecorderSetup setup) throws IOException {
 	this.id = Util.generateUniqueId(id);
@@ -81,9 +75,9 @@ public class RecorderImpl implements Recorder, Serializable {
 	cp.setConferenceId(parameters.conferenceId);
 	cp.setInputTreatment("null");
 	cp.setRecorder(true);
-	cp.setName(this.id);
+	cp.setName(id);
 
-	cp.setCallId(this.id);
+	cp.setCallId(id);
 
 	cp.setRecordDirectory(setup.recordDirectory);
 
@@ -93,10 +87,12 @@ public class RecorderImpl implements Recorder, Serializable {
 	
 	logger.info("New recorder at (" + setup.x + ":" + setup.z + ":" + setup.y + ")");
 
+	Call call;
+
 	try {
-	    call = new CallImpl(this.id, callSetup);
+	    call = new CallImpl(id, callSetup);
 	} catch (IOException e) {
-	    logger.warning("Unable to create call for recorder:  " + this.id
+	    logger.warning("Unable to create call for recorder:  " + id
 	 	+ ":  " + e.getMessage());
 	    return;
 	}
@@ -118,11 +114,11 @@ public class RecorderImpl implements Recorder, Serializable {
 
 	logger.finest("back from starting recorder...");
 
-	VoiceImpl.getInstance().putRecorder(this);
+	VoiceImpl.getInstance().putRecorder(id, new RecorderInfo(this, call, null));
     }
 
     private void removeRecorderCommit() {
-	VoiceImpl.getInstance().removeRecorder(this);
+	VoiceImpl.getInstance().removeRecorder(id);
     }
 
     public String getId() {
@@ -140,6 +136,14 @@ public class RecorderImpl implements Recorder, Serializable {
     }
 
     private void startRecordingCommit(String recordingFile) {
+	RecorderInfo info = getRecorderInfo();
+
+	if (info == null) {
+	    return;
+	}
+
+	info.recordingFile = recordingFile;
+
 	try {
 	    VoiceImpl.getInstance().getBridgeManager().startRecording(id, recordingFile);
 	} catch (IOException e) {
@@ -148,13 +152,17 @@ public class RecorderImpl implements Recorder, Serializable {
 	    return;
 	}
 
-	this.recordingFile = recordingFile;
-
-	logger.info("RECORDING TO " + this.recordingFile);
+	logger.info("RECORDING TO " + recordingFile);
     }
 
     public void pauseRecording() throws IOException {
-	if (recordingFile == null) {
+	RecorderInfo info = getRecorderInfo();
+
+	if (info == null) {
+	    return;
+	}
+
+	if (info.recordingFile == null) {
 	    throw new IOException("Not recording");
 	}
 
@@ -164,13 +172,25 @@ public class RecorderImpl implements Recorder, Serializable {
     }
 
     private void pauseRecordingCommit() {
-	call.getPlayer().setRecording(false);
+	RecorderInfo info = getRecorderInfo();
+
+	if (info == null) {
+	    return;
+	}
+
+	info.call.getPlayer().setRecording(false);
     }
 
     public void stopRecording() throws IOException {
-	logger.info("STOP RECORDING " + recordingFile);
+	RecorderInfo info = getRecorderInfo();
 
-	if (recordingFile == null) {
+	if (info == null) {
+	    return;
+	}
+
+	logger.info("STOP RECORDING " + info.recordingFile);
+
+	if (info.recordingFile == null) {
 	    throw new IOException("Not recording");
 	}
 
@@ -188,11 +208,25 @@ public class RecorderImpl implements Recorder, Serializable {
 	    return;
 	}
 
-	call.getPlayer().setRecording(false);
-	recordingFile = null;
+	RecorderInfo info = getRecorderInfo();
+
+	if (info == null) {
+	    return;
+	}
+
+	info.call.getPlayer().setRecording(false);
+	info.recordingFile = null;
     }
 
     public void playRecording(String recordingFile) throws IOException {
+	RecorderInfo info = getRecorderInfo();
+
+	if (info == null) {
+	    return;
+	}
+
+	info.recordingFile = recordingFile;
+
 	if (VoiceImpl.getInstance().addWork(new PlayRecorderWork(this, recordingFile)) == false) {
 	    playRecordingCommit(recordingFile);
 	}
@@ -206,12 +240,16 @@ public class RecorderImpl implements Recorder, Serializable {
                 + recordingFile + " for " + id + " " + e.getMessage());
 	    return;
         }
-
-	this.recordingFile = recordingFile;
     }
 
     public void pausePlayingRecording() throws IOException {
-	if (recordingFile == null) {
+       RecorderInfo info = getRecorderInfo();
+
+        if (info == null) {
+            return;
+        }
+
+	if (info.recordingFile == null) {
 	    throw new IOException("Not playing");
 	}
 
@@ -224,7 +262,13 @@ public class RecorderImpl implements Recorder, Serializable {
     }
 
     public void stopPlayingRecording() throws IOException {
-	if (recordingFile == null) {
+       RecorderInfo info = getRecorderInfo();
+
+        if (info == null) {
+            return;
+        }
+
+	if (info.recordingFile == null) {
 	    throw new IOException("Not playing");
 	}
 
@@ -242,7 +286,23 @@ public class RecorderImpl implements Recorder, Serializable {
 	    return;
         }
 
-	recordingFile = null;
+	RecorderInfo info = getRecorderInfo();
+	
+	if (info == null) {
+	    return;
+	}
+
+	info.recordingFile = null;
+    }
+
+    private RecorderInfo getRecorderInfo() {
+	RecorderInfo info = VoiceImpl.getInstance().getRecorderInfo(id);
+
+	if (info == null) {
+	    logger.log(Level.WARNING, "Unable to get recorder info for " + id);
+	}
+
+	return info;
     }
 
     public void commit(RecorderWork work) {

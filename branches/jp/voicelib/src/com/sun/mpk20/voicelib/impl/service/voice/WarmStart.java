@@ -26,14 +26,18 @@ import com.sun.sgs.app.AppContext;
 import com.sun.sgs.app.DataManager;
 import com.sun.sgs.app.NameNotBoundException;
 
+import com.sun.mpk20.voicelib.app.BridgeInfo;
 import com.sun.mpk20.voicelib.app.Recorder;
 import com.sun.mpk20.voicelib.app.RecorderSetup;
 import com.sun.mpk20.voicelib.app.Treatment;
 import com.sun.mpk20.voicelib.app.TreatmentGroup;
 import com.sun.mpk20.voicelib.app.TreatmentSetup;
 
+import com.sun.voip.client.connector.CallStatus;
+
 import java.io.IOException;
 
+import java.util.Map;
 import java.util.HashMap;
 import java.util.Enumeration;
 
@@ -45,9 +49,10 @@ public class WarmStart {
     private static final Logger logger =
         Logger.getLogger(WarmStart.class.getName());
 
+    private boolean callsEnded;
     private boolean treatmentGroupsRestarted;
     private boolean treatmentsRestarted;
-    private boolean recordersRestarted = true;
+    private boolean recordersRestarted;
 
     VoiceImpl voiceImpl;
 
@@ -58,6 +63,10 @@ public class WarmStart {
 
 	logger.info("WARM START");
 
+	if (callsEnded == false) {
+	    endCalls();
+	}
+
 	if (treatmentGroupsRestarted == false) {
 	    restartTreatmentGroups();
 	}
@@ -66,7 +75,65 @@ public class WarmStart {
 	    restartTreatments();
 	}
 
-	restartRecorders();
+        if (recordersRestarted == false) {
+	    restartRecorders();
+	}
+    }
+
+    private void endCalls() {
+        WarmStartCalls warmStartCalls;
+
+	DataManager dm = AppContext.getDataManager();
+
+        try {
+            warmStartCalls = (WarmStartCalls) dm.getBinding(
+		WarmStartInfo.DS_WARM_START_CALLS);
+        } catch (NameNotBoundException e) {
+	    logger.fine("There are no calls to end...");
+	    return;
+	}
+
+	Enumeration<String> keys = warmStartCalls.keys();
+
+	while (keys.hasMoreElements()) {
+	    String callID = keys.nextElement();
+
+	    BridgeManager bridgeManager = voiceImpl.getBridgeManager();
+
+	    BridgeInfo info = warmStartCalls.get(callID);
+
+	    BridgeConnection bc = bridgeManager.findBridge(
+		info.publicHostName, String.valueOf(info.publicSipPort));
+
+	    if (bc == null) {
+		logger.warning("Unable to find BridgeConnection for " + callID);
+		sendStatus(callID);
+		continue;
+	    }
+
+	    try {
+		bc.endCall(callID);
+	    } catch (IOException e) {
+		logger.warning("Unable to end call " + callID
+		    + ": " + e.getMessage());
+	    }
+	    sendStatus(callID);
+	}
+
+	warmStartCalls.clear();
+	callsEnded = true;
+    }
+
+    private void sendStatus(String callID) {
+	HashMap<String, String> options = new HashMap();
+		
+	options.put("CallId", callID);
+	options.put("ConferenceId", voiceImpl.getConferenceId());
+	options.put("Reason", "Warm Start");
+
+	CallStatus status = CallStatus.getInstance("SIPDialer/1.0", CallStatus.ENDED, options);
+
+	voiceImpl.callStatusChanged(status);
     }
 
     private void restartTreatmentGroups() {

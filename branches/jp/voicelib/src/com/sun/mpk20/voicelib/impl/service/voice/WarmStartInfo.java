@@ -25,6 +25,9 @@ package com.sun.mpk20.voicelib.impl.service.voice;
 
 public class WarmStartInfo {
 
+    public static final String DS_WARM_START_CALLS =
+        CallImpl.class.getName() + ".WARM_START_CALLS";
+
     public static final String DS_WARM_START_TREATMENTGROUPS =
         TreatmentGroupImpl.class.getName() + ".WARM_START_TREATMENTGROUPS";
 
