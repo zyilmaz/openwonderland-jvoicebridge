@@ -384,6 +384,8 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
     public void end(boolean removePlayer) throws IOException {
 	if (VoiceImpl.getInstance().addWork(new EndCallWork(this, removePlayer)) == false) {
 	    endCommit(removePlayer);
+	} else {
+	    VoiceImpl.getInstance().removeCall(this);
 	}
     }
 
@@ -392,8 +394,6 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
             VoiceImpl.getInstance().getBridgeManager().endCall(id);
         } catch (IOException e) {
             logger.log(Level.INFO, "Unable to end call " + id
-                + " " + e.getMessage());
-            System.out.println("Unable to end call " + id
                 + " " + e.getMessage());
         }
 
@@ -409,9 +409,9 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 
 	        VoiceImpl.getInstance().removePlayer(player);
 	    }
+	} else {
+	    player.setCall(null);
 	}
-
-	VoiceImpl.getInstance().removeCall(this);
     }
 
     public void callStatusChanged(CallStatus callStatus) {
