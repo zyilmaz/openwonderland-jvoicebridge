@@ -545,6 +545,11 @@ public class SipCommunicator extends Thread implements
 	    return;
 	}
 
+	if (command.indexOf("endCalls") >= 0) {
+	    endCalls();
+  	    return;
+	}
+
 	if (command.indexOf("ping") >= 0) {
 	    if (firstTime) {
 		firstTime = false;
