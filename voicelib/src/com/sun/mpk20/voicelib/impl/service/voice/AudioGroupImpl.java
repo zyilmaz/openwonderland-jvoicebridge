@@ -41,6 +41,7 @@ import com.sun.mpk20.voicelib.app.PlayerSetup;
 import com.sun.mpk20.voicelib.app.Util;
 import com.sun.mpk20.voicelib.app.VirtualPlayerListener;
 import com.sun.mpk20.voicelib.app.VoiceManager;
+import com.sun.mpk20.voicelib.app.VoiceManagerParameters;
 
 import java.io.Serializable;
 
@@ -132,16 +133,28 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
     }
 
     private void removePlayerCommit(Player player) {
+	VoiceImpl voiceImpl = VoiceImpl.getInstance();
+
 	player.removeAudioGroup(this);
 
 	AudioGroupPlayerInfo info = players.remove(player);
 
 	for (AudioGroupListener listener : listeners) {
-	    VoiceImpl.getInstance().scheduleTask(new Notifier(listener, this, player, info, false));
+	    voiceImpl.scheduleTask(new Notifier(listener, this, player, info, false));
 	}
 
 	if (virtualPlayerHandler != null) {
 	    virtualPlayerHandler.playerRemoved(player, info);
+	}
+
+	if (players.size() == 0) {
+	    VoiceManagerParameters parameters = voiceImpl.getVoiceManagerParameters();
+
+	    if (this.equals(parameters.livePlayerAudioGroup) == false &&
+		    this.equals(parameters.stationaryPlayerAudioGroup) == false) {
+
+	        voiceImpl.removeAudioGroup(this);
+	    }
 	}
     }
 
@@ -348,6 +361,16 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 	}
 	
 	return s;
+    }
+
+    public boolean equals(Object o) {
+	if (o instanceof AudioGroup == false) {
+	    return false;
+	}
+
+	AudioGroup audioGroup = (AudioGroup) o;
+
+	return id.equals(audioGroup.getId());
     }
 
     public String toString() {
