@@ -123,7 +123,9 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 	    virtualPlayerHandler.playerAdded(player, info);
 	}
 
-	logger.info("Adding " + player + " to " + this + " call info " + info);
+	player.setPrivateMixes(true);
+
+	logger.info("Added " + player + " to " + this + " call info " + info);
     }
 
     public void removePlayer(Player player) {
@@ -218,6 +220,10 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 
     private void setSpeakingCommit(Player player, boolean isSpeaking) {
 	AudioGroupPlayerInfo info = players.get(player);
+
+	if (info == null) {
+	    return;
+	}
 
 	info.isSpeaking = isSpeaking;
     }

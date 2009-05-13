@@ -68,6 +68,8 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 
     private boolean isMuted;
 
+    private boolean ended;
+
     public CallImpl(String id, CallSetup setup) throws IOException {
 	this.id = id;
 	this.setup = setup;
@@ -161,9 +163,9 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 
 	VoiceImpl.getInstance().addCallStatusListener(this, id);
 
-	//if (setup.listener != null) {
-        //    VoiceImpl.getInstance().addCallStatusListener(setup.listener, id);
-        //}
+	if (setup.listener != null) {
+            VoiceImpl.getInstance().addCallStatusListener(setup.listener, id);
+        }
 
 	if (setup.incomingCall == false) {
 	    try {
@@ -184,6 +186,7 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 		sendStatus(CallStatus.ENDED, 
 		    " Unable to setup call:  " + e.getMessage() + " " + cp);
 		cleanup();
+		ended = true;
 		return;
 	    }
 	}
@@ -247,6 +250,10 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
         }
 
 	this.isMuted = isMuted;
+
+	if (player != null) {
+            player.setPrivateMixes(true);
+	}
     }
 
     public boolean isMuted() {
@@ -382,26 +389,34 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
     }
 
     public void end(boolean removePlayer) throws IOException {
-	if (VoiceImpl.getInstance().addWork(new EndCallWork(this, removePlayer)) == false) {
+	VoiceImpl voiceImpl = VoiceImpl.getInstance();
+
+	if (voiceImpl.addWork(new EndCallWork(this, removePlayer)) == false) {
 	    endCommit(removePlayer);
 	} else {
-	    VoiceImpl.getInstance().removeCall(this);
+	    voiceImpl.removeCall(this);
+
+	    if (setup.managedListenerRef != null) {
+		voiceImpl.removeCallStatusListener(setup.managedListenerRef.get(), id);
+	    }
 	}
     }
 
     private void endCommit(boolean removePlayer) {
-	try {
-            VoiceImpl.getInstance().getBridgeManager().endCall(id);
-        } catch (IOException e) {
-            logger.log(Level.INFO, "Unable to end call " + id
-                + " " + e.getMessage());
-        }
+	if (ended == false) {
+	    try {
+                VoiceImpl.getInstance().getBridgeManager().endCall(id);
+            } catch (IOException e) {
+                logger.log(Level.INFO, "Unable to end call " + id
+                    + " " + e.getMessage());
+            }
+	}
+
+	Player player = getPlayer();
 
 	if (removePlayer) {
-	    Player player = getPlayer();
-
 	    if (player != null) {
-		AudioGroup[] audioGroups = player.getAudioGroups().toArray(new AudioGroup[0]);
+		AudioGroup[] audioGroups = player.getAudioGroups();
 
 		for (int i = 0; i < audioGroups.length; i++) {
 		    audioGroups[i].removePlayer(player);
@@ -410,7 +425,9 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	        VoiceImpl.getInstance().removePlayer(player);
 	    }
 	} else {
-	    player.setCall(null);
+	    if (player != null) {
+	        player.setCall(null);
+	    }
 	}
     }
 
@@ -446,10 +463,8 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 
         case CallStatus.ENDED:
 	    logger.info(callStatus.toString());
-	    VoiceImpl.getInstance().removeCallStatusListener(this, id);
-	    if (setup.listener != null) {
-                VoiceImpl.getInstance().removeCallStatusListener(setup.listener, id);
-            }
+	    cleanup();
+	    ended = true;
 	    break;
 	}
     }

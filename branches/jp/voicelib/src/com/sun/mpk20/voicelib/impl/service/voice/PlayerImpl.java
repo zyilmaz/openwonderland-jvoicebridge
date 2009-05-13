@@ -386,7 +386,6 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    logger.warning(this + " is aleady in audio group " + audioGroup);
 	}
 
-	updateAttenuation();
 	setPrivateMixes(true);
     }
 
@@ -402,26 +401,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    logger.warning("removed " + this + " from " + audioGroup);
 	}
 
-	updateAttenuation();
-    }
-
-    private void updateAttenuation() {
-	AudioGroup privateAudioGroup = null;
-
-	for (AudioGroup audioGroup : audioGroups) {
-	    if (audioGroup.getPlayerInfo(this).chatType == AudioGroupPlayerInfo.ChatType.PUBLIC == false) {
-		privateAudioGroup = audioGroup;
-		logger.warning(this + " belongs to private audio group " + audioGroup);
-		break;
-	    } 
-	}
-
-	if (privateAudioGroup != null) {
-	    attenuateOtherGroups(privateAudioGroup, 0,
-		AudioGroup.MINIMAL_LISTEN_ATTENUATION);
-	} else {
-	    attenuateOtherGroups(null, 0, 0);
-	}
+	setPrivateMixes(true);
     }
 
     public void attenuateOtherGroups(AudioGroup audioGroup, 
@@ -438,10 +418,12 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
     private void attenuateOtherGroupsCommit(AudioGroup audioGroup, 
 	    double speakingAttenuation, double listenAttenuation) {
 
-	boolean inExclusiveAudioGroup = getExclusiveAudioGroup() != null;
+	AudioGroup[] audioGroups = getAudioGroups();
 
-	for (AudioGroup ag : audioGroups) {
-	    if (audioGroup != null && ag.equals(audioGroup)) {
+	for (int i = 0; i < audioGroups.length; i++) {
+	    AudioGroup ag = audioGroups[i];
+
+	    if (ag.equals(audioGroup)) {
 		continue;
 	    }
 
@@ -452,44 +434,19 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 		continue;
 	    }
 
-	    if (inExclusiveAudioGroup) {
-	        info.speakingAttenuation = 0;
-	        info.listenAttenuation = 0;
-		logger.finest("group " + audioGroup + " " + this 
-		    + " in exclusive group, attenuation to 0 " + ag);
-		continue;
-	    }
+	    info.speakingAttenuation = speakingAttenuation;
+	    info.listenAttenuation = listenAttenuation;
 
-	    if (audioGroup != null) {
-	        info.speakingAttenuation = speakingAttenuation;
-	        info.listenAttenuation = listenAttenuation;
-		logger.finest("group " + audioGroup + " " + this 
-		    + " setting listen attenuation to " 
-		    + listenAttenuation + " " + ag);
-	    } else {
-	        info.speakingAttenuation = info.defaultSpeakingAttenuation;
-	        info.listenAttenuation = info.defaultListenAttenuation;
-	    }
-
-	    logger.warning(this + " group " + audioGroup + " speakingAttenuation " 
-		+ speakingAttenuation + " listenAttenuation " + listenAttenuation);
+	    logger.finest("group " + audioGroup + " " + this 
+		+ " setting listen attenuation to " 
+		+ listenAttenuation + " " + ag + " info " + info);
 	}
 
 	setPrivateMixes(true);
     }
 
-    private AudioGroup getExclusiveAudioGroup() {
-	for (AudioGroup audioGroup : audioGroups) {
-	    if (audioGroup.getPlayerInfo(this).chatType == AudioGroupPlayerInfo.ChatType.EXCLUSIVE) {
-		return audioGroup;
-	    }
-	}
-
-	return null;
-    }
-
-    public ArrayList<AudioGroup> getAudioGroups() {
-	return audioGroups;
+    public AudioGroup[] getAudioGroups() {
+	return audioGroups.toArray(new AudioGroup[0]);
     }
 
     private CopyOnWriteArrayList<PlayerInRangeListener> playersInRangeListeners =
@@ -545,10 +502,6 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
     private long timeToSetMixes;
  
-    private int numberOfPrivateMixesSet;
-
-    private int skipped;
-
     private Integer lock = new Integer(0);
 
     public void setPrivateMixes(boolean positionChanged) {
@@ -565,8 +518,6 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	// in 3-space relative to each other call
 	// and set the private mix accordingly.
 
-	long startTime = System.nanoTime();
-
         Player[] playersArray = VoiceImpl.getInstance().getPlayers();
 
 	logger.finer("Players " + playersArray.length + " changed " + this);
@@ -579,7 +530,6 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    Player p1 = playersArray[i];
 
 	    if (p1 == this) {
-		skipped++;
 		continue;
 	    }
 
@@ -597,17 +547,11 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 		 * Set the private mix p1 has for us
 		 */
 		setPrivateMix(p1, this);
-	    } else {
-		skipped++;
-	    }
+	    } 
 
-	    if (getSetup().isLivePlayer == false && isRecording() == false) {
+	    if (getSetup().isLivePlayer == true || isRecording() == false) {
 		/*
 		 * Only live players have private mixes
-		 */
-		skipped++;
-	    } else {
-		/*
 		 * Set the private mix we have for p1
 		 */
 		setPrivateMix(this, p1);
@@ -617,33 +561,6 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	if (logger.isLoggable(Level.FINE) == false) {
 	    return;
 	}
-
-	long now = System.nanoTime();
-
-	//synchronized (lock) {
-	    timeToSetMixes += (now - startTime);
-
-	    if (numberOfPrivateMixesSet < 1000) {
-		return;
-	    }
-
-	    double elapsed = timeToSetMixes / 1000000000.;
-
-	    double avg = elapsed / numberOfPrivateMixesSet;
-
-	    logger.info("elapsed " + elapsed + " avg time to set " 
-		+ numberOfPrivateMixesSet + " mixes "
-		+ avg + ", number of players " + playersArray.length 
-		+ ", avg time to spatialize " 
-		+ (timeToSpatialize / 1000000000. / 
-		  (numberOfPrivateMixesSet + skipped))
-		+ ", out of range " + skipped);
-
-	    numberOfPrivateMixesSet = 0;
-	    timeToSetMixes = 0;
-	    timeToSpatialize = 0;
-	    skipped = 0;
-	//}
     }
 
     /*
@@ -664,8 +581,10 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
 	double volume = p1.spatialize(p2);
 
+	boolean inRange = p1.isInRange(p2);
+
 	if (volume == 0) {
-	    if (p1.isInRange(p2) == false) {
+	    if (inRange == false) {
 		/*
 		 * This is an optimization.  p2 was not in range
 		 * and we already knew that.
@@ -673,7 +592,6 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	        logger.finest("pmx for " + p1 + ": "
 	            + p2 + " is not in range."); 
 
-		skipped++;
 		return;
 	    }
 
@@ -682,7 +600,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
 	    p1.removePlayerInRange(p2);   // p2 is not in range any more
 	} else {
-	    if (p1.isInRange(p2) == false) {
+	    if (inRange == false) {
 	    	logger.finest("pmx for " + p1 + ": "
 	            + p2 + " setting in range."); 
 
@@ -697,22 +615,24 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
      * players in the AudioGroup.
      */
     public double spatialize(Player p) {
-	ArrayList<AudioGroup> groups = p.getAudioGroups();
+	AudioGroup[] audioGroups = p.getAudioGroups();
 
-	//logger.warning("groups size " + audioGroups.size() + " for " + this);
-	//logger.warning("groups size " + groups.size() + " for " + p);
+	//logger.warning("groups size " + getAudioGroups().length + " for " + this);
+	//logger.warning("groups size " + p.getAudioGroups().length + " for " + p);
 
 	double[] privateMixParameters = new double[4];
 
-	if (p.getCall() != null && p.getCall().isMuted() == false) {
-	    AudioGroup[] audioGroupList = audioGroups.toArray(new AudioGroup[0]);
+	if (p.getCall() == null) {
+	    return 0;
+	}
 
-	    for (int i = 0; i < audioGroupList.length; i++) {
-		AudioGroup audioGroup = audioGroupList[i];
+	if (p.getCall().isMuted() == false) {
+	    for (int i = 0; i < audioGroups.length; i++) {
+		AudioGroup audioGroup = audioGroups[i];
 
 	        //logger.warning("ag " + audioGroup);
 
-                if (groups.contains(audioGroup) == false) {
+                if (this.audioGroups.contains(audioGroup) == false) {
                     logger.finest(p + " not in audio group " + audioGroup + " of " + this);
                     continue;
                 }
@@ -783,11 +703,11 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	/*
 	 * Debug
 	 */
-	if (privateMixParameters[0] == 0 && privateMixParameters[1] == 0 &&
-	        privateMixParameters[2] == 0 && privateMixParameters[3] == 0) {
+	//if (privateMixParameters[0] == 0 && privateMixParameters[1] == 0 &&
+	//        privateMixParameters[2] == 0 && privateMixParameters[3] == 0) {
 
-	     dumpEverything(p);
-	}
+	//     dumpEverything(p);
+	//}
 
         if (privateMixParameters[3] > .1) {
             logger.finest("this=" + this + " p=" + p + " mix "
@@ -799,8 +719,6 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
         VoiceImpl.getInstance().getBridgeManager().setPrivateMix(
 	    getCall().getId(), p.getCall().getId(), privateMixParameters);
-
-	numberOfPrivateMixesSet++;
 
 	return privateMixParameters[3];
     }
@@ -821,24 +739,26 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
      * players in the AudioGroup.
      */
     public void spatializeDebug(Player p) {
-	ArrayList<AudioGroup> groups = p.getAudioGroups();
+	AudioGroup[] audioGroups = p.getAudioGroups();
 
-	System.out.println("groups size " + audioGroups.size() + " for " + this);
-	System.out.println("groups size " + groups.size() + " for " + p);
+	System.out.println("groups size " + getAudioGroups().length + " for " + this);
+	System.out.println("groups size " + p.getAudioGroups().length + " for " + p);
 
 	double[] privateMixParameters = new double[4];
 
-	if (p.getCall() != null && p.getCall().isMuted() == false) {
-	    AudioGroup[] audioGroupList = audioGroups.toArray(new AudioGroup[0]);
+	if (p.getCall() == null) {
+	    return;
+	}
 
-	    System.out.println("audioGroupList length " + audioGroupList.length);
+	if (p.getCall().isMuted() == false) {
+	    System.out.println("audioGroups length " + audioGroups.length);
 
-	    for (int i = 0; i < audioGroupList.length; i++) {
-		AudioGroup audioGroup = audioGroupList[i];
+	    for (int i = 0; i < audioGroups.length; i++) {
+		AudioGroup audioGroup = audioGroups[i];
 
 	        System.out.println("ag " + audioGroup);
 
-                if (groups.contains(audioGroup) == false) {
+                if (this.audioGroups.contains(audioGroup) == false) {
                     System.out.println(p + " not in audio group " + audioGroup + " of " + this);
                     continue;
                 }

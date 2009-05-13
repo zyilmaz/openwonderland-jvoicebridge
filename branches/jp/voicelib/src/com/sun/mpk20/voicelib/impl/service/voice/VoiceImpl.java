@@ -197,9 +197,17 @@ public class VoiceImpl implements Serializable {
     
     private static VoiceImpl voiceImpl;
 
+    private boolean bindingsInitialized;
+
     public static VoiceImpl getInstance() {
 	if (voiceImpl == null) {
 	    voiceImpl = new VoiceImpl();
+	}
+
+	if (VoiceServiceImpl.getInstance().inTransaction()) {
+	    if (voiceImpl.bindingsInitialized() == false) {
+	        voiceImpl.initializeBindings();
+	    }
 	}
 
 	return voiceImpl;
@@ -283,6 +291,50 @@ public class VoiceImpl implements Serializable {
 	    getConferenceId(), livePlayerSpatializer, stationarySpatializer, 
 	    outworlderSpatializer, livePlayerAudioGroup,
 	    stationaryPlayerAudioGroup);
+    }
+
+    public boolean bindingsInitialized() {
+	return bindingsInitialized;
+    }
+
+    private void initializeBindings() {
+        DataManager dm = AppContext.getDataManager();
+
+        try {
+            dm.getBinding(DS_MANAGED_ALL_CALL_LISTENERS);
+        } catch (NameNotBoundException e) {
+            try {
+                dm.setBinding(DS_MANAGED_ALL_CALL_LISTENERS, 
+		    new ManagedAllCallListeners());
+            }  catch (RuntimeException re) {
+                logger.warning("failed to bind all call listeners map " + re.getMessage());
+                throw re;
+            }
+        }
+
+        try {
+            dm.getBinding(DS_MANAGED_CALL_STATUS_LISTENERS);
+        } catch (NameNotBoundException e) {
+            try {
+                dm.setBinding(DS_MANAGED_CALL_STATUS_LISTENERS, 
+		    new ManagedCallStatusListeners());
+            }  catch (RuntimeException re) {
+                logger.warning("failed to bind call listeners map " + re.getMessage());
+                throw re;
+            }
+        }
+
+        try {
+            dm.getBinding(DS_MANAGED_CALL_BEGIN_END_LISTENERS);
+        } catch (NameNotBoundException e) {
+            try {
+                dm.setBinding(DS_MANAGED_CALL_BEGIN_END_LISTENERS, 
+		    new ManagedCallBeginEndListeners());
+            }  catch (RuntimeException re) {
+                logger.warning("failed to bind begin / end listeners map " + re.getMessage());
+                throw re;
+            }
+        }
     }
 
     public BridgeManager getBridgeManager() {
@@ -404,7 +456,6 @@ public class VoiceImpl implements Serializable {
 
     public void removeCall(Call call) {
 	calls.remove(call.getId());
-	VoiceServiceImpl.getInstance().endCall(call);
     }
 
     public void putPlayer(Player player) {
@@ -638,54 +689,8 @@ public class VoiceImpl implements Serializable {
 	}
     }
     
-    private boolean bindingsInitialized;
-
-    private void initializeBindings() {
-        DataManager dm = AppContext.getDataManager();
-
-        try {
-            dm.getBinding(DS_MANAGED_ALL_CALL_LISTENERS);
-        } catch (NameNotBoundException e) {
-            try {
-                dm.setBinding(DS_MANAGED_ALL_CALL_LISTENERS, 
-		    new ManagedAllCallListeners());
-            }  catch (RuntimeException re) {
-                logger.warning("failed to bind all call listeners map " + re.getMessage());
-                throw re;
-            }
-        }
-
-        try {
-            dm.getBinding(DS_MANAGED_CALL_STATUS_LISTENERS);
-        } catch (NameNotBoundException e) {
-            try {
-                dm.setBinding(DS_MANAGED_CALL_STATUS_LISTENERS, 
-		    new ManagedCallStatusListeners());
-            }  catch (RuntimeException re) {
-                logger.warning("failed to bind call listeners map " + re.getMessage());
-                throw re;
-            }
-        }
-
-        try {
-            dm.getBinding(DS_MANAGED_CALL_BEGIN_END_LISTENERS);
-        } catch (NameNotBoundException e) {
-            try {
-                dm.setBinding(DS_MANAGED_CALL_BEGIN_END_LISTENERS, 
-		    new ManagedCallBeginEndListeners());
-            }  catch (RuntimeException re) {
-                logger.warning("failed to bind begin / end listeners map " + re.getMessage());
-                throw re;
-            }
-        }
-    }
-
     private void addManagedCallStatusListener(
 	    ManagedCallStatusListener listener, String callId) {
-
-	if (bindingsInitialized == false) {
-	    initializeBindings();
-	}
 
 	DataManager dm = AppContext.getDataManager();
 
@@ -804,6 +809,8 @@ public class VoiceImpl implements Serializable {
 	    if (listeners.isEmpty()) {
 		managedListeners.remove(callId);
 	    }
+	} else {
+	    System.out.println("Didn't find listener for " + callId);
 	}
     }
 
@@ -827,10 +834,6 @@ public class VoiceImpl implements Serializable {
     }
 
     private void addManagedCallBeginEndListener(ManagedCallBeginEndListener listener) {
-	if (bindingsInitialized == false) {
-	    initializeBindings();
-	}
-
         DataManager dm = AppContext.getDataManager();
 
         ManagedCallBeginEndListeners managedListeners =
@@ -971,10 +974,6 @@ public class VoiceImpl implements Serializable {
     }
 
     public void notifyManagedCallStatusListeners(CallStatus status) {
-	if (bindingsInitialized == false) {
-	    initializeBindings();
-	}
-
         DataManager dm = AppContext.getDataManager();
 
         ManagedAllCallListeners managedAllListeners = (ManagedAllCallListeners) dm.getBinding(
@@ -1038,10 +1037,6 @@ public class VoiceImpl implements Serializable {
     }
 
     private void notifyManagedCallBeginEndListeners(CallStatus status) {
-	if (bindingsInitialized == false) {
-	    initializeBindings();
-	}
-
         DataManager dm = AppContext.getDataManager();
 
         ManagedCallBeginEndListeners managedCallBeginEndListeners =
