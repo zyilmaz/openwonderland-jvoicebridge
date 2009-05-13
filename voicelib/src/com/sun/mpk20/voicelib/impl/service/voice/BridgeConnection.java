@@ -285,9 +285,6 @@ public class BridgeConnection extends VoiceBridgeConnection {
         }
     }
 
-    /*
-     * Called by voice service when call is established
-     */
     public void addCall(CallParticipant cp) {
 	callParticipantMap.put(cp.getCallId(), cp);
 
@@ -327,13 +324,14 @@ public class BridgeConnection extends VoiceBridgeConnection {
     public String setupCall(CallParticipant cp) throws IOException {
 	monitorConference(cp.getConferenceId());
 
+	addCall(cp);
+
 	BridgeResponse br = sendWithResponse(cp.getCallSetupRequest());
 
         logger.fine("setupCall status " + br.getStatus());
         
 	switch (br.getStatus()) {
 	case SUCCESS:
-	    addCall(cp);
             logger.finest("setupCall contents " + br.getContents());
 	    return br.getContents();
 
@@ -370,7 +368,10 @@ public class BridgeConnection extends VoiceBridgeConnection {
     }
 
     public void endCall(String callId) throws IOException {
-        removeCall(callId);
+        if (callParticipantMap.get(callId) == null) {
+	    logger.fine("Call not found " + callId);
+	    return;
+	}
 
 	if (isConnected() == false) {
 	    return;

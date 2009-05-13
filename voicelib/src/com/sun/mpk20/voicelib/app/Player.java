@@ -22,8 +22,6 @@
  */
 package com.sun.mpk20.voicelib.app;
 
-import java.util.ArrayList;
-
 import com.sun.voip.client.connector.CallStatusListener;
 
 public interface Player extends CallStatusListener {
@@ -84,7 +82,7 @@ public interface Player extends CallStatusListener {
 
     public void removeAudioGroup(AudioGroup group);
 
-    public ArrayList<AudioGroup> getAudioGroups();
+    public AudioGroup[] getAudioGroups();
 
     public void addVirtualPlayer(VirtualPlayer p);
 
