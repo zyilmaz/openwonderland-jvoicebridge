@@ -97,6 +97,11 @@ public class TreatmentGroupImpl implements TreatmentGroup, CallStatusListener, S
     }
 
     private void addTreatmentCommit(Treatment treatment) {
+	if (treatment.getCall() == null) {
+	    logger.warning("Treatment call ended:  " + treatment);
+	    return;
+	}
+
 	String callId = treatment.getCall().getId();
 
 	VoiceImpl.getInstance().addCallStatusListener(this, callId);
