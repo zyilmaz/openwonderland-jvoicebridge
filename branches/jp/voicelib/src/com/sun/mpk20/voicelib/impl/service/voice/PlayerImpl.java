@@ -439,7 +439,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
 	    logger.finest("group " + audioGroup + " " + this 
 		+ " setting listen attenuation to " 
-		+ listenAttenuation + " " + ag + " info " + info);
+		+ listenAttenuation + " " + ag + " info " + ag.getPlayerInfo(this));
 	}
 
 	setPrivateMixes(true);

@@ -40,12 +40,12 @@ public class VirtualPlayer implements Serializable {
 	this.playerWithVirtualPlayer = playerWithVirtualPlayer;
     }
 	
-    public String getUsername() {
-	return realPlayer.getCall().getSetup().cp.getName();
+    public String getId() {
+	return player.getId();
     }
 
     public String toString() {
-	return getUsername() + ", real player " + realPlayer 
+	return getId() + ", real player " + realPlayer 
 	+ " player with virtual player " + playerWithVirtualPlayer;
     }
 

@@ -37,6 +37,8 @@ public class AttenuateOtherGroupsWork extends PlayerWork {
 
 	super(player);
 	this.audioGroup = audioGroup;
+	this.speakingAttenuation = speakingAttenuation;
+	this.listenAttenuation = listenAttenuation;
     }
 
 }

@@ -73,7 +73,7 @@ public class VirtualPlayerHandler implements Serializable {
 	    if (p.equals(player) || p.getSetup().isLivePlayer == false) {
 		continue;
 	    }
-
+		
 	    if (audioGroup.getPlayerInfo(p).chatType == AudioGroupPlayerInfo.ChatType.PUBLIC) {
 	        logger.info("Creating virtual player for " + p + ": " + player);
 	        createVirtualPlayer(p, player);
@@ -91,7 +91,7 @@ public class VirtualPlayerHandler implements Serializable {
     }
 
     private void createVirtualPlayer(Player playerWithVp, Player player) {
-	String id = "V-" + player.getId() + "-to-" + playerWithVp.getId();
+	String id = player.getId() + "-to-" + playerWithVp.getId();
 
 	VoiceImpl voiceImpl = VoiceImpl.getInstance();
 
@@ -100,7 +100,14 @@ public class VirtualPlayerHandler implements Serializable {
 	    return;
 	}
 
-	Call call = player.getCall();
+	Call call = playerWithVp.getCall();
+
+	if (call.getSetup().externalOutgoingCall == true ||
+		call.getSetup().incomingCall == true) {
+
+	    logger.fine("Don't create a virtual player attached to " + playerWithVp);
+	    return;
+	}
 
 	PlayerSetup setup = new PlayerSetup();
 	double scale = voiceImpl.getVoiceManagerParameters().scale;
