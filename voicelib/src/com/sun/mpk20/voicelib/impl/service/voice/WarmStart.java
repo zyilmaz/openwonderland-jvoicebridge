@@ -61,7 +61,7 @@ public class WarmStart {
     public WarmStart(VoiceImpl voiceImpl) {
 	this.voiceImpl = voiceImpl;
 
-	logger.info("WARM START");
+	System.out.println("WARM START");
 
 	if (callsEnded == false) {
 	    endCalls();
@@ -147,16 +147,16 @@ public class WarmStart {
             warmStartTreatmentGroups = (WarmStartTreatmentGroups) dm.getBinding(
 		WarmStartInfo.DS_WARM_START_TREATMENTGROUPS);
         } catch (NameNotBoundException e) {
-	    logger.fine("There are no treatment groups to restart...");
+	    System.out.println("There are no treatment groups to restart...");
 	    return;
 	}
 
 	for (String groupId : warmStartTreatmentGroups) {
 	    if (voiceImpl.getTreatmentGroup(groupId) == null) {
 		treatmentGroups.put(groupId, voiceImpl.createTreatmentGroup(groupId));
-		logger.fine("Restarted treatment group " + groupId);
+		System.out.println("Restarted treatment group " + groupId);
 	    } else {
-		logger.fine("Treatment group is already started:  " + groupId);
+		System.out.println("Treatment group is already started:  " + groupId);
 	    }
 	}
 
@@ -164,7 +164,7 @@ public class WarmStart {
     }
 
     private void restartTreatments() {
-	logger.fine("Restarting treatments...");
+	System.out.println("Restarting treatments...");
 
         WarmStartTreatments warmStartTreatments;
 
@@ -174,11 +174,11 @@ public class WarmStart {
             warmStartTreatments = (WarmStartTreatments) dm.getBinding(
 		WarmStartInfo.DS_WARM_START_TREATMENTS);
         } catch (NameNotBoundException e) {
-	    logger.fine("There are no treatments to restart...");
+	    System.out.println("There are no treatments to restart...");
 	    return;
 	}
 
-	logger.fine("Treatments to restart:  " + warmStartTreatments.size());
+	System.out.println("Treatments to restart:  " + warmStartTreatments.size());
 
 	Enumeration<String> keys = warmStartTreatments.keys();
 
@@ -195,18 +195,18 @@ public class WarmStart {
                         TreatmentGroup group = treatmentGroups.get(info.groupId);
 
 			if (group == null) {
-			    logger.warning("Unable to find treatmentGroup " + info.groupId);
+			    System.out.println("Unable to find treatmentGroup " + info.groupId);
 			} else {
                             group.addTreatment(treatment);
 			}
                     }
-		    logger.fine("Created treatment " + treatmentId);
+		    System.out.println("Created treatment " + treatmentId);
                 } catch (IOException e) {
-                    logger.warning("Unable to create treatment " + treatmentId + " "
+                    System.out.println("Unable to create treatment " + treatmentId + " "
                     + e.getMessage());
                 }
 	    } else {
-		logger.fine("Treatment is already started:  " + treatmentId);
+		System.out.println("Treatment is already started:  " + treatmentId);
 	    }
 	}
 

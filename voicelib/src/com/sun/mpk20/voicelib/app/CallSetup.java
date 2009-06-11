@@ -43,4 +43,6 @@ public class CallSetup implements Serializable {
 
     public boolean externalOutgoingCall;
 
+    public boolean ended;
+
 }

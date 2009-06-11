@@ -125,11 +125,11 @@ public class VirtualPlayerHandler implements Serializable {
 	voiceImpl.getVoiceManagerParameters().livePlayerAudioGroup.addPlayer(vp, 
 	    new AudioGroupPlayerInfo(true, AudioGroupPlayerInfo.ChatType.PUBLIC));
 
-	VirtualPlayer virtualPlayer = new VirtualPlayer(vp, player, playerWithVp);
+	VirtualPlayer virtualPlayer = new VirtualPlayer(audioGroup, vp, player, playerWithVp);
 
 	playerWithVp.addVirtualPlayer(virtualPlayer);
 
-	voiceImpl.scheduleTask(new Notifier(audioGroup, virtualPlayer));
+	voiceImpl.scheduleTask(new Notifier(virtualPlayer));
     }
 
     public void playerRemoved(Player player, AudioGroupPlayerInfo info) {
@@ -168,7 +168,7 @@ public class VirtualPlayerHandler implements Serializable {
 
 	logger.fine("othersToRemoveSize " + othersToRemove.size());
 
-	voiceImpl.scheduleTask(new Notifier(audioGroup, othersToRemove.toArray(new VirtualPlayer[0])));
+	voiceImpl.scheduleTask(new Notifier(othersToRemove.toArray(new VirtualPlayer[0])));
     }
 
     private void removeVirtualPlayers(Player player) {
@@ -176,7 +176,7 @@ public class VirtualPlayerHandler implements Serializable {
 
 	VoiceImpl voiceImpl = VoiceImpl.getInstance();
 
-	voiceImpl.scheduleTask(new Notifier(audioGroup, virtualPlayersToRemove));
+	voiceImpl.scheduleTask(new Notifier(virtualPlayersToRemove));
 	
 	for (int i = 0; i < virtualPlayersToRemove.length; i++) {
 	    VirtualPlayer vp = virtualPlayersToRemove[i];
@@ -189,19 +189,15 @@ public class VirtualPlayerHandler implements Serializable {
 
     private class Notifier implements KernelRunnable, NonDurableTransactionParticipant {
 
-	private AudioGroup audioGroup;
-
 	private VirtualPlayer[] virtualPlayers;
 
 	private VirtualPlayer virtualPlayer;
 
-	public Notifier(AudioGroup audioGroup, VirtualPlayer[] virtualPlayers) {
-	    this.audioGroup = audioGroup;
+	public Notifier(VirtualPlayer[] virtualPlayers) {
 	    this.virtualPlayers = virtualPlayers;
 	}
 
-	public Notifier(AudioGroup audioGroup, VirtualPlayer virtualPlayer) {
-	    this.audioGroup = audioGroup;
+	public Notifier(VirtualPlayer virtualPlayer) {
 	    this.virtualPlayer = virtualPlayer;
 	}
 
@@ -221,9 +217,9 @@ public class VirtualPlayerHandler implements Serializable {
 	     * ExceptionRetryStatus is thrown.
 	     */
 	    if (virtualPlayer != null) {
-		listener.virtualPlayerAdded(audioGroup, virtualPlayer);
+		listener.virtualPlayerAdded(virtualPlayer);
 	    } else {
-	        listener.virtualPlayersRemoved(audioGroup, virtualPlayers);
+	        listener.virtualPlayersRemoved(virtualPlayers);
 	    }
         }
 

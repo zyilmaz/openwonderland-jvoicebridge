@@ -190,6 +190,11 @@ public class TreatmentGroupImpl implements TreatmentGroup, CallStatusListener, S
 
 	Treatment treatment = treatments.get(callId);
 
+	if (treatment == null) {
+	    System.out.println("Can't find treatment for " + callId);
+	    return;
+	}
+
 	switch (code) {
         case CallStatus.ESTABLISHED:
         case CallStatus.MIGRATED:

@@ -62,13 +62,25 @@ public abstract class FileAudioSource implements AudioSource {
      */
     public static FileAudioSource getAudioSource(String path) {
         // get the extension
+	String ext;
+
         int extIdx = path.lastIndexOf(".");
         if (extIdx == -1) {
-            Logger.error("Unable to determine extension of " + path);
-            return null;
-        }
-        
-        String ext = path.substring(extIdx);
+	    if (path.startsWith("http://") == false) {
+                Logger.error("Unable to determine extension of " + path);
+		return null;
+	    }
+	    ext = ".mp3";
+        } else {
+            ext = path.substring(extIdx);
+
+	    if (ext.indexOf("/") > 0 || ext.indexOf("?") > 0) {
+		/*
+		 * There's no extension, try it as MP3
+		 */
+		ext = ".mp3";
+	    }
+	}
 
         Class<? extends FileAudioSource> clazz = types.get(ext);
 

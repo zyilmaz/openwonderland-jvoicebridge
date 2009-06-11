@@ -2048,6 +2048,31 @@ public class RequestParser {
 	}
 
         try {
+            value = getValue("pauseInputTreatment" , "pit", request);
+
+	    String[] tokens = value.split(":");
+
+	    if (tokens.length != 2) {
+		throw new ParseException("missing parameters", 0);
+	    }
+	    
+	    booleanValue = getBoolean(tokens[0]);
+
+	    String callId = tokens[1];
+
+            CallHandler callHandler = CallHandler.findCall(callId);
+
+            if (callHandler == null) {
+                Logger.println("Invalid callId:  " + callId);
+                throw new ParseException("Invalid callId: " + callId, 0);
+            }
+
+            callHandler.getMember().getMemberReceiver().pauseInputTreatment(booleanValue);
+            return true;
+        } catch (ParameterException e) {
+        }
+
+        try {
             value = getValue("pauseTreatmentToCall" , "", request);
 
 	    String[] tokens = value.split(":");

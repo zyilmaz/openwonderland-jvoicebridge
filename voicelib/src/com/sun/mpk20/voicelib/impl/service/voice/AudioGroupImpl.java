@@ -64,7 +64,7 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 
     private String id;
 
-    private ConcurrentHashMap<Player, AudioGroupPlayerInfo> players = new ConcurrentHashMap();
+    private ConcurrentHashMap<String, AudioGroupPlayerInfo> players = new ConcurrentHashMap();
 
     private CopyOnWriteArrayList<AudioGroupListener> listeners = new CopyOnWriteArrayList();
 
@@ -111,7 +111,7 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
     }
 
     private void addPlayerCommit(Player player, AudioGroupPlayerInfo info) {
-	players.put(player, info);
+	players.put(player.getId(), info);
 
 	((PlayerImpl) player).addAudioGroupCommit(this);
 
@@ -139,7 +139,7 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 
 	player.removeAudioGroup(this);
 
-	AudioGroupPlayerInfo info = players.remove(player);
+	AudioGroupPlayerInfo info = players.remove(player.getId());
 
 	for (AudioGroupListener listener : listeners) {
 	    voiceImpl.scheduleTask(new Notifier(listener, this, player, info, false));
@@ -161,7 +161,25 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
     }
 
     public Player[] getPlayers() {
-	return players.keySet().toArray(new Player[0]);
+        VoiceImpl voiceImpl = VoiceImpl.getInstance();
+
+	String[] keys = players.keySet().toArray(new String[0]);
+
+	ArrayList<Player> players = new ArrayList();
+
+	for (int i = 0; i < keys.length; i++) {
+	    Player player = voiceImpl.getPlayer(keys[i]);
+
+	    if (player == null) {
+		System.out.println("Can't find player for " + keys[i]);
+		players.remove(keys[i]);
+		continue;
+	    }
+	
+	    players.add(player);
+	}
+
+	return players.toArray(new Player[0]);
     }
 
     public int getNumberOfPlayers() {
@@ -191,7 +209,7 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
     }
 
     private void setSpeakingAttenuationCommit(Player player, double speakingAttenuation) {
-	AudioGroupPlayerInfo info = players.get(player);
+	AudioGroupPlayerInfo info = players.get(player.getId());
 
 	info.speakingAttenuation = speakingAttenuation;
 	player.setPrivateMixes(true);
@@ -206,7 +224,7 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
     }
 
     private void setListenAttenuationCommit(Player player, double listenAttenuation) {
-	AudioGroupPlayerInfo info = players.get(player);
+	AudioGroupPlayerInfo info = players.get(player.getId());
 
 	info.listenAttenuation = listenAttenuation;
 	player.setPrivateMixes(true);
@@ -219,7 +237,7 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
     }
 
     private void setSpeakingCommit(Player player, boolean isSpeaking) {
-	AudioGroupPlayerInfo info = players.get(player);
+	AudioGroupPlayerInfo info = players.get(player.getId());
 
 	if (info == null) {
 	    return;
@@ -229,11 +247,7 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
     }
 
     public AudioGroupPlayerInfo getPlayerInfo(Player player) {
-	return players.get(player);
-    }
-
-    public boolean equals(AudioGroup audioGroup) {
-	return this.id.equals(audioGroup.getId());
+	return players.get(player.getId());
     }
 
     public void commit(AudioGroupWork work) {
@@ -356,14 +370,18 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 	    return s;
 	}
 
-	Iterator<Player> it = players.keySet().iterator();
+	VoiceImpl voiceImpl = VoiceImpl.getInstance();
+
+	Iterator<String> it = players.keySet().iterator();
 	
 	while (it.hasNext()) {
-	    Player player = it.next();
+	    String key = it.next();
 
-	    AudioGroupPlayerInfo info = players.get(player);
+	    AudioGroupPlayerInfo info = players.get(key);
 	    
-            s += "\n  " + player.getId() + " " + info;
+	    Player player = voiceImpl.getPlayer(key);
+
+            s += "\n  " + player + " " + info;
 	}
 	
 	return s;

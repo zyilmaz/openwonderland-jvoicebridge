@@ -356,6 +356,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
     private void removePrivateSpatializerCommit(Player player) {
 	privateSpatializers.remove(player.getId());
+	setPrivateMixes(true);
     }
 
     public void setMasterVolume(double masterVolume) {
@@ -474,27 +475,27 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
     public void addPlayerInRange(Player p) {
 	if (playersInRange.contains(p)) {
-	    logger.warning("playersInRange already contains " + p);
+	    logger.fine("playersInRange already contains " + p);
 	    return;
 	}
-	playersInRange.add(p);
 
-	notifyPlayerInRangeListeners(this, p, true);
+	playersInRange.add(p);
+	notifyPlayerInRangeListeners(p, true);
     }
 
     public void removePlayerInRange(Player p) {
 	if (playersInRange.contains(p) == false) {
-	    logger.warning("playersInRange doesn't contain " + p);
+	    logger.fine("playersInRange doesn't contain " + p);
 	    return;
 	}
-	playersInRange.remove(p);
 
-	notifyPlayerInRangeListeners(this, p, false);
+	playersInRange.remove(p);
+	notifyPlayerInRangeListeners(p, false);
     }
 
-    private void notifyPlayerInRangeListeners(Player p, Player playerInRange, boolean isInRange) {
+    private void notifyPlayerInRangeListeners(Player playerInRange, boolean isInRange) {
 	for (PlayerInRangeListener listener : playersInRangeListeners) {
-	     new Notifier(listener, p, playerInRange, isInRange);
+	     new Notifier(listener, this, playerInRange, isInRange);
 	}
     }
 
@@ -630,7 +631,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    for (int i = 0; i < audioGroups.length; i++) {
 		AudioGroup audioGroup = audioGroups[i];
 
-	        //logger.warning("ag " + audioGroup);
+	        //System.out.println("ag " + audioGroup);
 
                 if (this.audioGroups.contains(audioGroup) == false) {
                     logger.finest(p + " not in audio group " + audioGroup + " of " + this);
@@ -659,10 +660,10 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 		    getX(), getY(), getZ(), getOrientation());
 
 	        if (pmp[3] > privateMixParameters[3]) {
-	            logger.finest("group " + audioGroup + " " + this + " has pm for " + p 
-		        + " vol " + privateMixParameters[3] + " ag " + audioGroup
+	            logger.finest("group " + audioGroup + " " + this 
+		        + " current vol " + privateMixParameters[3] + " ag " + audioGroup
 		        + " la " + audioGroup.getPlayerInfo(this).listenAttenuation + " sap "
-		        + info.speakingAttenuation + " pmp[3] " + pmp[3]);
+		        + info.speakingAttenuation + " new vol " + pmp[3]);
 
 		    privateMixParameters = pmp;
 	        }
@@ -785,10 +786,10 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 		    getX(), getY(), getZ(), getOrientation());
 
 	        if (pmp[3] > privateMixParameters[3]) {
-	            System.out.println("group " + audioGroup + " " + this + " has pm for " + p 
-		        + " vol " + privateMixParameters[3] + " ag " + audioGroup
+	            logger.finest("group " + audioGroup + " " + this 
+		        + " current vol " + privateMixParameters[3] + " ag " + audioGroup
 		        + " la " + audioGroup.getPlayerInfo(this).listenAttenuation + " sap "
-		        + info.speakingAttenuation + " pmp[3] " + pmp[3]);
+		        + info.speakingAttenuation + " new vol " + pmp[3]);
 
 		    privateMixParameters = pmp;
 	        }
@@ -799,10 +800,10 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	        }
 	    }
 	} else {
-	    System.out.println(p + " is Muted");
+	    logger.finest(p + " is Muted");
 	}
 
-	System.out.println ("pm vol is " + privateMixParameters[3]);
+	logger.finest("pm vol is " + privateMixParameters[3]);
 
 	if (privateMixParameters[3] != 0) {
 	    /*
@@ -812,7 +813,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    Spatializer spatializer = getPrivateSpatializer(p);
 
 	    if (spatializer != null) {
-		System.out.println("Using private spatializer");
+		logger.finest("Using private spatializer");
 	        privateMixParameters = spatializer.spatialize(
 	            p.getX(), p.getY(), p.getZ(), p.getOrientation(), 
 		    getX(), getY(), getZ(), getOrientation());
@@ -823,13 +824,13 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    privateMixParameters[3] *= masterVolume;
 	} else {
 	    if (isInRange(p) == false) {
-		System.out.println("Not in range and we knew it");
+		logger.finest("Not in range and we knew it");
 		return;	// it's not in range and we already knew it
 	    }
 	}
 
         if (privateMixParameters[3] > .1) {
-            System.out.println("this=" + this + " p=" + p + " mix "
+            logger.finest("this=" + this + " p=" + p + " mix "
                 + Util.round100(privateMixParameters[0]) + ", "
                 + Util.round100(privateMixParameters[1]) + ", "
                 + Util.round100(privateMixParameters[2]) + ", "
@@ -865,8 +866,8 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
         setPrivateMixes(true);
     }
 
-    public int getNumberOfPlayersInRange() {
-	return VoiceImpl.getInstance().getNumberOfPlayersInRange(x, y, z);
+    public Player[] getPlayersInRange() {
+	return playersInRange.toArray(new Player[0]);
     }
 
     public void callStatusChanged(CallStatus callStatus) {
@@ -930,13 +931,15 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    }
 	}
 
-	if (playersInRange.size() == 0) {
-	    s += "\n  There are no players in range.";
-	} else {
-	    s += "\n  Players in Range: ";
+	if (setup.isLivePlayer) {
+	    if (playersInRange.size() == 0) {
+	        s += "\n  There are no players in range.";
+	    } else {
+	        s += "\n  Players in Range: ";
 
-	    for (Player p : playersInRange) {
-	        s += p.getId() + " ";
+	        for (Player p : playersInRange) {
+	            s += p.getId() + " ";
+	        }
 	    }
 	}
 	
@@ -1032,6 +1035,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	logger.warning("Unknown PlayerWork:  " + work);
     }
 
+    @Override
     public boolean equals(Object o) {
 	if (o instanceof Player == false) {
 	    return false;
@@ -1042,6 +1046,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	return id.equals(p.getId());
     }
 
+    @Override
     public String toString() {
 	double xR = Util.round100(x);
 	double yR = Util.round100(y);
@@ -1055,7 +1060,8 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
 	return getId() + ":(" + xR + "," + yR + "," + zR + "," + a + ")" 
 	    + " " + (setup.isLivePlayer ? "LivePlayer" : "") 
-	    + (publicSpatializer != null ? publicSpatializer.toString() : "");
+	    + (publicSpatializer != null ? publicSpatializer.toString() : ""
+	    + " " + super.toString());
     }
 
     private class Notifier implements KernelRunnable, NonDurableTransactionParticipant {
@@ -1072,6 +1078,8 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    this.player = player;
 	    this.playerInRange = playerInRange;
 	    this.isInRange = isInRange;
+
+	    VoiceImpl.getInstance().scheduleTask(this);
 	}
 
 	public String getBaseTaskType() {

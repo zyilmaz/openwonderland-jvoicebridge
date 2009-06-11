@@ -368,7 +368,7 @@ public class BridgeConnection extends VoiceBridgeConnection {
     }
 
     public void endCall(String callId) throws IOException {
-        if (callParticipantMap.get(callId) == null) {
+        if (callId.equals("0") == false && callParticipantMap.get(callId) == null) {
 	    logger.fine("Call not found " + callId);
 	    return;
 	}
@@ -504,6 +504,40 @@ if (false) {
 
         default:
             throw new IOException("newInputTreatment failed:  "
+              + br.getMessage());
+        }
+    }
+
+    public void pauseInputTreatment(String callId, boolean isPaused) throws IOException {
+        BridgeResponse br = sendWithResponse("pauseInputTreatment="
+	    + isPaused + ":" + callId + "\n");
+
+        logger.finest("pauseInputTreatment status " + br.getStatus());
+
+        switch (br.getStatus()) {
+        case SUCCESS:
+            logger.finest("pauseInputTreatment success");
+            return;
+
+        default:
+            throw new IOException("pauseInputTreatment failed:  "
+              + br.getMessage());
+        }
+    }
+
+    public void resumeInputTreatment(String callId) throws IOException {
+        BridgeResponse br = sendWithResponse("resumeTreatmentToCall="
+	    + callId + "\n");
+
+        logger.finest("resumeTreatment status " + br.getStatus());
+
+        switch (br.getStatus()) {
+        case SUCCESS:
+            logger.finest("resumeTreatment success");
+            return;
+
+        default:
+            throw new IOException("resumeTreatment failed:  "
               + br.getMessage());
         }
     }

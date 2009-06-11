@@ -591,6 +591,8 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 
 	    if (warmStart) {
                 new WarmStart(VoiceImpl.getInstance());
+	    } else {
+		System.out.println("There is nothing to warm start");
 	    }
         }
     }

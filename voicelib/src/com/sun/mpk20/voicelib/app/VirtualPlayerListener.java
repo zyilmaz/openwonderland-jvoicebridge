@@ -27,8 +27,8 @@ import java.io.Serializable;
 
 public interface VirtualPlayerListener extends Serializable {
 
-    public void virtualPlayerAdded(AudioGroup audioGroup, VirtualPlayer player);
+    public void virtualPlayerAdded(VirtualPlayer player);
 
-    public void virtualPlayersRemoved(AudioGroup audioGroup, VirtualPlayer[] players);
+    public void virtualPlayersRemoved(VirtualPlayer[] players);
 
 }

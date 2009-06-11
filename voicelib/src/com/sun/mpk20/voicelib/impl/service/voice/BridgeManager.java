@@ -514,6 +514,12 @@ public class BridgeManager extends Thread
 	bc.newInputTreatment(callId, treatment);
     }
 
+    public void pauseInputTreatment(String callId, boolean isPaused) throws IOException {
+	BridgeConnection bc = getBridgeConnection(callId, false);
+
+	bc.pauseInputTreatment(callId, isPaused);
+    }
+
     public void stopInputTreatment(String callId) throws IOException {
 	BridgeConnection bc = getBridgeConnection(
             callId);
