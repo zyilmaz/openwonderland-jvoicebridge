@@ -685,6 +685,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 		inputTreatment = treatmentManager;
 	    }
 
+	    inputTreatment.pause(inputTreatmentPaused);
+
 	    if (Logger.logLevel >= Logger.LOG_INFO) {
 	        Logger.println("Created treatment manager for " 
 		    + treatmentManager.getId());
@@ -705,6 +707,22 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	cp.setInputTreatment(treatment);
 
 	restartInputTreatment();
+    }
+
+    private boolean inputTreatmentPaused;
+
+    public void pauseInputTreatment(boolean isPaused) {
+	inputTreatmentPaused = isPaused;
+
+	synchronized (whisperGroup) {
+	    if (inputTreatment == null) {
+		Logger.println("There is no input treatment to pause or resume");
+		return;
+	    }
+
+	    Logger.println("Pausing input treatment " + isPaused);
+	    inputTreatment.pause(isPaused);
+	}
     }
 
     public void stopInputTreatment() {
@@ -1635,50 +1653,9 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	            }
 		}
 	    } else {
-		/*
-	 	 * If there's an input treatment, there's no endpoint
-		 * and therefore no member contribution other than
-		 * the input treatment
-		 */
-		inputTreatment.saveCurrentContribution();
-
-		currentContribution = inputTreatment.getCurrentContribution();
-
-		if (currentContribution == null) {
-		    if (Logger.logLevel >= Logger.LOG_INFO) {
-		        Logger.println("Call " + cp 
-			    + " input treatment returned null");
-		    }
-
-	            inputTreatment = null;
-		} else {
-		    forwardData(currentContribution);
-
-		    if (inputVolume != 1) {
-	    		callHandler.getMember().adjustVolume(currentContribution, 
-			    inputVolume);
-		    }
+		if (inputTreatment.isPaused() == false) {
+		    getInputTreatmentContribution();
 		}
-
-		if (speechDetector != null) {
-		    if (currentContribution == null) {
-			if (speechDetector.reset() == true) {
-	        	    callHandler.speakingChanged(false);
-			}
-		    } else {
-	    	        if (speechDetector.processData(currentContribution) == 
-				true) {
-
-                            boolean isSpeaking = speechDetector.isSpeaking();
-
-                            callHandler.speakingChanged(isSpeaking);
-
-                            if (isSpeaking == false) {
-                                currentContribution = null;
-                            }
-			}
-		    }
-        	}
 	    } 
 
 	    if (currentContribution != null) {
@@ -1698,6 +1675,50 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	        }
             }
 	}
+    }
+
+    private void getInputTreatmentContribution() {
+	/*
+	 * If there's an input treatment, there's no endpoint
+	 * and therefore no member contribution other than
+	 * the input treatment
+	 */
+	inputTreatment.saveCurrentContribution();
+
+	currentContribution = inputTreatment.getCurrentContribution();
+
+	if (currentContribution == null) {
+	    if (Logger.logLevel >= Logger.LOG_INFO) {
+		Logger.println("Call " + cp 
+		    + " input treatment returned null");
+	    }
+
+	    inputTreatment = null;
+	} else {
+	    forwardData(currentContribution);
+
+	    if (inputVolume != 1) {
+	    	callHandler.getMember().adjustVolume(currentContribution, inputVolume);
+	    }
+	}
+
+	if (speechDetector != null) {
+	    if (currentContribution == null) {
+		if (speechDetector.reset() == true) {
+	            callHandler.speakingChanged(false);
+		}
+	    } else {
+	    	if (speechDetector.processData(currentContribution) == true) {
+                    boolean isSpeaking = speechDetector.isSpeaking();
+
+                    callHandler.speakingChanged(isSpeaking);
+
+                    if (isSpeaking == false) {
+                        currentContribution = null;
+                    }
+		}
+	    }
+        }
     }
 
     private void log(RtpReceiverPacket rtpPacket) {

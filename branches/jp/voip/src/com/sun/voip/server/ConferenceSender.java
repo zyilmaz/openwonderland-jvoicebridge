@@ -175,7 +175,9 @@ public class ConferenceSender extends Thread {
 	        if (Logger.logLevel >= Logger.LOG_DETAIL) {
 	            Logger.println(s);
 	        } else {
-		    Logger.writeFile(s);
+		    if (Logger.logLevel >= Logger.LOG_INFO) {
+		        Logger.writeFile(s);
+		    }
 	        }
 
 		if (packetsSent > 0) {

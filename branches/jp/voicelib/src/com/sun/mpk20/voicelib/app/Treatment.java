@@ -34,6 +34,10 @@ public interface Treatment {
 
     public void setTreatment(String treatment);
 
+    public void pause(boolean isPaused);
+
+    public void restart(boolean pause);
+
     public void stop();
 
     public String dump();

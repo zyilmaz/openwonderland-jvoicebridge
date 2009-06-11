@@ -90,7 +90,7 @@ public interface Player extends CallStatusListener {
 
     public VirtualPlayer[] getVirtualPlayers();
 
-    public int getNumberOfPlayersInRange();
+    public Player[] getPlayersInRange();
 
     public void addPlayerInRangeListener(PlayerInRangeListener listener);
 

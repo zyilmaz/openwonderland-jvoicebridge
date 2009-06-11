@@ -68,8 +68,6 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 
     private boolean isMuted;
 
-    private boolean ended;
-
     public CallImpl(String id, CallSetup setup) throws IOException {
 	this.id = id;
 	this.setup = setup;
@@ -186,7 +184,7 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 		sendStatus(CallStatus.ENDED, 
 		    " Unable to setup call:  " + e.getMessage() + " " + cp);
 		cleanup();
-		ended = true;
+		setup.ended = true;
 		return;
 	    }
 	}
@@ -403,7 +401,7 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
     }
 
     private void endCommit(boolean removePlayer) {
-	if (ended == false) {
+	if (setup.ended == false) {
 	    try {
                 VoiceImpl.getInstance().getBridgeManager().endCall(id);
             } catch (IOException e) {
@@ -464,7 +462,7 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
         case CallStatus.ENDED:
 	    logger.info(callStatus.toString());
 	    cleanup();
-	    ended = true;
+	    setup.ended = true;
 	    break;
 	}
     }

@@ -186,6 +186,13 @@ public class TreatmentManager implements MixDataSource {
     }
 
     public void saveCurrentContribution() {
+	if (isPaused) {
+	    previousContribution = null;
+	    currentContribution = null;
+
+	    return;
+	}
+
 	previousContribution = currentContribution;
 	currentContribution = getLinearData(RtpPacket.PACKET_PERIOD);
     }
@@ -195,7 +202,7 @@ public class TreatmentManager implements MixDataSource {
     private SampleRateConverter sampleRateConverter; 
 
     public byte[] getLinearDataBytes(int sampleTime) {
-	if (isStopped) {
+	if (isStopped || isPaused) {
 	    return null;
 	}
 
@@ -405,7 +412,8 @@ public class TreatmentManager implements MixDataSource {
 	synchronized (treatments) {
             if (path.substring(0, 1).equals(File.separator) ||
 		   path.startsWith("/") ||
-		   path.startsWith("http://")) {
+		   path.startsWith("http://") ||
+		   path.startsWith("file://")) {
 
                 AudioSource as = FileAudioSource.getAudioSource(path);
 
@@ -483,7 +491,9 @@ public class TreatmentManager implements MixDataSource {
 	    } else if (currentTreatment.indexOf("s:") == 0) {
 		addSineWaveTreatment(currentTreatment.substring(2));
             } else {
-		if (currentTreatment.indexOf("file:") == 0) {
+		if (currentTreatment.indexOf("file:") == 0 && 
+			currentTreatment.endsWith(".mp3") == false) {
+
 		    currentTreatment = currentTreatment.substring(5);
                 } 
                 addFileTreatment(currentTreatment);

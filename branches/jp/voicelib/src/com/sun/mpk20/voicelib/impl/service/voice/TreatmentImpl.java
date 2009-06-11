@@ -159,6 +159,36 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
 	// not sure yet what to do.
     }
 
+    public void pause(boolean isPaused) {
+	if (VoiceImpl.getInstance().addWork(new PauseTreatmentWork(this, isPaused)) == false) {
+	    pauseCommit(isPaused);
+	}
+    }
+
+    public void pauseCommit(boolean isPaused) {
+	try {
+	    VoiceImpl.getInstance().getBridgeManager().pauseInputTreatment(id, isPaused);
+	} catch (IOException e) {
+	    logger.warning("Unable to pause or resume treatment " + id + ": " + e.getMessage());
+	}
+    }
+
+    public void restart(boolean isPaused) {
+	if (VoiceImpl.getInstance().addWork(new RestartTreatmentWork(this, isPaused)) == false) {
+	    restartCommit(isPaused);
+	}
+    }
+
+    public void restartCommit(boolean isPaused) {
+	try {
+	    VoiceImpl.getInstance().getBridgeManager().restartInputTreatment(id);
+	} catch (IOException e) {
+	    logger.warning("Unable to pause treatment " + id + ": " + e.getMessage());
+	}
+
+	pauseCommit(isPaused);
+    }
+
     public void stop() {
 	if (VoiceImpl.getInstance().addWork(new StopTreatmentWork(this)) == false) {
 	    stopCommit();
@@ -222,6 +252,16 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
 
 	if (work instanceof StopTreatmentWork) {
 	    stopCommit();
+	    return;
+	}
+
+	if (work instanceof PauseTreatmentWork) {
+	    pauseCommit(((PauseTreatmentWork) work).isPaused);
+	    return;
+	}
+
+	if (work instanceof RestartTreatmentWork) {
+	    restartCommit(((RestartTreatmentWork) work).isPaused);
 	    return;
 	}
 
