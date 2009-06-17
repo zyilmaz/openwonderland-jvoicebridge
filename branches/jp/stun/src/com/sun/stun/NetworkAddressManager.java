@@ -37,6 +37,7 @@ import java.io.IOException;
 
 import java.lang.reflect.Method;
 
+import java.util.ArrayList;
 import java.util.Enumeration;
 
 import java.util.logging.Level;
@@ -48,9 +49,6 @@ public class NetworkAddressManager {
 
     private static final Logger logger =
         Logger.getLogger(NetworkAddressManager.class.getName());
-
-    private NetworkAddressManager() {
-    }
 
     public static void setLogLevel(Level newLevel) {
 	logger.setLevel(newLevel);
@@ -66,10 +64,8 @@ public class NetworkAddressManager {
 	try {
 	    networkInterfaceClass = Class.forName("java.net.NetworkInterface");
 
-	    isUp = networkInterfaceClass.getDeclaredMethod("isUp", 
-		new Class[]{NetworkInterface.class});
-	    isLoopback = networkInterfaceClass.getDeclaredMethod(
-		"isLoopback", new Class[]{NetworkInterface.class});
+	    isUp = networkInterfaceClass.getDeclaredMethod("isUp");
+	    isLoopback = networkInterfaceClass.getDeclaredMethod("isLoopback");
 	} catch (Exception e) {
 	}
 
@@ -133,24 +129,6 @@ public class NetworkAddressManager {
 	return address;
     }
 	
-    public static InetAddress getPrivateLocalAddress(String ifName) throws UnknownHostException {
-	NetworkInterface iFace;
-
-	try {
-	    iFace = NetworkInterface.getByName(ifName);
-	} catch (SocketException e) {
-	    throw new UnknownHostException("Unknown interface " + ifName + ": " + e.getMessage());
-	}
- 
-	InetAddress ia = getAddress(iFace);
-
-	if (ia != null) {
-	    return ia;
-	}
-
-	throw new UnknownHostException("Unusable interface " + ifName);
-    }
-
     public static InetAddress getPrivateLocalAddress() throws UnknownHostException {
 	InetAddress ia = findLocalAddress();
 
@@ -264,13 +242,13 @@ public class NetworkAddressManager {
     private static boolean isUsable(NetworkInterface iFace) {
 	try {
 	    if (isUp != null) {
-                if ((Boolean) isUp.invoke(networkInterfaceClass, new Object[]{iFace}) == false) {
+                if ((Boolean) isUp.invoke(iFace) == false) {
                     return false;
                 }
 	    }
 
             if (isLoopback != null) {
-                if ((Boolean) isLoopback.invoke(networkInterfaceClass, new Object[]{iFace}) == true) {
+                if ((Boolean) isLoopback.invoke(iFace) == true) {
                     return false;
 	        }
             }
@@ -330,6 +308,237 @@ public class NetworkAddressManager {
 	return stunClient.getMappedAddress();
     }
 	    
+    private static ArrayList<NetworkAddress> networkAddressList = new ArrayList<NetworkAddress>();
+
+    private static NetworkAddress defaultNetworkAddress = null;
+
+    private static final String LOCALHOST = "localhost";
+
+    /** Creates a new instance of NetworkAddress */
+    public static class NetworkAddress {
+        private String name;
+        private InetAddress hostAddress;
+
+        public NetworkAddress(String name, InetAddress hostAddress) {
+	     this.name = name;
+	     this.hostAddress = hostAddress;
+        }
+
+        public String getName() {
+	    return name;
+        }
+
+        private void setHostAddress(InetAddress hostAddress) {
+	    this.hostAddress = hostAddress;
+        }
+
+        public InetAddress getHostAddress() {
+	    return hostAddress;
+        }
+
+        public String toString() {
+	    String hostAddress = getHostAddress().getHostAddress();
+
+            if (getName().equals(hostAddress)) {
+                return getName();
+	    }
+
+            if ("".equals(getName())) {
+                return hostAddress;
+	    }
+
+            return hostAddress + " [" + getName() + "]";
+        }
+
+    }
+
+    public synchronized static void setDefaultNetworkAddress(NetworkAddress defaultNetworkAddress) {
+        NetworkAddressManager.defaultNetworkAddress = defaultNetworkAddress;
+    }
+
+    public synchronized static NetworkAddress getDefaultNetworkAddress() {
+	return defaultNetworkAddress;
+    }
+
+    public synchronized static NetworkAddress[] getNetworkAddresses() {
+	// First add network interfaces which are up and aren't loopback
+	// (since we will add localhost separately)
+	try {
+	    Enumeration<NetworkInterface> eni = NetworkInterface.getNetworkInterfaces();
+
+	    while (eni.hasMoreElements()) {
+		NetworkInterface ni = eni.nextElement();
+
+		if (isUsable(ni) == false) {
+		    continue;
+		}
+
+		Enumeration<InetAddress> eia = ni.getInetAddresses();
+		while (eia.hasMoreElements()) {
+		    InetAddress ia = eia.nextElement();
+
+		    String hostAddress = ia.getHostAddress();
+
+		    if (hostAddress.indexOf("0:0:0:0:0:0:0") == 0) {
+			continue;
+		    }
+
+		    if (!ia.isLinkLocalAddress()) {
+			addAddress(ni.getName(), hostAddress);
+			break;
+		    }
+		}
+	    }
+	} catch (Exception e) {}
+
+	// Then add the LOCALHOST entry.
+	try {
+	    InetAddress ia = InetAddress.getByName(LOCALHOST);
+
+	    if (ia != null) {
+		addAddress(LOCALHOST, ia.getHostAddress());
+	    }
+	} catch (Exception e) {
+	}
+
+	try {
+	    addAddress("auto", getPrivateLocalAddress().getHostAddress());
+	} catch (UnknownHostException e) {
+	    System.out.println("Unable to get private local host address: " + e.getMessage());
+	}
+
+	addAddress("manual", System.getProperty("wonderland.local.hostAddress",""));
+
+	if ((defaultNetworkAddress == null) && (networkAddressList.size() > 0)) {
+            defaultNetworkAddress = networkAddressList.get(0);
+	}
+
+	return networkAddressList.toArray(new NetworkAddress[0]);
+    }
+
+    public synchronized static NetworkAddress addAddress(String name, String address) {
+	if ((address == null) || "".equals(address)) {
+	    return null;
+	}
+
+	NetworkAddress na = null;
+
+	InetAddress hostAddress = null;
+
+	// See if it a hostname or IP address.
+	try {
+	    InetAddress ia = InetAddress.getByName(address);
+
+	    if (ia != null) {
+		hostAddress = ia;
+	    }
+	} catch (Exception e) {}
+
+	for (int i = 0; i < networkAddressList.size(); i++) {
+	    na = networkAddressList.get(i);
+
+	    // If the address is specified as a network interface or a tag
+	    // then just use that...
+	    if (na.getName().equals(address)) {
+		defaultNetworkAddress = na;
+		return na;
+	    }
+
+	    // If the host address matches that of an existing entry just use that...
+	    if ((hostAddress != null) && (na.getHostAddress().equals(hostAddress))) {
+		defaultNetworkAddress = na;
+		return na;
+	    }
+
+	    // If the tag name matches, then override this entries host address
+	    if (na.getName().equals(name)) {
+		break;
+	    }
+
+	    na = null;
+	}
+
+	if (hostAddress == null) {
+	    return null;
+	}
+
+	if (na == null) {
+	    na = new NetworkAddress(name, hostAddress);
+	    networkAddressList.add(na);
+	} else {
+	    na.setHostAddress(hostAddress);
+	}
+
+	defaultNetworkAddress = na;
+	return na;
+    }
+
+    public static InetAddress getPrivateLocalAddress(String s) throws UnknownHostException {
+	if (s == null || s.length() == 0) {
+	    InetAddress ia = NetworkAddressManager.getPrivateLocalAddress();
+
+	    logger.finer("Default:  " + ia);
+	    return ia;
+	}
+
+	logger.finer(s);
+
+	String[] tokens = s.split(":");
+
+	if (tokens.length == 1 || tokens[0].equalsIgnoreCase("host")) {
+	    /*
+	     * It's a host name or address
+	     */
+	    InetAddress ia = InetAddress.getByName(tokens[0]);
+
+	    logger.finer("Host " + s + ": " + ia);
+	    return ia;
+	}
+
+	if (tokens[0].equalsIgnoreCase("interface")) {
+	    InetAddress ia = NetworkAddressManager.getPrivateLocalAddress(tokens[1]);
+
+	    logger.finer("Interface " + tokens[1] + ": " + ia);
+	    return ia;
+	}
+
+	if (tokens[0].equalsIgnoreCase("server") == false) {
+	    logger.warning("Invalid specification:  " + s);
+	    throw new UnknownHostException("Invalid specification:  " + s);
+	}
+
+	if (tokens.length < 3) {
+	    logger.warning("Invalid server specified:  " + s);
+	    throw new UnknownHostException("Invalid server specified:  " + s);
+	}
+
+	int port;
+
+	try {
+	    port = Integer.parseInt(tokens[2]);	
+	} catch (NumberFormatException e) {
+	    logger.warning("Invalid port specified:  " + s);
+	    throw new UnknownHostException("Invalid port specified:  " + s);
+	}
+	
+	int timeout = 500;
+
+	if (tokens.length == 4) {
+	    try {
+		timeout = Integer.parseInt(tokens[3]);
+	    } catch (NumberFormatException e) {
+		logger.warning("Invalid timeout specified:  " + s
+		    + " defaulting to " + timeout);
+	    }
+	}
+
+	InetAddress ia = NetworkAddressManager.getPrivateLocalAddress(
+	    tokens[1], port, timeout);
+
+	logger.finer("server " + tokens[1] + ":" + port + ": " + ia);
+	return ia;
+    }
+
     public static void main(String[] args) {
 	if (args.length != 4) {
 	    System.out.println("Usage:  java com.sun.stun.NetworkAddressManager <stun server> "
