@@ -124,14 +124,6 @@ public class MicrophoneAlsaImpl implements Microphone {
     
 	adjustVolume(linearData, offset, len);
 
-	if (isMuted) {
-	    for (int i = 0; i < len; i++) {
-		if (linearData[i] != 0) {
-		    System.out.println("Non-zero data while muted:  " + linearData[i]);
-		}
-	    }
-	}
-
 	notifyListeners(linearData, offset, len);
     }
 
