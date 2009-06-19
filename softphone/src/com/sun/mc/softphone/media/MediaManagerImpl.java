@@ -713,8 +713,12 @@ if (false) {
     }
 
     public void microphoneData(byte[] linearData, int offset, int length) {
-	System.out.println("VuMeterData:" + LevelTest.processChunk(linearData, offset, length,
-	    microphone.getSampleSizeInBits() / 8 * microphone.getChannels()));
+	if (microphone.isMuted()) {
+	    System.out.println("VuMeterData:" + 0.0);
+	} else {
+	    System.out.println("VuMeterData:" + LevelTest.processChunk(linearData, offset, length,
+	        microphone.getSampleSizeInBits() / 8 * microphone.getChannels()));
+	}
     }
 
     public synchronized void start() throws IOException {
