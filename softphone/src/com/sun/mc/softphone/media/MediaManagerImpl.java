@@ -713,7 +713,7 @@ if (false) {
     }
 
     public void microphoneData(byte[] linearData, int offset, int length) {
-	if (microphone.isMuted()) {
+	if (isMuted) {
 	    System.out.println("VuMeterData:" + 0.0);
 	} else {
 	    System.out.println("VuMeterData:" + LevelTest.processChunk(linearData, offset, length,
@@ -968,8 +968,12 @@ if (false) {
         }
     }
 
+    private boolean isMuted;
+
     public void mute(boolean isMuted) {
 	if (audioTransmitter != null) {
+	    this.isMuted = isMuted;
+
 	    audioTransmitter.mute(isMuted);
 	}
     }
