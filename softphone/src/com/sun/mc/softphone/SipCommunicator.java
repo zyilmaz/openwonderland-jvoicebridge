@@ -536,6 +536,21 @@ public class SipCommunicator extends Thread implements
             return;
         }
 
+	if (command.indexOf("StartVuMeter=") >= 0) {
+	    if (mediaManager == null) {
+		return;
+	    }
+
+            String tokens[] = command.split("=");
+
+	    if (tokens[1].equalsIgnoreCase("true")) {
+	        mediaManager.startVuMeter(true);
+	    } else {
+		mediaManager.startVuMeter(false);
+	    }
+	    return;
+	}
+
 	if (command.indexOf("isConnected") >= 0) {
 	    if (callInProgressInterlocutor != null) {
 		Logger.println("Softphone is connected");

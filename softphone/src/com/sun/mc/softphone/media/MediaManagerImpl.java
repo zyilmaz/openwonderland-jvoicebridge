@@ -109,7 +109,7 @@ import java.text.ParseException;
  * @version 1.1
  *
  */
-public class MediaManagerImpl implements MediaManager {
+public class MediaManagerImpl implements MediaManager, MicrophoneListener {
     private static Console console = Console.getConsole(MediaManagerImpl.class);
     private ArrayList listeners = new ArrayList();
 
@@ -698,6 +698,23 @@ if (false) {
 	stop();
 	initSdpManager();
 	initialize();
+    }
+
+    public void startVuMeter(boolean startVuMeter) {
+	if (microphone == null) {
+	    return;
+	}
+
+	if (startVuMeter == true) {
+	    microphone.addListener(this);
+	} else {
+	    microphone.removeListener(this);
+	}
+    }
+
+    public void microphoneData(byte[] linearData, int offset, int length) {
+	System.out.println("VuMeterData:" + LevelTest.processChunk(linearData, offset, length,
+	    microphone.getSampleSizeInBits() / 8 * microphone.getChannels()));
     }
 
     public synchronized void start() throws IOException {

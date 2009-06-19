@@ -42,8 +42,7 @@ public class LevelTest {
     private Speaker speaker;
     private Socket sock;
     private DataOutputStream dos;
-    private int dataSize;
-    private int channels;
+    private int sampleSize;
     
     /** Creates a new instance of LevelTest */
     public LevelTest(int port, float dur, float sampleRate, int channels) {
@@ -55,6 +54,9 @@ public class LevelTest {
             ioe.printStackTrace();
             return;
 	}
+	
+	sampleSize = microphone.getSampleSizeInBits() / 8 * microphone.getChannels();
+
         try {
             if (port>0) {
                 sock = new Socket("localhost", port);
@@ -86,10 +88,8 @@ public class LevelTest {
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
-        dataSize = microphone.getSampleSizeInBits()/8;
-        channels = microphone.getChannels();
         float rate = microphone.getSampleRate();
-        int chunksize = (int)(dataSize*channels*rate*0.02f);
+        int chunksize = (int)(sampleSize*rate*0.02f);
         byte[] data = new byte[chunksize*(int)(50*dur)];
         int loc = 0;
 	int lastLevel = 0;
@@ -169,9 +169,13 @@ public class LevelTest {
     }
     
     private float processChunk(byte[] linearData, int offset, int length) {
+	return processChunk(linearData, offset, length, sampleSize);
+    }
+
+    public static float processChunk(byte[] linearData, int offset, int length, int sampleSize) {
         long ourmax = 0;
         //System.out.prinltn("Got "+length+" bytes of microphone data");
-        for (int i=offset; i<offset+length; i+= dataSize*channels) {
+        for (int i=offset; i<offset+length; i+= sampleSize) {
             long sample = ((long)linearData[i]<<8) + ((long)linearData[i+1] & 0xFF);
             sample = Math.abs(sample);
             if (sample > ourmax) {
