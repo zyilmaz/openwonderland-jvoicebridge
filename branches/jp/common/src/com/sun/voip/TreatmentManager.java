@@ -410,11 +410,7 @@ public class TreatmentManager implements MixDataSource {
 	}
 
 	synchronized (treatments) {
-            if (path.substring(0, 1).equals(File.separator) ||
-		   path.startsWith("/") ||
-		   path.startsWith("http://") ||
-		   path.startsWith("file://")) {
-
+	    if (isFile(path)) {
                 AudioSource as = FileAudioSource.getAudioSource(path);
 
 		if (as == null) {
@@ -439,6 +435,28 @@ public class TreatmentManager implements MixDataSource {
 
 	    throw new IOException("Invalid treatment, no audio source: " + path);
 	}
+    }
+
+    private boolean isFile(String path) {
+	if (path.startsWith("http://") || path.startsWith("file://")) {
+	    return true;
+	}
+	
+        if (path.substring(0, 1).equals(File.separator) ||
+	        path.startsWith("/")) {
+
+	    return true;
+	}
+
+	if (path.length() < 2) {
+	    return true;
+	}
+
+	if (File.separator.equals("\\") && path.substring(1,2).equals(":")) {
+	    return true;
+	}
+
+	return false;
     }
 
     /*
