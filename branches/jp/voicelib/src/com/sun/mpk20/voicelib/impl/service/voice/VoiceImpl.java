@@ -843,14 +843,23 @@ public class VoiceImpl implements Serializable {
         /*
          * Create a reference to listener and keep that.
          */
-	ManagedCallBeginEndListener ml = (ManagedCallBeginEndListener) listener;
-
-        ManagedReference<ManagedCallBeginEndListener> mr = dm.createReference(ml);
+        ManagedReference<ManagedCallBeginEndListener> mr = dm.createReference(listener);
 
 	if (managedListeners.contains(mr) == false) {
             managedListeners.add(mr);
+	    //System.out.println("Added managed call begin end listener " + managedListeners.size());
 	}
     }
+
+    //public void foo() {
+    //    DataManager dm = AppContext.getDataManager();
+
+    //    ManagedCallBeginEndListeners managedListeners =
+    //        (ManagedCallBeginEndListeners) dm.getBinding(
+    //	    DS_MANAGED_CALL_BEGIN_END_LISTENERS);
+
+    //	System.out.println("FOOOO: " + managedListeners.size());
+    //}
 
     public void removeCallBeginEndListener(CallBeginEndListener listener) {
 	if (listener instanceof ManagedCallBeginEndListener) {

@@ -343,16 +343,19 @@ public class BridgeConnection extends VoiceBridgeConnection {
 	}
     }
 
-    public void migrateCall(CallParticipant cp) throws IOException {
+    public void migrateCall(CallParticipant cp, boolean cancel) throws IOException {
 	if (isConnected() == false) {
 	    return;
 	}
 
 	BridgeResponse br;
 
-	cp.setMigrateCall(true);
-
-	br = sendWithResponse(cp.getCallSetupRequest());
+	if (cancel == true) {
+	    br = sendWithResponse("cancelMigration=" + cp.getCallId() + "\n");
+	} else {
+	    cp.setMigrateCall(true);
+	    br = sendWithResponse(cp.getCallSetupRequest());
+	}
 
         logger.fine("migrate status " + br.getStatus());
         

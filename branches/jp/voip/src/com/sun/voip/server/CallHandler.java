@@ -745,7 +745,9 @@ public abstract class CallHandler extends Thread {
 
 		    MemberReceiver memberReceiver = call.getMemberReceiver();
 
-		    if (memberReceiver != null) {
+		    if (memberReceiver != null && memberReceiver.getMember() != null &&
+			    memberReceiver.getMember().getCallHandler() != null) {
+
 			memberReceiver.getMember().getCallHandler().muteChanged(isMuted);
 			memberReceiver.setMuted(isMuted);
 		    }

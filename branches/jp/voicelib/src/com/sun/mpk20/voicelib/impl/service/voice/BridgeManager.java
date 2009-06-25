@@ -463,12 +463,18 @@ public class BridgeManager extends Thread
 	bc.stopTreatmentToCall(callId, treatment);
     }
 
-    public void migrateCall(CallParticipant cp) throws IOException {
-	BridgeConnection bc = getBridgeConnection(cp.getCallId(), true);
+    public void migrateCall(CallParticipant cp, boolean cancel) throws IOException {
+	BridgeConnection bc = getBridgeConnection(cp.getCallId(), cancel == false);
 
+	if (cancel) {
+	    bc.migrateCall(cp, cancel);
+	    removeCallConnection(cp.getCallId());
+	    return;
+        }
+	
 	putCallConnection(cp.getCallId(), new CallInfo(cp, bc));
 
-	bc.migrateCall(cp);
+	bc.migrateCall(cp, false);
     }
 
     public void endCall(String callId) throws IOException {

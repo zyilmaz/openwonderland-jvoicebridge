@@ -560,6 +560,11 @@ public class SipCommunicator extends Thread implements
 	    return;
 	}
 
+        if (command.indexOf("disconnect") >= 0) {
+            endCalls();
+            return;
+        }
+
 	if (command.indexOf("endCalls") >= 0) {
 	    endCalls();
   	    return;
@@ -884,6 +889,11 @@ public class SipCommunicator extends Thread implements
         }
             
 	if (mediaManager != null) {
+	    if (command.indexOf("getMicrophoneVolume") >= 0) {
+		System.out.println("MicrophoneVolume:" + mediaManager.getMicrophoneVolume());
+		return;
+	    }
+
 	    if (command.indexOf("microphoneVolume=") >= 0) {
 		try {
 		    float volume = Float.parseFloat(command.substring(17));
@@ -894,6 +904,11 @@ public class SipCommunicator extends Thread implements
 		}
 		return;
 	    } 
+
+	    if (command.indexOf("getSpeakerVolume") >= 0) {
+		System.out.println("SpeakerVolume:" + mediaManager.getSpeakerVolume());
+	   	return;
+	    }
 
 	    if (command.indexOf("speakerVolume=") >= 0) {
                 try {

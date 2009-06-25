@@ -884,10 +884,20 @@ class RequestHandler extends Thread implements CallEventListener {
 	notifyConferenceMonitors(callEvent);
     }
 
+    private boolean suppressStatus;
+
+    public void suppressStatus(boolean suppressStatus) {
+	this.suppressStatus = suppressStatus;
+    }
+
     public void callEventNotification(CallEvent callEvent) {
 	notifyConferenceMonitors(callEvent);
 
 	if (synchronousMode == true) {
+	    return;
+	}
+
+	if (suppressStatus) {
 	    return;
 	}
 

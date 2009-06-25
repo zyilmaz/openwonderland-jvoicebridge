@@ -43,7 +43,7 @@ public interface Call extends CallStatusListener {
 
     public boolean isMuted();
 
-    public void transfer(CallParticipant cp) throws IOException;
+    public void transfer(CallParticipant cp, boolean cancel) throws IOException;
 
     public void transferToConference(String conferenceId) throws IOException;
 

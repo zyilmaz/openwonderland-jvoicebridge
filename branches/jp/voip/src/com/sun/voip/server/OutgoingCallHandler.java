@@ -332,7 +332,7 @@ public class OutgoingCallHandler extends CallHandler
             }
 	}
         
-        if (suppressEvent(cp, callEvent) == false) {
+        if (suppressEvent(callEvent) == false) {
             RequestHandler.outgoingCallNotification(callEvent);
 	    csl.callEventNotification(callEvent);
         } 
@@ -351,13 +351,12 @@ public class OutgoingCallHandler extends CallHandler
     //}
     
     /*
-     * To make call migration and automatic retries to alternate gateways
-     * transparent to the facilitator, we need to suppress certain
+     * To make call migration transparent we need to suppress certain
      * status messages.
      */
-    private boolean suppressEvent(CallParticipant cp, CallEvent callEvent) {
+    public boolean suppressEvent(CallEvent callEvent) {
         /*
-         * Suppress status from migrated calls so the facilitator
+         * Suppress status from migrated calls so listeners
          * doesn't see CALL_ENDED from the previous call.
          *
          * XXX Not sure about this.  I think we want the status to go through.
@@ -368,21 +367,21 @@ public class OutgoingCallHandler extends CallHandler
          * we clear the migrateCall flag so that CALL_ENDING and CALL_END
          * will be delivered to the client
          */
-        if (suppressStatus == true) {
-            if (callEvent.getInfo() != null && 
-		    callEvent.getInfo().indexOf("No Answer") >= 0 || 
-		    callEvent.equals(CallEvent.BUSY_HERE) ||
-		    callEvent.equals(CallEvent.CALL_ANSWER_TIMEOUT) ||
-		    callEvent.equals(CallEvent.MIGRATED) ||
-		    callEvent.equals(CallEvent.MIGRATION_FAILED) ||
-		    callEvent.equals(CallEvent.JOIN_TIMEOUT)) {
+        if (suppressStatus == false) {
+	    return false;
+	}
 
-                return false;
-            }
-            
-            return true;
+	if (callEvent.getInfo() != null && 
+	        callEvent.getInfo().indexOf("No Answer") >= 0 || 
+	        callEvent.equals(CallEvent.BUSY_HERE) ||
+	        callEvent.equals(CallEvent.CALL_ANSWER_TIMEOUT) ||
+	        callEvent.equals(CallEvent.MIGRATED) ||
+	        callEvent.equals(CallEvent.MIGRATION_FAILED) ||
+	        callEvent.equals(CallEvent.JOIN_TIMEOUT)) {
+
+            return false;
         }
-        
+            
         /*
          * We automatically retry calls with an alternate gateway
          * when there is a gateway error.  The status sent to the

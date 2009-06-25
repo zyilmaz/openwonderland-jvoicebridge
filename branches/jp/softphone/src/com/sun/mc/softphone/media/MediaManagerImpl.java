@@ -582,6 +582,7 @@ if (false) {
 	    if (Logger.logLevel >= Logger.LOG_MOREINFO) {
 	        Logger.println("closing microphone");
 	    }
+	    microphone.removeListener(this);
 	    microphone.done();
 	    microphone = null;
 	}
@@ -713,6 +714,10 @@ if (false) {
     }
 
     public void microphoneData(byte[] linearData, int offset, int length) {
+	if (microphone == null) {
+	    return;
+	}
+
 	if (isMuted) {
 	    System.out.println("VuMeterData:" + 0.0);
 	} else {
