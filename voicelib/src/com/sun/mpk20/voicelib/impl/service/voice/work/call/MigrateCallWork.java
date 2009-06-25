@@ -30,10 +30,12 @@ import com.sun.voip.CallParticipant;
 public class MigrateCallWork extends CallWork {
 
     public CallParticipant cp;
+    public boolean cancel;
 
-    public MigrateCallWork(Call call, CallParticipant cp) {
+    public MigrateCallWork(Call call, CallParticipant cp, boolean cancel) {
 	super(call);
 	this.cp = cp;
+	this.cancel = cancel;
     }
 
 }

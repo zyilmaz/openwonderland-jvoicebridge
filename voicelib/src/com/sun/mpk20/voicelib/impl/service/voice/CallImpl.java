@@ -68,6 +68,8 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 
     private boolean isMuted;
 
+    private String callee;
+
     public CallImpl(String id, CallSetup setup) throws IOException {
 	this.id = id;
 	this.setup = setup;
@@ -93,7 +95,7 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	    }
 	} 
 
-	String callee = setup.cp.getPhoneNumber();
+	callee = setup.cp.getPhoneNumber();
 
 	logger.finer("createCall:  callId " + this.id + " callee: " + callee
 	    + " Bridge: " + setup.bridgeInfo);
@@ -277,19 +279,20 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	}
     }
 
-    public void transfer(CallParticipant cp) throws IOException {
-	if (VoiceImpl.getInstance().addWork(new MigrateCallWork(this, cp)) == false) {
-	    transferCommit(cp);
+    public void transfer(CallParticipant cp, boolean cancel) throws IOException {
+	if (VoiceImpl.getInstance().addWork(new MigrateCallWork(this, cp, cancel)) == false) {
+	    transferCommit(cp, cancel);
 	}
     }
 
-    private void transferCommit(CallParticipant cp) {
+    private void transferCommit(CallParticipant cp, boolean cancel) {
 	try {
-            VoiceImpl.getInstance().getBridgeManager().migrateCall(cp);
+            VoiceImpl.getInstance().getBridgeManager().migrateCall(cp, cancel);
         } catch (IOException e) {
             logger.log(Level.INFO, "Unable to migrate to call "
                 + this + " " + e.getMessage());
 
+	    setup.cp.setPhoneNumber(callee);
 	    sendStatus(CallStatus.MIGRATE_FAILED, e.getMessage());
 	}
     }
@@ -441,8 +444,11 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	logger.finer("Call:  callStatus " + callStatus);
 
 	switch (code) {
-        case CallStatus.ESTABLISHED:
         case CallStatus.MIGRATED:
+	    callee = setup.cp.getPhoneNumber();
+	    logger.info("MIGRATED:  " + callStatus + " callee " + callee);
+
+        case CallStatus.ESTABLISHED:
             logger.warning("callEstablished: " + callId);
 
 	    String s = callStatus.getOption("IncomingCall");
@@ -450,7 +456,6 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	    if (s != null && s.equals("true")) {
 		handleIncomingCall(callStatus);
 	    }
-
             break;
 
         case CallStatus.STARTEDSPEAKING:
@@ -461,10 +466,27 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 
         case CallStatus.ENDED:
 	    logger.info(callStatus.toString());
+
+	    if (getPhoneNumber(callStatus).equals(callee) == false) {
+		return;
+	    }
+
 	    cleanup();
 	    setup.ended = true;
 	    break;
 	}
+    }
+
+    private String getPhoneNumber(CallStatus callStatus) {
+	String callInfo = callStatus.getCallInfo();
+
+	int ix = callInfo.indexOf("@");
+
+	if (ix < 0) {
+	    return callInfo;
+	}
+
+	return callInfo.substring(ix + 1);
     }
 
     private void handleIncomingCall(CallStatus callStatus) {
@@ -536,7 +558,8 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	}
 
 	if (work instanceof MigrateCallWork) {
-	    transferCommit(((MigrateCallWork) work).cp);
+	    MigrateCallWork w = (MigrateCallWork) work;
+	    transferCommit(w.cp, w.cancel);
 	    return;
 	} 
 

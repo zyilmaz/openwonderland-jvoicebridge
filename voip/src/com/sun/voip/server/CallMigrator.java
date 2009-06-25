@@ -150,7 +150,7 @@ if (false) {
 	     * However, if the previous call ends and then migration fails,
 	     * we need to send call ending status back.
 	     */
-	    previousCall.suppressStatus = true;
+	    suppressStatus(previousCall, true);
 
 	    OutgoingCallHandler newCall = 
 		new OutgoingCallHandler(requestHandler, cp);
@@ -158,7 +158,7 @@ if (false) {
 	    previousCall.getMember().migrating();
 
 	    synchronized(this) {
-	        newCall.suppressStatus = true;
+	        suppressStatus(newCall, true);
 
 	        newCall.start();		// call new party
 
@@ -178,10 +178,10 @@ if (false) {
 
 		    callEvent.setInfo("Migration failed: " + reason);
 
-		    newCall.suppressStatus = false;
+		    suppressStatus(newCall, false);
 		    newCall.sendCallEventNotification(callEvent);
 
-		    previousCall.suppressStatus = false;
+		    suppressStatus(previousCall, false);
 
 		    if (!previousCall.isCallEstablished()) {
 	 	        previousCall.sendCallEventNotification(callEvent);
@@ -191,7 +191,7 @@ if (false) {
 	            return;
 	        }
 
-	        newCall.suppressStatus = false;
+	        suppressStatus(newCall, false);
 	    }
 
 	    if (previousCall.isCallEstablished() == true) {
@@ -206,7 +206,7 @@ if (false) {
 	Logger.println("Call " + previousCp
 	    + " migrated to " + cp.getPhoneNumber());
 
-	previousCall.suppressStatus = false;
+	suppressStatus(previousCall, false);
 	cp.setMigrateCall(false);	// call is no longer migrating
 
 	/*
@@ -223,7 +223,7 @@ if (false) {
 
 	previousCall.sendCallEventNotification(callEvent);
 
-	previousCall.suppressStatus = true;
+	suppressStatus(previousCall, true);
 
 	/*
 	 * Suppress conference leave treatment.  No other calls should
@@ -234,6 +234,11 @@ if (false) {
 
 	previousCall.cancelRequest("Call " + previousCp 
 	    + " migrated to " + cp.getPhoneNumber());
+    }
+
+    private void suppressStatus(CallHandler call, boolean suppressStatus) {
+	call.suppressStatus(suppressStatus);
+	requestHandler.suppressStatus(suppressStatus);
     }
 
     private void migrateWithNoPreviousCall(RequestHandler requestHandler, 
@@ -275,7 +280,15 @@ if (false) {
 
 	if (callHandler == null) {
 	    Logger.println("Can't find migrating call for " + callId);
-	    return;
+
+	    callHandler = CallHandler.findCall(callId);
+
+	    if (callHandler == null) {
+		Logger.println("Can't find call for " + callId);
+		return;
+	    }
+
+	    Logger.println("Cancelling original call " + callId);
         }
 	
 	callHandler.cancelRequest(reason);

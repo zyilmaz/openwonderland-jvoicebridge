@@ -61,7 +61,9 @@ public class WarmStart {
     public WarmStart(VoiceImpl voiceImpl) {
 	this.voiceImpl = voiceImpl;
 
-	System.out.println("WARM START");
+	//System.out.println("WARM START");
+
+	//voiceImpl.foo();
 
 	if (callsEnded == false) {
 	    endCalls();
