@@ -8,7 +8,7 @@ sudo apt-get install libasound2-dev.
 To build the library:
 
 	- build the softphone
-	- Then on a Linux machine (you must run this on a Linux system!) type ./build.sh.
+	- Then on a Linux machine (you must run this on a Linux 32-bit system!) type ./build.sh.
 
 
 NOTE:  ON 5/18/2007 I modified /usr/include/jni.h to include linux/jni_md.h.
