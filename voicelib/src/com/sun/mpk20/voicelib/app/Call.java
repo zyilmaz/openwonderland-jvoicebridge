@@ -60,6 +60,8 @@ public interface Call extends CallStatusListener {
 
     public void stopTreatment(String treatment) throws IOException;
 
+    public void record(String path, boolean isRecording) throws IOException;
+
     public void end(boolean removePlayer) throws IOException;
 
     public String dump();

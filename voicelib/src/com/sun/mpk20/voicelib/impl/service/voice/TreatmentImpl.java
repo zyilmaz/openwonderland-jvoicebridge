@@ -76,7 +76,7 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
 
     public TreatmentImpl(String id, TreatmentSetup setup) throws IOException {
     	this.setup = setup;
-	this.id = Util.generateUniqueId(id);
+	this.id = Util.generateUniqueId(id).replaceAll(":", "_");
 
 	logger.info("setupTreatment:  id " + this.id + " treatment " + setup.treatment);
 
@@ -102,12 +102,10 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
 	callSetup.listener = setup.listener;
 	callSetup.managedListenerRef = callSetup.managedListenerRef;
 
-	String callId = id.replaceAll(":", "_");
-
-	VoiceImpl.getInstance().addCallStatusListener(this, callId);
+	VoiceImpl.getInstance().addCallStatusListener(this, id);
 
 	try {
-	    call = new CallImpl(callId, callSetup);
+	    call = new CallImpl(id, callSetup);
 	} catch (IOException e) {
 	    logger.info("Unable to setup treatment " + setup.treatment
 		+ " " + e.getMessage());
@@ -199,6 +197,11 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
 	VoiceImpl.getInstance().removeTreatment(this);
 
 	try {
+	    if (call == null) {
+		logger.warning("Call is null");
+		return;
+	    }
+
 	    call.end(true);
 	} catch (IOException e) {
 	    logger.warning("Unable to end call for treatment " + getId());

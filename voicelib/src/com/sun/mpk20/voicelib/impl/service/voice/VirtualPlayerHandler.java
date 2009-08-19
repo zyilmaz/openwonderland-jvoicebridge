@@ -114,11 +114,14 @@ public class VirtualPlayerHandler implements Serializable {
 	setup.x = -playerWithVp.getX() * scale;
 	setup.y = playerWithVp.getY() * scale;
 	setup.z = playerWithVp.getZ() * scale;
-	setup.orientation = playerWithVp.getOrientation();
+	setup.orientation = Math.toDegrees(playerWithVp.getOrientation());
 	setup.isLivePlayer = true;
 	setup.isVirtualPlayer = true;
 
 	Player vp = voiceImpl.createPlayer(id, setup);
+
+	//System.out.println("CREATE VP:  player " + player + " p with vp " 
+	//    + playerWithVp + " vp " + vp);
 
 	vp.setCall(call);
 

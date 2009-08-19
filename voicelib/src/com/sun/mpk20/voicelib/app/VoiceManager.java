@@ -22,6 +22,8 @@
  */
 package com.sun.mpk20.voicelib.app;
 
+import com.sun.sgs.kernel.KernelRunnable;
+
 import com.sun.voip.client.connector.CallStatusListener;
 
 import java.math.BigInteger;
@@ -140,6 +142,8 @@ public interface VoiceManager extends Serializable {
 
     public void setSpatialBehindVolume(double spatialBehindVolume)
         throws IOException;
+
+    public void scheduleTask(KernelRunnable runnable, long startTime);
 
     public String dump(String command);
 

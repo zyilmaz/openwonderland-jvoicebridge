@@ -113,7 +113,7 @@ class ServerAudioPlayer implements AudioPlayer {
     private int bytesToPlay = 0;
     private int bytesPlayed = 0;
 
-    private byte[] byteLinearData;
+    private byte[] byteLinearData = new byte[0];
 
     public ServerAudioPlayer() {
     }
@@ -366,6 +366,16 @@ class ServerAudioPlayer implements AudioPlayer {
      * @return data int[] voice data
      */
     public int[] getLinearData() {
+	if (byteLinearData == null) {
+	    System.out.println("TTS:  no linear data, waiting 50ms");
+	    try {
+		synchronized (this) {
+		    wait(50);
+		}
+	    } catch (InterruptedException e) {
+	    }
+	}
+
 	return AudioConversion.bytesToInts(byteLinearData);
     }
 

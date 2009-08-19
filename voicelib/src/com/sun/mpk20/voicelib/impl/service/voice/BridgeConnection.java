@@ -873,11 +873,11 @@ if (false) {
 
         switch (br.getStatus()) {
         case SUCCESS:
-            logger.finest("recordTomember success: " + cmd);
+            logger.finest("recordToMember success: " + cmd);
             return br.getMessage();
 
         default:
-            throw new IOException("recordTomember failed:  " + cmd
+            throw new IOException("recordToMember failed:  " + cmd
 		+ " " + br.getMessage());
         }
     }
@@ -896,6 +896,27 @@ if (false) {
 
         default:
             throw new IOException("stop recording failed:  " + cmd
+		+ " " + br.getMessage());
+        }
+    }
+
+    public String recordCall(String callId, String recordingFile, boolean isRecording)
+	    throws IOException {
+	
+	String cmd = "recordFromMember=" + isRecording + ":" + callId + ":" + recordingFile 
+	    + ":" + "au" + "\n";
+
+        BridgeResponse br = sendWithResponse(cmd);
+
+        logger.finest("getStatus " + br.getStatus());
+
+        switch (br.getStatus()) {
+        case SUCCESS:
+            logger.finest("recordFromMember success: " + cmd);
+            return br.getMessage();
+
+        default:
+            throw new IOException("recordFromMember failed:  " + cmd
 		+ " " + br.getMessage());
         }
     }
