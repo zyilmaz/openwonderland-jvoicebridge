@@ -38,9 +38,9 @@ import com.sun.mc.softphone.media.Speaker;
 
 public class AlsaAudioServiceProvider implements AudioServiceProvider {
 
-    private static final String ALSA_32BIT_NAME = "libMediaFramework32.so";
+    private static final String ALSA_I386_NAME = "libMediaFrameworkI386.so";
 
-    private static final String ALSA_64BIT_NAME = "libMediaFramework64.so";
+    private static final String ALSA_AMD64_NAME = "libMediaFrameworkAmd64.so";
 
     private static AudioDriver audioDriver;
 
@@ -50,10 +50,10 @@ public class AlsaAudioServiceProvider implements AudioServiceProvider {
     public AlsaAudioServiceProvider() throws IOException {
         audioDriver = new AudioDriverAlsa();
 
-	if (System.getProperty("os.arch").contains("64")) {
-	    NativeLibUtil.loadLibrary(getClass(), ALSA_64BIT_NAME);
+	if (System.getProperty("os.arch").contains("amd64")) {
+	    NativeLibUtil.loadLibrary(getClass(), ALSA_AMD64_NAME);
 	} else {
-	    NativeLibUtil.loadLibrary(getClass(), ALSA_32BIT_NAME);
+	    NativeLibUtil.loadLibrary(getClass(), ALSA_I386_NAME);
 	}
     }
 

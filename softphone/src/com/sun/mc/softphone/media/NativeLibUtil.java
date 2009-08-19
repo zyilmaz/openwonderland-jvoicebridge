@@ -77,7 +77,7 @@ public class NativeLibUtil {
         // load the temporary file as a library
 	String path = f.getAbsolutePath();
 
-	Logger.println("Trying to load " + path + " writable " + f.canWrite()
+	System.out.println("Trying to load " + path + " writable " + f.canWrite()
 	    + " length " + f.length() + " exists " + f.exists());
 
 	//System.out.println("class path " + System.getProperty("java.class.path"));
