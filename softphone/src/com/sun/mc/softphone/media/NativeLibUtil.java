@@ -28,6 +28,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.sun.voip.Logger;
+
 /**
  * Load native libraries stored in the jar file
  * @author jkaplan
@@ -52,7 +54,7 @@ public class NativeLibUtil {
         // load the data from the jar file
         InputStream in = clazz.getResourceAsStream("native/" + name);
         
-	//System.err.println("native name is native/" + name);
+	//System.out.println("native name is native/" + name);
 
         // create a temporary file
         String suffix = null;
@@ -75,8 +77,8 @@ public class NativeLibUtil {
         // load the temporary file as a library
 	String path = f.getAbsolutePath();
 
-	//System.out.println("Trying to load " + path + " writable " + f.canWrite()
-	//    + " length " + f.length() + " exists " + f.exists());
+	Logger.println("Trying to load " + path + " writable " + f.canWrite()
+	    + " length " + f.length() + " exists " + f.exists());
 
 	//System.out.println("class path " + System.getProperty("java.class.path"));
 	//System.out.println("library path " + System.getProperty("java.library.path"));
