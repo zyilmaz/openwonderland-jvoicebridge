@@ -81,10 +81,10 @@
 
         <!-- copy native libraries -->
         <copy todir="${build.lib.dir}">
-            <fileset dir="${alsa.32bit.dir}">
+            <fileset dir="${alsa.i386.dir}">
                 <include name="*.so"/>
 	    </fileset>
-            <fileset dir="${alsa.64bit.dir}">
+            <fileset dir="${alsa.amd64.dir}">
                 <include name="*.so"/>
 	    </fileset>
             <fileset dir="${coreaudio.dir}">
@@ -171,9 +171,9 @@
         <property name="alsa.native.dir"
                   value="${classes.dir}/com/sun/mc/softphone/media/alsa/native"/>
         <mkdir dir="${alsa.native.dir}"/>
-        <copy file="${alsa.native.32bit.library}"
+        <copy file="${alsa.native.i386.library}"
               todir="${alsa.native.dir}"/>
-        <copy file="${alsa.native.64bit.library}"
+        <copy file="${alsa.native.amd64.library}"
               todir="${alsa.native.dir}"/>
     </target>
 
@@ -203,7 +203,8 @@
             </manifest>
         </jar>
         
-        <copy file="${alsa.native.32bit.library}" tofile="${build.lib.dir}/libMediaFramework32.so"/>
+        <copy file="${alsa.native.i386.library}" tofile="${build.lib.dir}/libMediaFrameworkI386.so"/>
+        <copy file="${alsa.native.amd64.library}" tofile="${build.lib.dir}/libMediaFrameworkAmd64.so"/>
         <copy file="${coreaudio.native.library}" tofile="${build.lib.dir}/libMediaFramework.jnilib"/>
 
         <jar compress="true" jarfile="${build.lib.dir}/softphone_inst.jar">
@@ -213,7 +214,8 @@
 
             <fileset dir="${build.lib.dir}" file="${softphone.jar}"/>    
 
-            <fileset dir="${build.lib.dir}" file="libMediaFramework.so"/>    
+            <fileset dir="${build.lib.dir}" file="libMediaFrameworkI386.so"/>    
+            <fileset dir="${build.lib.dir}" file="libMediaFrameworkAmd64.so"/>    
             <fileset dir="${build.lib.dir}" file="libMediaFramework.jnilib"/>    
             
             <manifest>
