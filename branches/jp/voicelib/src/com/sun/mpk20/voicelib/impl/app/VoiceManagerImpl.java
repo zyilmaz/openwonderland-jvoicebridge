@@ -44,6 +44,8 @@ import com.sun.mpk20.voicelib.app.VoiceService;
 import com.sun.mpk20.voicelib.app.VoiceBridgeParameters;
 import com.sun.mpk20.voicelib.app.VoiceManagerParameters;
 
+import com.sun.sgs.kernel.KernelRunnable;
+
 import com.sun.voip.client.connector.CallStatus;
 import com.sun.voip.client.connector.CallStatusListener;
 
@@ -288,6 +290,10 @@ public class VoiceManagerImpl implements VoiceManager {
             logger.warning("Unable to set spatial audio behind volume: "
                 + e.getMessage());
         }
+    }
+
+    public void scheduleTask(KernelRunnable runnable, long startTime) {
+	backingManager.scheduleTask(runnable, startTime);
     }
 
     public String dump(String command) {

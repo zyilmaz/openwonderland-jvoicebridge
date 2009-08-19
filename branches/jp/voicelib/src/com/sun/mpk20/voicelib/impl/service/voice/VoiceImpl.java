@@ -110,7 +110,7 @@ public class VoiceImpl implements Serializable {
     private double DEFAULT_SCALE = 1.0;
 
     private final String CONFERENCE_PROPERTY = 
-	VOICEIMPL_PREFIX + ".DEFAULT_CONFERENCE";
+	VOICEIMPL_PREFIX + "DEFAULT_CONFERENCE";
 
     private final String DEFAULT_CONFERENCE="Test:PCM/16000/2";
 
@@ -441,9 +441,7 @@ public class VoiceImpl implements Serializable {
 
  	call.end(removePlayer);	
 
-	if (calls.remove(call.getId()) == null) {
-	    logger.warning("Call " + call + " not in list of calls");
-	} 
+	removeCall(call);
 
 	if (logger.isLoggable(Level.FINE)) {
 	    System.out.println(dump("all"));

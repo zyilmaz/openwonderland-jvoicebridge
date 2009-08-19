@@ -24,6 +24,6 @@ package com.sun.mpk20.voicelib.app;
 
 public interface PlayerInRangeListener {
 
-    public void playerInRange(Player player, Player PlayerInRange, boolean isInRange);
+    public void playerInRange(Player player, Player playerInRange, boolean isInRange);
 
 }

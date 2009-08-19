@@ -512,6 +512,11 @@ public class BridgeManager extends Thread
  	bc.stopRecordingToCall(callId);
     }
 
+    public void recordCall(String callId, String recordingFile, boolean isRecording) throws IOException {
+        BridgeConnection bc = getBridgeConnection(callId);
+ 	bc.recordCall(callId, recordingFile, isRecording);
+    }
+
     public void newInputTreatment(String callId, String treatment) 
 	    throws IOException {
 

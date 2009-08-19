@@ -846,7 +846,15 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     }
 
     public void scheduleTask(KernelRunnable runnable) {
-        transactionScheduler.scheduleTask(runnable, taskOwner); 
+	scheduleTask(runnable, 0);
+    }
+
+    public void scheduleTask(KernelRunnable runnable, long startTime) {
+	if (startTime == 0) {
+            transactionScheduler.scheduleTask(runnable, taskOwner); 
+	} else {
+            transactionScheduler.scheduleTask(runnable, taskOwner, startTime); 
+	}
     }
 
     public void joinTransaction(NonDurableTransactionParticipant participant) {

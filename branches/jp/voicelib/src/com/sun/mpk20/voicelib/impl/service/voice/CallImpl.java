@@ -210,7 +210,11 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	    voiceImpl.removeCallStatusListener(setup.listener, id);
 	}
 
-	voiceImpl.removeCall(this);
+	Call call = voiceImpl.getCall(id);
+
+	if (call == this) {
+	    voiceImpl.removeCall(this);
+	} 
     }
 
     public String getId() {
@@ -389,6 +393,21 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	}
     }
 
+   public void record(String path, boolean isRecording) {
+	if (VoiceImpl.getInstance().addWork(new RecordCallWork(this, path, isRecording)) == false) {
+	    recordCommit(path, isRecording);
+	}
+   }
+
+   private void recordCommit(String path, boolean isRecording) {
+	try {
+            VoiceImpl.getInstance().getBridgeManager().recordCall(id, path, isRecording);
+	} catch (IOException e) {
+	    logger.log(Level.INFO, "Unable to start / stop recording call " + id + " " 
+		+ e.getMessage());
+	}
+    }
+
     public void end(boolean removePlayer) throws IOException {
 	VoiceImpl voiceImpl = VoiceImpl.getInstance();
 
@@ -443,15 +462,18 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 
 	logger.finer("Call:  callStatus " + callStatus);
 
+	String s;
+
 	switch (code) {
         case CallStatus.MIGRATED:
 	    callee = setup.cp.getPhoneNumber();
 	    logger.info("MIGRATED:  " + callStatus + " callee " + callee);
+	    break;
 
         case CallStatus.ESTABLISHED:
             logger.warning("callEstablished: " + callId);
 
-	    String s = callStatus.getOption("IncomingCall");
+	    s = callStatus.getOption("IncomingCall");
 
 	    if (s != null && s.equals("true")) {
 		handleIncomingCall(callStatus);
@@ -467,8 +489,18 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
         case CallStatus.ENDED:
 	    logger.info(callStatus.toString());
 
-	    if (getPhoneNumber(callStatus).equals(callee) == false) {
-		return;
+	    if (callee != null) {
+	        s = callee;
+
+	        int ix;
+
+	        if ((ix = s.indexOf("@")) >= 0) {
+		    s = s.substring(ix + 1);
+	        }
+	
+	        if (getPhoneNumber(callStatus).equals(s) == false) {
+		    return;
+	        }
 	    }
 
 	    cleanup();
@@ -562,6 +594,12 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	    transferCommit(w.cp, w.cancel);
 	    return;
 	} 
+
+	if (work instanceof RecordCallWork) {
+	    RecordCallWork w = (RecordCallWork) work;
+	    recordCommit(w.recordingPath, w.isRecording);
+	    return;
+	}
 
 	if (work instanceof EndCallWork) {
 	    endCommit(((EndCallWork) work).removePlayer);
