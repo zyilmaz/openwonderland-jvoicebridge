@@ -295,6 +295,8 @@ public class SipServer implements SipListener {
         try {
             Request request = requestEvent.getRequest();
 
+	   //System.out.println("GOT REQUEST:  " + request);
+
 	    CallIdHeader callIdHeader = (CallIdHeader)
 		request.getHeader(CallIdHeader.NAME);
 

@@ -1183,7 +1183,7 @@ public class CallParticipant implements Serializable {
 
 	    int start = 0;
 
-	    if (phoneNumber.indexOf("sip:") == 0) {
+	    if (phoneNumber.indexOf("sip:") == 0 || phoneNumber.indexOf("sips:") == 0) {
 	        start = phoneNumber.indexOf(":") + 1;
 	    }
 

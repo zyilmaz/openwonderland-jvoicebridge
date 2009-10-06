@@ -508,7 +508,7 @@ public abstract class CallHandler extends Thread {
 	    return true;
 	}
 
-	if (number.indexOf("sip:") == 0) {
+	if (number.indexOf("sip:") == 0 || number.indexOf("sips:") == 0) {
 	    int ix = number.indexOf("@");
 
 	    if (ix >= 0) {
