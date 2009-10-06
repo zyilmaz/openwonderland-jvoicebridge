@@ -570,7 +570,7 @@ public class NetworkAddressManager {
 	try {
 	    socket = new DatagramSocket(privatePort, ia);
 	} catch (SocketException e) {
-	    System.out.println(e.getMessage());
+	    System.out.println("SocketException: " + e.getMessage());
 	    System.exit(1);
 	}
 
@@ -578,7 +578,7 @@ public class NetworkAddressManager {
 	    System.out.println("public address " 
 	        + NetworkAddressManager.getPublicAddressFor(isa, socket));
 	} catch (IOException e) {
-	    System.out.println(e.getMessage());
+	    System.out.println("IOException: " + e.getMessage());
 	    System.exit(1);
 	}
     }

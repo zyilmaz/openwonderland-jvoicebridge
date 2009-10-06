@@ -568,7 +568,7 @@ class RequestHandler extends Thread implements CallEventListener {
 	/*
 	 * It's a softphone number.  Leave it as is.
 	 */
-	if (phoneNumber.indexOf("sip:") == 0) {
+	if (phoneNumber.indexOf("sip:") == 0 || phoneNumber.indexOf("sips:") == 0) {
 	    /*
 	     * There is a problem where Meeting Central gives
 	     * us a phone number with only "sip:" which isn't valid.

@@ -371,7 +371,7 @@ if (false) {
 	     */
 	    Logger.println("Call " + cp + " Using proxy " + proxy 
 		+ " for " + toNumber);
-        } else if (toNumber.indexOf("sip:") == 0) {
+        } else if (toNumber.indexOf("sip:") == 0 || toNumber.indexOf("sips:") == 0) {
             /*
              * If a SIP URI is specified, parse it and send
              * the request directly to the target unless sendSipUriToProxy is false.
@@ -612,7 +612,9 @@ if (false) {
     }
 
     public static boolean isSipUri(String phoneNumber) {
-	if (phoneNumber == null || phoneNumber.indexOf("sip:") != 0) {
+	if (phoneNumber == null || phoneNumber.indexOf("sip:") != 0 ||
+		phoneNumber.indexOf("sips:") != 0) {
+
 	    return false;
 	}
 

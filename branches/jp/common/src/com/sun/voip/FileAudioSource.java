@@ -65,6 +65,7 @@ public abstract class FileAudioSource implements AudioSource {
 	String ext;
 
         int extIdx = path.lastIndexOf(".");
+
         if (extIdx == -1) {
 	    if (path.startsWith("http://") == false) {
                 Logger.error("Unable to determine extension of " + path);

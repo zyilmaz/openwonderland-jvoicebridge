@@ -285,6 +285,20 @@ public class MemberSender {
         return outputVolume;
     }
 
+    private ArrayList<DataListener> dataListeners = new ArrayList();
+
+    public void addDataListener(DataListener listener) {
+	synchronized (dataListeners) {
+	    dataListeners.add(listener);
+	}
+    }
+
+    public void removeDataListener(DataListener listener) {
+	synchronized (dataListeners) {
+	    dataListeners.remove(listener);
+	}
+    }
+
     private long timePreviousPacketSent;
 
     public synchronized boolean sendData(int[] dataToSend) {
@@ -466,6 +480,10 @@ public class MemberSender {
 	        }
 	        return false;
 	    }
+	}
+
+	for (DataListener listener : dataListeners) {
+	     listener.rtpData(senderPacket.getData(), senderPacket.getLength());
 	}
 
 	senderPacket.setBuffer(rtpData);

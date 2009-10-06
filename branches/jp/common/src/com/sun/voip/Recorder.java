@@ -71,6 +71,12 @@ public class Recorder extends Thread {
 	    throw new IOException("Invalid recording type " + recordingType);
 	}
 
+	try {
+	    checkPermission(this.recordPath, false);
+	} catch (ParseException e) {
+	    throw new IOException(e.getMessage());
+	}
+
 	openFile(mediaInfo);
 
         start();
@@ -173,8 +179,10 @@ public class Recorder extends Thread {
 	    File file = new File(recordPath);
 
 	    if (file.exists() == false) {
-	        throw new ParseException(
-		    "Non-existent directory:  " + recordPath, 0);
+		if (file.mkdirs() == false) {
+	            throw new ParseException(
+		        "Unable to create directory:  " + recordPath, 0);
+		} 
 	    }
 
 	    if (file.isDirectory() == false) {
@@ -196,19 +204,28 @@ public class Recorder extends Thread {
 		if (file.isDirectory()) {
 		    throw new ParseException("Not a regular file:  "
 			+ recordPath + ".", 0);
+		} else {
+		    if (file.canWrite()) {
+			return;
+		    }
+
+		    throw new ParseException("Can't write file:  "
+			+ recordPath + ".", 0);
+		}
+	    } else {
+		if (recordPath.startsWith(fileSeparator)) {
+		    file.mkdirs();	// try to make intermediate directories
+		} else {
+		    recordPath = defaultRecordDirectory + fileSeparator + recordPath;
 		}
 	    }
 
 	    /*
-	     * Try to create a file in the directory
+	     * Try to create the file 
 	     */
-	    String directory = defaultRecordDirectory;
-
 	    int i = recordPath.lastIndexOf(fileSeparator);
 
-	    if (i > 0) {
-		directory = recordPath.substring(0, i);
-	    }
+	    String directory = recordPath.substring(0, i);
 
 	    file = File.createTempFile("Record", "tmp", new File(directory));
 

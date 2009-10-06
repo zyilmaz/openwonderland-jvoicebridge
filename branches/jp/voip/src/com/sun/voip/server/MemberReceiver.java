@@ -712,6 +712,11 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
     private boolean inputTreatmentPaused;
 
     public void pauseInputTreatment(boolean isPaused) {
+	if (whisperGroup == null) {
+	    System.out.println("Can't pause input treatment, whispergroup is null");
+	    return;
+	}
+
 	inputTreatmentPaused = isPaused;
 
 	synchronized (whisperGroup) {
