@@ -33,6 +33,7 @@ import java.io.RandomAccessFile;
 
 import java.text.ParseException;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 /**
@@ -40,6 +41,8 @@ import java.util.LinkedList;
  */
 public class Recorder extends Thread {
     
+    private static ArrayList<RecorderListener> recorderListeners = new ArrayList();
+
     private BufferedOutputStream bo;
     private FileOutputStream fo;
     
@@ -49,6 +52,7 @@ public class Recorder extends Thread {
 
     private String recordPath;
     private boolean recordRtp;
+    private MediaInfo mediaInfo;
 
     private static String fileSeparator = System.getProperty("file.separator");
 
@@ -76,6 +80,8 @@ public class Recorder extends Thread {
 	} catch (ParseException e) {
 	    throw new IOException(e.getMessage());
 	}
+
+	this.mediaInfo = mediaInfo;
 
 	openFile(mediaInfo);
 
@@ -146,6 +152,7 @@ public class Recorder extends Thread {
                     buf[2] = (byte) 0x50;  // P
 
                     bo.write(buf, 0, buf.length);
+		    notifyRecordingData(buf, 0, buf.length);
                 }
 	    }
         } catch (IOException e) {
@@ -160,6 +167,8 @@ public class Recorder extends Thread {
 
 	Logger.println("Recording to " + recordFile.getAbsolutePath()
 	    + " recording type is " + (recordRtp ? "RTP" : "Audio"));
+
+	notifyStartRecording();
     }
 
     public String getRecordPath() {
@@ -236,6 +245,36 @@ public class Recorder extends Thread {
         }
     }
 
+    public void addRecorderListener(RecorderListener listener) {
+	synchronized (recorderListeners) {
+	    recorderListeners.add(listener);
+	}
+    }
+
+    public void removeRecorderListener(RecorderListener listener) {
+	synchronized (recorderListeners) {
+	    recorderListeners.remove(listener);
+	}
+    }
+
+    private void notifyStartRecording() {
+	for (RecorderListener listener : recorderListeners) {
+	    listener.startRecording(recordPath, mediaInfo);
+	}
+    }
+
+    private void notifyStopRecording() {
+	for (RecorderListener listener : recorderListeners) {
+	    listener.stopRecording(recordPath);
+	}
+    }
+
+    private void notifyRecordingData(byte[] buffer, int offset, int length) {
+	for (RecorderListener listener : recorderListeners) {
+	    listener.data(buffer, offset, length);
+	}
+    }
+
     private byte[] auHeader;
 
     private void writeAuHeader(MediaInfo mediaInfo) throws IOException {
@@ -281,6 +320,7 @@ public class Recorder extends Thread {
         auHeader[23] = (byte)(channels & 0xff);
         
         bo.write(auHeader, 0, auHeader.length);
+        notifyRecordingData(auHeader, 0, auHeader.length);
     }
     
     public void done() {
@@ -293,6 +333,8 @@ public class Recorder extends Thread {
         synchronized(dataToWrite) {
             dataToWrite.notifyAll();
         }
+
+	notifyStopRecording();
     }
     
     /*
@@ -418,6 +460,7 @@ public class Recorder extends Thread {
         try {
 	    synchronized(this) {
                 bo.write(d.data, 0, d.length);
+                notifyRecordingData(d.data, 0, d.length);
 		dataSize += d.length;
             }
         } catch (IOException e) {
