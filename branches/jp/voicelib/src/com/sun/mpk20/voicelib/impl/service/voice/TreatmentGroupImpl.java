@@ -72,7 +72,15 @@ public class TreatmentGroupImpl implements TreatmentGroup, CallStatusListener, S
 	VoiceImpl.getInstance().putTreatmentGroup(this);
     }
 	
+    private boolean treatmentGroupRemoved;
+
     public void removeTreatmentGroupCommit() {
+	if (treatmentGroupRemoved) {
+	    return;
+	}
+
+	treatmentGroupRemoved = true;
+
 	VoiceImpl.getInstance().removeTreatmentGroup(this);
     }
 
@@ -133,7 +141,15 @@ public class TreatmentGroupImpl implements TreatmentGroup, CallStatusListener, S
 	}
     }
 
+    private boolean done;
+
     private void removeTreatmentCommit(Treatment treatment, boolean restartTreatments) {
+	if (done) {
+	    return;
+	}
+
+	done = true;
+
 	Call call = treatment.getCall();
 
 	if (call != null) {
@@ -191,7 +207,7 @@ public class TreatmentGroupImpl implements TreatmentGroup, CallStatusListener, S
 	Treatment treatment = treatments.get(callId);
 
 	if (treatment == null) {
-	    System.out.println("Can't find treatment for " + callId);
+	    logger.warning("Can't find treatment for " + callId);
 	    return;
 	}
 
@@ -286,6 +302,14 @@ public class TreatmentGroupImpl implements TreatmentGroup, CallStatusListener, S
 	}
 
 	return s;
+    }
+
+    public boolean equals(Object o) {
+	if (o instanceof TreatmentGroup == false) {
+	    return false;
+	}
+
+	return ((TreatmentGroup) o).getId().equals(id);
     }
 
     public String toString() {

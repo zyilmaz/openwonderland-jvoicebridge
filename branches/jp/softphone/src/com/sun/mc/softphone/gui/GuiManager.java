@@ -385,7 +385,7 @@ public class GuiManager implements GuiManagerUI, GuiCallback {
 	/*
 	 * It's a softphone number.  Leave it as is.
 	 */
-	if (phoneNumber.indexOf("sip:") == 0) {
+	if (phoneNumber.indexOf("sip:") == 0 || phoneNumber.indexOf("sips:") == 0) {
 	    return phoneNumber;
 	}
 

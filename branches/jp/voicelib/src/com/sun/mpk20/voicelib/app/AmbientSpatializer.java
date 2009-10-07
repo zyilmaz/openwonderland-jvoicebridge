@@ -34,9 +34,9 @@ public class AmbientSpatializer implements Spatializer, Serializable {
     double minZ;
     double maxZ;
 
-    double attenuator = 1.0;
+    double attenuator = Spatializer.DEFAULT_MAXIMUM_VOLUME;
 
-    private double scale;
+    private double scale = 1.0;
 
     public AmbientSpatializer() {
     }
@@ -59,12 +59,12 @@ public class AmbientSpatializer implements Spatializer, Serializable {
 	//	+ " lZ " + lowerLeftZ + " uX " + upperRightX
 	//	+ " uY " + upperRightY + " uZ " + upperRightZ);
 
-        minX = Math.min(lowerLeftX / scale, upperRightX / scale);
-        maxX = Math.max(lowerLeftX / scale, upperRightX / scale);
-        minY = Math.min(lowerLeftY / scale, upperRightY / scale);
-        maxY = Math.max(lowerLeftY / scale, upperRightY / scale);
-        minZ = Math.min(lowerLeftZ / scale, upperRightZ / scale);
-        maxZ = Math.max(lowerLeftZ / scale, upperRightZ / scale);
+        minX = Util.round100(Math.min(lowerLeftX / scale, upperRightX / scale));
+        maxX = Util.round100(Math.max(lowerLeftX / scale, upperRightX / scale));
+        minY = Util.round100(Math.min(lowerLeftY / scale, upperRightY / scale));
+        maxY = Util.round100(Math.max(lowerLeftY / scale, upperRightY / scale));
+        minZ = Util.round100(Math.min(lowerLeftZ / scale, upperRightZ / scale));
+        maxZ = Util.round100(Math.max(lowerLeftZ / scale, upperRightZ / scale));
     }
 
     public double[] spatialize(double sourceX, double sourceY, 
@@ -91,17 +91,17 @@ public class AmbientSpatializer implements Spatializer, Serializable {
     }
         
     private boolean isInside(double x, double y, double z) {
-	//logger.info("isInside: x " + round(x) + " y " + round(y) 
-	//	+ " z " + z
-	//	+ " minX " + round(minX) + " maxX " + round(maxX)
-	//	+ " minY " + round(minY) + " maxY " + round(maxY)
+	//System.out.println("isInside: x " + x + " y " + y + " z " + z
+	//	+ " minX " + minX + " maxX " + maxX
+	//	+ " minY " + minY + " maxY " + maxY
 	//	+ " minZ " + minZ + " maxZ " + maxZ); 
 
 	/*
 	 * Don't check z because we always expect 0, but it's always
 	 * non-zero.
 	 */
-        return x >= minX && x <= maxX && y >= minY && y <= maxY;
+        return x >= minX && x <= maxX && y >= minY && y <= maxY &&
+	    z >= minZ && z <= maxZ;
     }
 
     public void setAttenuator(double attenuator) {
@@ -128,8 +128,8 @@ public class AmbientSpatializer implements Spatializer, Serializable {
 
     public String toString() {
 	return "AmbientSpatializer(minX=" + minX + " maxX=" + maxX
-	    + " minY=" + minY + " minZ=" + minZ + " maxZ=" + maxZ 
-	    + " attenuator=" + attenuator + ")";
+	    + " minY=" + minY + " maxY=" + maxY + " minZ=" + minZ 
+	    + " maxZ=" + maxZ + " attenuator=" + attenuator + ")";
     }
 
 }

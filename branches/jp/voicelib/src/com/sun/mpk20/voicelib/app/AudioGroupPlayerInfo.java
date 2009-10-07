@@ -24,7 +24,7 @@ package com.sun.mpk20.voicelib.app;
 
 import java.io.Serializable;
 
-public class AudioGroupPlayerInfo implements Serializable {
+public class AudioGroupPlayerInfo {
 
     public double defaultSpeakingAttenuation = 
 	AudioGroup.DEFAULT_SPEAKING_ATTENUATION;
@@ -37,6 +37,8 @@ public class AudioGroupPlayerInfo implements Serializable {
 
     public double listenAttenuation = AudioGroup.DEFAULT_LISTEN_ATTENUATION;
     public boolean isSpeaking;
+
+    public boolean isTransientMember;
 
     public enum ChatType {
 	EXCLUSIVE,
@@ -55,7 +57,8 @@ public class AudioGroupPlayerInfo implements Serializable {
     public String toString() {
 	return "speakingAttenuation=" + speakingAttenuation
 	    + ", listenAttenuation=" + listenAttenuation
-	    + ", isSpeaking=" + isSpeaking + " " + chatType;
+	    + ", isSpeaking=" + isSpeaking 
+	    + ", isTransientMember=" + isTransientMember + " " + chatType;
     }
 	
 }

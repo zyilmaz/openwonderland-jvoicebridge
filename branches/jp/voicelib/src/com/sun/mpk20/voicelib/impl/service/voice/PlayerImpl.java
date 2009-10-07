@@ -33,6 +33,7 @@ import java.io.Serializable;
 import java.lang.Integer;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -74,7 +75,7 @@ import com.sun.voip.client.connector.CallStatusListener;
 
 import java.awt.geom.Line2D;
 
-public class PlayerImpl implements Player, CallStatusListener, Serializable {
+public class PlayerImpl implements Player, CallStatusListener {
 
     private static final Logger logger =
         Logger.getLogger(PlayerImpl.class.getName());
@@ -110,7 +111,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
     private Spatializer publicSpatializer;
 
-    private ArrayList<AudioGroup> audioGroups = new ArrayList();
+    private CopyOnWriteArrayList<AudioGroup> audioGroups = new CopyOnWriteArrayList();
 
     private CopyOnWriteArrayList<VirtualPlayer> virtualPlayers = new CopyOnWriteArrayList();
 
@@ -133,7 +134,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
 	publicSpatializer = setup.publicSpatializer;
 
-	logger.info("creating player for " + id
+	logger.info("creating player for " + id 
             + " at (" + setup.x + ", " + setup.y + ", " + setup.z + ": "
 	    + setup.orientation + ")" + " setup.isOutworlder " + setup.isOutworlder);
 
@@ -270,7 +271,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	logger.finest("Player " + this + " moved to " + x + ":" + y + ":" + z
 	    + " orientation " + orientation + " positionChanged = " + positionChanged);
 
-	setPrivateMixes(positionChanged);
+	setPrivateMixesCommit(positionChanged);
     }
 
     private void setPosition(double x, double y, double z) {
@@ -318,7 +319,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	}
     }
 
-    private void setPublicSpatializerCommit(Spatializer spatializer) {
+    private void setPublicSpatializerCommit(Spatializer publicSpatializer) {
 	this.publicSpatializer = publicSpatializer;
     }
 
@@ -341,7 +342,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	}
 
 	privateSpatializers.put(player.getId(), spatializer);
-	setPrivateMixes(true);
+	setPrivateMixesCommit(true);
     }
 
     public Spatializer getPrivateSpatializer(Player player) {
@@ -356,7 +357,15 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
     private void removePrivateSpatializerCommit(Player player) {
 	privateSpatializers.remove(player.getId());
-	setPrivateMixes(true);
+	setPrivateMixesCommit(true);
+    }
+
+    private void dumppm() {
+	Enumeration keys = privateSpatializers.keys();
+
+	while (keys.hasMoreElements()) {
+	    System.out.println(this + " has pm for " + keys.nextElement());
+	}
     }
 
     public void setMasterVolume(double masterVolume) {
@@ -367,7 +376,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
     private void setMasterVolumeCommit(double masterVolume) {
 	this.masterVolume = masterVolume;
-	setPrivateMixes(false);
+	setPrivateMixesCommit(false);
     }
 
     public double getMasterVolume() {
@@ -383,11 +392,18 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
     public void addAudioGroupCommit(AudioGroup audioGroup) {
 	if (audioGroups.contains(audioGroup) == false) {
 	    audioGroups.add(audioGroup);
+
+	    //System.out.println("Player " + this + " added to " + audioGroup + " size " 
+	    //	+ audioGroups.size());
 	} else {
-	    logger.warning(this + " is aleady in audio group " + audioGroup);
+	    //System.out.println(this + " is aleady in audio group " + audioGroup);
 	}
 
-	setPrivateMixes(true);
+	//for (AudioGroup ag: audioGroups) {
+	//    System.out.println("Player " + this + " belongs to " + ag);
+	//}
+
+	setPrivateMixesCommit(true);
     }
 
     public void removeAudioGroup(AudioGroup audioGroup) {
@@ -402,7 +418,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    logger.warning("removed " + this + " from " + audioGroup);
 	}
 
-	setPrivateMixes(true);
+	setPrivateMixesCommit(true);
     }
 
     public void attenuateOtherGroups(AudioGroup audioGroup, 
@@ -439,11 +455,12 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    info.listenAttenuation = listenAttenuation;
 
 	    logger.finest("group " + audioGroup + " " + this 
+		+ " setting speaking attenuation to " + speakingAttenuation
 		+ " setting listen attenuation to " 
 		+ listenAttenuation + " " + ag + " info " + ag.getPlayerInfo(this));
 	}
 
-	setPrivateMixes(true);
+	setPrivateMixesCommit(true);
     }
 
     public AudioGroup[] getAudioGroups() {
@@ -474,8 +491,11 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
     }
 
     public void addPlayerInRange(Player p) {
+	//System.out.println(p + " IN RANGE OF " + this);
+
 	if (playersInRange.contains(p)) {
 	    logger.fine("playersInRange already contains " + p);
+	    //System.out.println("playersInRange already contains " + p);
 	    return;
 	}
 
@@ -484,8 +504,11 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
     }
 
     public void removePlayerInRange(Player p) {
+	//System.out.println(p + " NOT IN RANGE OF " + this);
+
 	if (playersInRange.contains(p) == false) {
 	    logger.fine("playersInRange doesn't contain " + p);
+	    //System.out.println("playersInRange doesn't contain " + p);
 	    return;
 	}
 
@@ -513,6 +536,8 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	}
     }
 
+    private boolean debug = false;
+
     private void setPrivateMixesCommit(boolean positionChanged) {
 	//Adjust private mixes for all calls
 	//For each call, we have to determine where it is
@@ -528,9 +553,9 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	 * changed player and other calls.
 	 */
 	for (int i = 0; i < playersArray.length; i++) {
-	    Player p1 = playersArray[i];
+	    Player player = playersArray[i];
 
-	    if (p1 == this) {
+	    if (player.equals(this)) {
 		continue;
 	    }
 
@@ -542,25 +567,21 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	     * the our player's sound coming from.
 	     */
 	    if (positionChanged == true &&
-		    (p1.getSetup().isLivePlayer == true || p1.isRecording())) {
+		    (player.getSetup().isLivePlayer == true || player.isRecording())) {
 
 		/*
-		 * Set the private mix p1 has for us
+		 * Set the private mix player has for us
 		 */
-		setPrivateMix(p1, this);
+		setPrivateMix(player, this);
 	    } 
 
 	    if (getSetup().isLivePlayer == true || isRecording() == false) {
 		/*
 		 * Only live players have private mixes
-		 * Set the private mix we have for p1
+		 * Set the private mix we have for player
 		 */
-		setPrivateMix(this, p1);
+		setPrivateMix(this, player);
 	    }
-	}
-
-	if (logger.isLoggable(Level.FINE) == false) {
-	    return;
 	}
     }
 
@@ -570,9 +591,18 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
     private void setPrivateMix(Player p1, Player p2) {
 	logger.finest("setting pm which " + p1 + " has for " + p2);
 
+	//if (debug) {
+	//    System.out.println("setting pm which " + p1 + " has for " + p2);
+	//}
+
 	if (p1.getCall() == null || p2.getCall() == null) {
 	    logger.warning("Can't set pm " + p1 + " has for " + p2
 		+ " p1 call " + p1.getCall() + " p2 call " + p2.getCall());
+
+	    //if (debug) {
+	    //    System.out.println("Can't set pm " + p1 + " has for " + p2
+	    //	    + " p1 call " + p1.getCall() + " p2 call " + p2.getCall());
+	    //}
 	    return;
 	}
 
@@ -582,30 +612,43 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
 	double volume = p1.spatialize(p2);
 
-	boolean inRange = p1.isInRange(p2);
+	/*
+	 * Determine if p1 can hear us or not.
+	 */
+	boolean inRange = p2.isInRange(p1);
 
 	if (volume == 0) {
+	    //if (debug) {
+	    //	System.out.println(p1 + " spatialize " + p2 + " inRange " + inRange 
+	    //	    + " volume " + volume);
+	    //}
+
 	    if (inRange == false) {
 		/*
-		 * This is an optimization.  p2 was not in range
+		 * This is an optimization.  p1 couldn't hear us
 		 * and we already knew that.
 		 */
-	        logger.finest("pmx for " + p1 + ": "
-	            + p2 + " is not in range."); 
-
+	        logger.finest(p1 + " can't hear: " + p2);
 		return;
 	    }
 
-	    logger.finest("pmx for " + p1 + ": "
-	        + p2 + " no longer in range."); 
+	    logger.finest(p1 + " can no longer hear: " + p2);
 
-	    p1.removePlayerInRange(p2);   // p2 is not in range any more
+	    p2.removePlayerInRange(p1);   // p1 cannot hear us
+	    //System.out.println(p1.getId() + " can no longer hear " + p2.getId());
+	    //System.out.println(dump());
 	} else {
-	    if (inRange == false) {
-	    	logger.finest("pmx for " + p1 + ": "
-	            + p2 + " setting in range."); 
+	    if (debug) {
+	    	System.out.println(p1 + " YYY spatialize " + p2 + " inRange " + inRange 
+	    	    + " volume " + volume);
+	    }
 
-		p1.addPlayerInRange(p2);  // p2 is in range now
+	    if (inRange == false) {
+	    	logger.finest(p1 + " can now hear: " + p2);
+
+		p2.addPlayerInRange(p1);  // p1 is in range now
+	        //System.out.println(p1.getId() + " is now in range of " + p2.getId());
+	        //System.out.println(dump());
 	    }
 	}
     }
@@ -616,38 +659,41 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
      * players in the AudioGroup.
      */
     public double spatialize(Player p) {
-	AudioGroup[] audioGroups = p.getAudioGroups();
+	AudioGroup[] playerAudioGroups = p.getAudioGroups();
 
 	//logger.warning("groups size " + getAudioGroups().length + " for " + this);
-	//logger.warning("groups size " + p.getAudioGroups().length + " for " + p);
-
-	double[] privateMixParameters = new double[4];
+	//logger.warning("groups size " + playerAudioGroups.length + " for " + p);
 
 	if (p.getCall() == null) {
 	    return 0;
 	}
 
+	double[] privateMixParameters = new double[4];
+
 	if (p.getCall().isMuted() == false) {
-	    for (int i = 0; i < audioGroups.length; i++) {
-		AudioGroup audioGroup = audioGroups[i];
+	    for (int i = 0; i < playerAudioGroups.length; i++) {
+		AudioGroup audioGroup = playerAudioGroups[i];
 
-	        //System.out.println("ag " + audioGroup);
+		//if (debug) {
+	        //    System.out.println("ag " + audioGroup);
+		//}
 
-                if (this.audioGroups.contains(audioGroup) == false) {
-                    logger.finest(p + " not in audio group " + audioGroup + " of " + this);
+                if (audioGroups.contains(audioGroup) == false) {
+		    //if (debug) {
+                    //    System.out.println(this + " not in audio group " + audioGroup + " of " + p);
+		    //}
+
+                    logger.finest(this + " not in audio group " + audioGroup + " of " + p);
                     continue;
                 }
 
 	        AudioGroupPlayerInfo info = audioGroup.getPlayerInfo(p);
 
-		if (info == null) {
-		    System.out.println("this " + this + " p null " + p + " group " + audioGroup);
+		if (info == null || info.isSpeaking == false) {
+		    //System.out.println("this " + this + " p null " + p + " group " + audioGroup
+		    //	+ " info " + info);
+		    continue;	
 		}
-
-	        if (info.isSpeaking == false) {
-		    logger.fine(this + "::: " + p + " not speaking in " + audioGroup);
-		    continue;  // p is not speaking in the group
-	        }
 
 		Spatializer spatializer = audioGroup.getSetup().spatializer;
 
@@ -659,18 +705,32 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	            p.getX(), p.getY(), p.getZ(), p.getOrientation(), 
 		    getX(), getY(), getZ(), getOrientation());
 
-	        if (pmp[3] > privateMixParameters[3]) {
-	            logger.finest("group " + audioGroup + " " + this 
-		        + " current vol " + privateMixParameters[3] + " ag " + audioGroup
-		        + " la " + audioGroup.getPlayerInfo(this).listenAttenuation + " sap "
-		        + info.speakingAttenuation + " new vol " + pmp[3]);
+		//if (debug) {
+	        //    System.out.println("group " + audioGroup + " " + this 
+		//        + " current vol " + privateMixParameters[3] + " ag " + audioGroup
+		//        + " la " + audioGroup.getPlayerInfo(this).listenAttenuation + " sap "
+		//        + info.speakingAttenuation + " new vol " + pmp[3]);
+		//}
 
+		AudioGroupPlayerInfo myPlayerInfo = audioGroup.getPlayerInfo(this);
+
+		if (myPlayerInfo == null) {
+		    System.out.println("No player info " + this.getId() + " group " + audioGroup);
+		    continue;
+		}
+
+	        if (pmp[3] > privateMixParameters[3]) {
 		    privateMixParameters = pmp;
 	        }
 
 	        if (privateMixParameters[3] != 0) {
 	            privateMixParameters[3] *= 
 		        audioGroup.getPlayerInfo(this).listenAttenuation * info.speakingAttenuation;
+
+		    //if (debug) {
+		    //	System.out.println("after attenuation " + privateMixParameters[3] + " "
+		    //	    + this + " spatializing " + p);
+		    //}
 	        }
 	    }
 	} else {
@@ -687,6 +747,11 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    Spatializer spatializer = getPrivateSpatializer(p);
 
 	    if (spatializer != null) {
+		//if (debug) {
+		//    System.out.println("Using privatate spatialize for " + p
+		//	+ " spatializer " + spatializer);
+		//}
+
 	        privateMixParameters = spatializer.spatialize(
 	            p.getX(), p.getY(), p.getZ(), p.getOrientation(), 
 		    getX(), getY(), getZ(), getOrientation());
@@ -695,10 +760,15 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	    }
 
 	    privateMixParameters[3] *= masterVolume;
-	} else {
-	    if (isInRange(p) == false) {
-		return 0;	// it's not in range and we already knew it
-	    }
+
+	    //if (debug) {
+	    //	System.out.println("VOLUME " + privateMixParameters[3] + " " + this 
+	    //	    + " spatializing for " + p);
+	    //}
+	//} else {
+	//    if (p.isInRange(this) == false) {
+	//	return 0;	// it's not in range and we already knew it
+	//    }
 	}
 
 	/*
@@ -710,6 +780,8 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	//     dumpEverything(p);
 	//}
 
+        privateMixParameters[3] = Util.round100(privateMixParameters[3]);
+
         if (privateMixParameters[3] > .1) {
             logger.finest("this=" + this + " p=" + p + " mix "
                 + Util.round100(privateMixParameters[0]) + ", "
@@ -720,6 +792,11 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
         VoiceImpl.getInstance().getBridgeManager().setPrivateMix(
 	    getCall().getId(), p.getCall().getId(), privateMixParameters);
+
+	//if (debug) {
+	//    System.out.println(this + " call " + getCall().getId() + "<--" + p.getCall().getId()
+	//	+ " VOLUME " + privateMixParameters[3]);
+	//}
 
 	return privateMixParameters[3];
     }
@@ -740,10 +817,10 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
      * players in the AudioGroup.
      */
     public void spatializeDebug(Player p) {
-	AudioGroup[] audioGroups = p.getAudioGroups();
+	AudioGroup[] playerAudioGroups = p.getAudioGroups();
 
 	System.out.println("groups size " + getAudioGroups().length + " for " + this);
-	System.out.println("groups size " + p.getAudioGroups().length + " for " + p);
+	System.out.println("groups size " + playerAudioGroups.length + " for " + p);
 
 	double[] privateMixParameters = new double[4];
 
@@ -752,14 +829,14 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	}
 
 	if (p.getCall().isMuted() == false) {
-	    System.out.println("audioGroups length " + audioGroups.length);
+	    System.out.println("player audioGroups length " + playerAudioGroups.length);
 
-	    for (int i = 0; i < audioGroups.length; i++) {
-		AudioGroup audioGroup = audioGroups[i];
+	    for (int i = 0; i < playerAudioGroups.length; i++) {
+		AudioGroup audioGroup = playerAudioGroups[i];
 
 	        System.out.println("ag " + audioGroup);
 
-                if (this.audioGroups.contains(audioGroup) == false) {
+                if (audioGroups.contains(audioGroup) == false) {
                     System.out.println(p + " not in audio group " + audioGroup + " of " + this);
                     continue;
                 }
@@ -854,16 +931,39 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	return wallAttenuation;
     }
 
-    private static ArrayList<Wall> walls = new ArrayList<Wall>();
+    private static CopyOnWriteArrayList<Wall> walls = new CopyOnWriteArrayList<Wall>();
 
     public void addWall(double startX, double startY, double endX, double endY,
         double characteristic) {
 
-        //synchronized (walls) {
-            walls.add(new Wall(startX, startY, endX, endY, characteristic));
-        //}
+	for (Wall wall : walls) {
+	    if (wall.startX == startX && wall.startY == startY &&
+	    	    wall.endX == endX && wall.endY == endY) {
+
+		logger.warning("Wall exists: startX " + startX
+		    + " startY " + startY + " endX " + endX + " endY " + endY);
+		return;
+	    }
+	}
+
+        walls.add(new Wall(startX, startY, endX, endY, characteristic));
 
         setPrivateMixes(true);
+    }
+
+    public void removeWall(double startX, double startY, double endX, double endY) {
+	for (Wall wall : walls) {
+	    if (wall.startX == startX && wall.startY == startY &&
+	    	    wall.endX == endX && wall.endY == endY) {
+	
+		walls.remove(wall);
+		break;
+	    }
+	}
+    }
+
+    public void removeAllWalls() {
+	walls = new CopyOnWriteArrayList<Wall>();
     }
 
     public Player[] getPlayersInRange() {
@@ -878,17 +978,11 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	switch (code) {
         case CallStatus.ESTABLISHED:
         case CallStatus.MIGRATED:
-            logger.fine("callEstablished: " + callId);
- 
+	    playersInRange.clear();
  	    setPrivateMixes(true);
             break;
 
 	case CallStatus.ENDED:
-	    if (callId == null || id.equals(callId) == false) {
-		return;
-	    }
-
-	    //removePlayer();
 	    break;
         }
     }
@@ -1060,8 +1154,7 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 
 	return getId() + ":(" + xR + "," + yR + "," + zR + "," + a + ")" 
 	    + " " + (setup.isLivePlayer ? "LivePlayer" : "") 
-	    + (publicSpatializer != null ? publicSpatializer.toString() : ""
-	    + " " + super.toString());
+	    + (publicSpatializer != null ? publicSpatializer.toString() : "");
     }
 
     private class Notifier implements KernelRunnable, NonDurableTransactionParticipant {
@@ -1120,4 +1213,5 @@ public class PlayerImpl implements Player, CallStatusListener, Serializable {
 	}
 
     }
+
 }

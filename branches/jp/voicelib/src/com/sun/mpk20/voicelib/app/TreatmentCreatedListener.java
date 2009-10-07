@@ -24,39 +24,8 @@ package com.sun.mpk20.voicelib.app;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
+public interface TreatmentCreatedListener extends Serializable {
 
-public class VirtualPlayer implements Serializable {
-
-    public AudioGroup audioGroup;
-    public Player player;
-    public Player realPlayer;
-    public Player playerWithVirtualPlayer;
-
-    public VirtualPlayer(AudioGroup audioGroup, Player player, Player realPlayer,
-	    Player playerWithVirtualPlayer) {
-
-	this.audioGroup = audioGroup;
-	this.player = player;
-	this.realPlayer = realPlayer;
-	this.playerWithVirtualPlayer = playerWithVirtualPlayer;
-    }
-	
-    public String getId() {
-	return player.getId();
-    }
-
-    public boolean equals(Object o) {
-	if (o instanceof VirtualPlayer == false) {
-	    return false;
-	}
-
-	return getId().equals(((VirtualPlayer) o).getId());
-    }
-
-    public String toString() {
-	return getId() + ":  audioGroup " + audioGroup + ", real player " + realPlayer 
-	+ " player with virtual player " + playerWithVirtualPlayer;
-    }
+    public void treatmentCreated(Treatment treatment, Player player);
 
 }

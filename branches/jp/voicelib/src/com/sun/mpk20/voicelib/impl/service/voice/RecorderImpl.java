@@ -346,4 +346,16 @@ public class RecorderImpl implements Recorder, Serializable {
 	logger.warning("Unknown RecorderWork:  " + work);
     }
 
+    public boolean equals(Object o) {
+        if (o instanceof Recorder == false) {
+            return false;
+        }
+
+        return ((Recorder) o).getId().equals(id);
+    }
+
+    public String toString() {
+	return id; 
+    }
+
 }

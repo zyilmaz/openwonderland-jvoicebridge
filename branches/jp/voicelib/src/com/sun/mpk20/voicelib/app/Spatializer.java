@@ -27,6 +27,11 @@ import java.io.Serializable;
 
 public interface Spatializer extends Serializable {
 
+    public static final String MAXIMUM_VOLUME =
+        "com.sun.server.impl.app.VoiceManager.MAXIMUM_VOLUME";
+
+    public static final double DEFAULT_MAXIMUM_VOLUME = .8;
+
     /**
      * Determine the private mix parameters for audio from the given source
      * going to the given destination.

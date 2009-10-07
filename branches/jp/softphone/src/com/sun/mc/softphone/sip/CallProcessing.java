@@ -860,8 +860,10 @@ public class CallProcessing
 	
             //Let's be uri fault tolerant
             if (callee.toLowerCase().indexOf("sip:") == -1 && 
+            	    callee.toLowerCase().indexOf("sips:") == -1 && 
 		    callee.indexOf('@') != -1) {
 
+		//Logger.println("ADDING SIP: to " + callee);
                 callee = "sip:" + callee;
             }
 
@@ -976,6 +978,7 @@ public class CallProcessing
             //Transaction
             ClientTransaction inviteTransaction;
             try {
+		//Logger.println("INVITE:  " + invite);
                 inviteTransaction = sipManCallback.sipProvider.
                     getNewClientTransaction(invite);
             }

@@ -65,7 +65,7 @@ public abstract class FalloffFunction implements Serializable {
     }
 
     public double getFullVolumeRadius() {
-	return fullVolumeRadius;
+	return Util.round100(fullVolumeRadius);
     }
 
     public void setZeroVolumeRadius(double zeroVolumeRadius) {
@@ -83,7 +83,7 @@ public abstract class FalloffFunction implements Serializable {
     }
 
     public double getZeroVolumeRadius() {
-	return zeroVolumeRadius;
+	return Util.round100(zeroVolumeRadius);
     }
 
     public void setMaximumVolume(double maximumVolume) {
