@@ -245,33 +245,39 @@ public class Recorder extends Thread {
         }
     }
 
-    public void addRecorderListener(RecorderListener listener) {
+    public static void addRecorderListener(RecorderListener listener) {
 	synchronized (recorderListeners) {
 	    recorderListeners.add(listener);
 	}
     }
 
-    public void removeRecorderListener(RecorderListener listener) {
+    public static void removeRecorderListener(RecorderListener listener) {
 	synchronized (recorderListeners) {
 	    recorderListeners.remove(listener);
 	}
     }
 
     private void notifyStartRecording() {
-	for (RecorderListener listener : recorderListeners) {
-	    listener.startRecording(recordPath, mediaInfo);
+	synchronized (recorderListeners) {
+	    for (RecorderListener listener : recorderListeners) {
+	        listener.startRecording(recordPath, mediaInfo);
+	    }
 	}
     }
 
     private void notifyStopRecording() {
-	for (RecorderListener listener : recorderListeners) {
-	    listener.stopRecording(recordPath);
+	synchronized (recorderListeners) {
+	    for (RecorderListener listener : recorderListeners) {
+	        listener.stopRecording(recordPath);
+	    }
 	}
     }
 
     private void notifyRecordingData(byte[] buffer, int offset, int length) {
-	for (RecorderListener listener : recorderListeners) {
-	    listener.data(buffer, offset, length);
+	synchronized (recorderListeners) {
+	    for (RecorderListener listener : recorderListeners) {
+	        listener.data(recordPath, buffer, offset, length);
+	    }
 	}
     }
 
@@ -333,8 +339,6 @@ public class Recorder extends Thread {
         synchronized(dataToWrite) {
             dataToWrite.notifyAll();
         }
-
-	notifyStopRecording();
     }
     
     /*
@@ -421,19 +425,16 @@ public class Recorder extends Thread {
 
         while (true) {
             synchronized(dataToWrite) {
-		if (done) {
-		    break;
-		}
-
                 if (dataToWrite.size() == 0) {
+		    if (done) {
+			notifyStopRecording();
+			break;
+		    }
+
                     try {
                         dataToWrite.wait();
                     } catch (InterruptedException e) {
                     }
-
-		    if (done) {
-			break;
-		    }
 		}
 
 	        while (dataToWrite.size() > 0) {
