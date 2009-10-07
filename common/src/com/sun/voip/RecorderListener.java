@@ -32,6 +32,6 @@ public interface RecorderListener {
 
     public void stopRecording(String path);
 
-    public void data(byte[] buffer, int offset, int length);
+    public void data(String path, byte[] buffer, int offset, int length);
 
 }
