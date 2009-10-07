@@ -26,6 +26,8 @@ package com.sun.mc.softphone.media.javasound;
 import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import  javax.sound.sampled.AudioFormat;
 import  javax.sound.sampled.AudioSystem;
@@ -394,7 +396,18 @@ public class MicrophoneJavasoundImpl implements Microphone {
         while (bufferLength > 0) {
             int n;
 
+	    Timer timer = new Timer();
+	    
+	    timer.schedule(new TimerTask() {
+		public void run() {
+		    Logger.println("Microphone read did not complete!");
+		    microphone.close();
+		}
+	    }, 3000);
+
             n = microphone.read(linearData, offset + o, bufferLength);
+
+	    timer.cancel();
 
             o += n;
             bufferLength -= n;

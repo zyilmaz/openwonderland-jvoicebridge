@@ -292,6 +292,13 @@ public class AudioReceiver extends Thread implements AudioFileDoneListener {
 	    return;
 	}
 
+	if (cipher != null) {
+	    Logger.println("Decrypt time " + decryptTime 
+		+ " packetsDecrypted " + packetsDecrypted
+		+ " Decrypt time per packet:  " 
+		+ ((double)decryptTime / packetsDecrypted));
+	}
+
         if (comfortNoisePlayer != null) {
             comfortNoisePlayer.done();
             comfortNoisePlayer = null;
@@ -401,6 +408,9 @@ public class AudioReceiver extends Thread implements AudioFileDoneListener {
     private int doCount = 2;
 
     private JitterManager jitterManager;
+
+    private long decryptTime;
+    private int packetsDecrypted;
 
     public void run() {
 	byte[] outOfSequenceData = null;
@@ -557,8 +567,10 @@ public class AudioReceiver extends Thread implements AudioFileDoneListener {
 	        length = rtpReceiverPacket.getLength();
 
 		if (cipher != null) {
+		    long start = System.currentTimeMillis();
 		    rtpData = decrypt(receivedData, length);
-
+		    decryptTime += (System.currentTimeMillis() - start);
+		    packetsDecrypted++;
 		    rtpReceiverPacket.setBuffer(rtpData);
 		    length = rtpData.length;
 	 	} 

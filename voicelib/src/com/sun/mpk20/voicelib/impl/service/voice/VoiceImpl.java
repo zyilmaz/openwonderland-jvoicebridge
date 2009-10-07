@@ -79,7 +79,7 @@ import java.util.logging.Logger;
 
 import java.util.prefs.Preferences;
 
-public class VoiceImpl implements Serializable {
+public class VoiceImpl {
 
     /** The serialVersionUID for this class. */
     private final static long serialVersionUID = 1L;
@@ -439,6 +439,8 @@ public class VoiceImpl implements Serializable {
 	    System.out.println(dump("all"));
 	}
 
+	//new Exception("ENDCall " + removePlayer + " call " + call).printStackTrace();
+
  	call.end(removePlayer);	
 
 	removeCall(call);
@@ -461,6 +463,7 @@ public class VoiceImpl implements Serializable {
     }
 
     public void removePlayer(Player player) {
+	//new Exception("removePlayer " + player.getId()).printStackTrace();
 	players.remove(player.getId());
     }
 
@@ -502,7 +505,7 @@ public class VoiceImpl implements Serializable {
     }
 
     public void removeTreatmentGroup(TreatmentGroup group) {
-	treatmentGroups.remove(group);
+	treatmentGroups.remove(group.getId());
     }
 	
     public TreatmentGroup getTreatmentGroup(String id) {
@@ -520,7 +523,7 @@ public class VoiceImpl implements Serializable {
     }
 
     public void removeTreatment(Treatment treatment) {
-	treatments.remove(treatment);
+	treatments.remove(treatment.getId());
     }
 
     public Treatment getTreatment(String id) {
@@ -653,11 +656,6 @@ public class VoiceImpl implements Serializable {
     }
 
     private void addCallStatusListenerCommit(CallStatusListener listener, String callId) {
-        if (listener instanceof ManagedCallStatusListener) {
-            addManagedCallStatusListener((ManagedCallStatusListener) listener, callId);
-            return;
-	}
-
 	if (callId == null) {
 	    synchronized (allCallListeners) {
 	        if (allCallListeners.contains(listener)) {
@@ -707,6 +705,7 @@ public class VoiceImpl implements Serializable {
 	    }
 
 	    managedListeners.add(mr);
+	    //System.out.println("Adding listener for all calls " + managedListeners.size());
 	    return;
 	}
 
@@ -724,7 +723,12 @@ public class VoiceImpl implements Serializable {
 	    return;
 	}
 
-	listeners.add(mr);
+	if (listeners.contains(mr) == false) {
+	    listeners.add(mr);
+	    //System.out.println("Adding listener for call " + " callId " + callId + " " + managedListeners.size());
+	} else {
+	    //System.out.println("Listeners already contains " + callId);
+	}
     }
 
     public void removeCallStatusListener(CallStatusListener listener, String callId) {
@@ -739,11 +743,6 @@ public class VoiceImpl implements Serializable {
     }
 
     private void removeCallStatusListenerCommit(CallStatusListener listener, String callId) {
-	if (listener instanceof ManagedCallStatusListener) {
-            removeManagedCallStatusListener((ManagedCallStatusListener) listener, callId);
-            return;
-        }
-
 	synchronized (callStatusListeners) {
 	    if (callId == null) {
                 callStatusListeners.remove(listener);
@@ -783,6 +782,7 @@ public class VoiceImpl implements Serializable {
 		dm.createReference(listener);
 
 	    allCallManagedListeners.remove(mr);
+	    //System.out.println("Removing listener for all calls " + allCallManagedListeners.size());
 	    return;
 	}
 
@@ -803,12 +803,13 @@ public class VoiceImpl implements Serializable {
 
 	if (listeners.contains(mr)) {
 	    listeners.remove(mr);
-
+	    //System.out.println("Removing listener for call " + callId + " " + listeners.size());
+	    
 	    if (listeners.isEmpty()) {
 		managedListeners.remove(callId);
 	    }
 	} else {
-	    System.out.println("Didn't find listener for " + callId);
+	    logger.fine("Didn't find listener for " + callId);
 	}
     }
 
@@ -888,6 +889,7 @@ public class VoiceImpl implements Serializable {
         ManagedReference<ManagedCallBeginEndListener> mr = dm.createReference(ml);
 
         managedListeners.remove(mr);
+	//System.out.println("Removed managed call begin end listener " + managedListeners.size());
     }
 
     public void callStatusChanged(CallStatus callStatus) {
@@ -952,7 +954,7 @@ public class VoiceImpl implements Serializable {
 	String callId = status.getCallId();
 
 	if (callId == null || callId.length() == 0) {
-	    logger.warning("No callID:  '" + callId + "'");
+	    logger.warning("No callId:  '" + callId + "'");
 	     return;
 	}
 
@@ -1018,7 +1020,7 @@ public class VoiceImpl implements Serializable {
 	}
 
 	if (callId == null || callId.length() == 0) {
-	    logger.warning("No callID:  '" + callId + "'");
+	    logger.warning("No callId:  '" + callId + "'");
 	    return;
 	}
 
@@ -1029,6 +1031,8 @@ public class VoiceImpl implements Serializable {
 	    logger.finer("No listeners for " + callId);
 	    return;
 	}
+
+	//System.out.println("notify managed " + listenerList.size());
 
 	for (ManagedReference<ManagedCallStatusListener> listener : listenerList) {
             listener.get().callStatusChanged(status);
@@ -1058,6 +1062,8 @@ public class VoiceImpl implements Serializable {
 	    return;
 	}
 	
+	//System.out.println("notify managed begin end " + listenerList.size());
+
 	for (ManagedReference<ManagedCallBeginEndListener> listener : listenerList) {
             listener.get().callBeginEndNotification(status);
         }

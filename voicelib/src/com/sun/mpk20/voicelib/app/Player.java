@@ -103,6 +103,13 @@ public interface Player extends CallStatusListener {
     public void attenuateOtherGroups(AudioGroup audioGroup, 
 	double speakingAttenuation, double listenAttenuation);
 
+    public void addWall(double startX, double startY, double endX, double endY,
+        double characteristic);
+
+    public void removeWall(double startX, double startY, double endX, double endY);
+
+    public void removeAllWalls();
+
     public String dump();
 
 }

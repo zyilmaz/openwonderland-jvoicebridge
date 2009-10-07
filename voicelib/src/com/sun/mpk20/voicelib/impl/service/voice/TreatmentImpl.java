@@ -30,8 +30,16 @@ import com.sun.sgs.app.DataManager;
 import com.sun.sgs.app.ManagedReference;
 import com.sun.sgs.app.NameNotBoundException;
 
+import com.sun.sgs.kernel.KernelRunnable;
+
+import com.sun.sgs.service.NonDurableTransactionParticipant;
+import com.sun.sgs.service.Transaction;
+import com.sun.sgs.service.TransactionProxy;
+
+
 import com.sun.mpk20.voicelib.app.AudioGroup;
 import com.sun.mpk20.voicelib.app.AudioGroupPlayerInfo;
+import com.sun.mpk20.voicelib.app.AudioGroupPlayerInfo.ChatType;
 import com.sun.mpk20.voicelib.app.Call;
 import com.sun.mpk20.voicelib.app.CallSetup;
 import com.sun.mpk20.voicelib.app.ManagedCallStatusListener;
@@ -39,6 +47,7 @@ import com.sun.mpk20.voicelib.app.Player;
 import com.sun.mpk20.voicelib.app.PlayerSetup;
 import com.sun.mpk20.voicelib.app.Spatializer;
 import com.sun.mpk20.voicelib.app.Treatment;
+import com.sun.mpk20.voicelib.app.TreatmentCreatedListener;
 import com.sun.mpk20.voicelib.app.TreatmentSetup;
 import com.sun.mpk20.voicelib.app.VoiceManagerParameters;
 import com.sun.mpk20.voicelib.app.Util;
@@ -62,7 +71,7 @@ import com.sun.voip.CallParticipant;
 import com.sun.voip.client.connector.CallStatus;
 import com.sun.voip.client.connector.CallStatusListener;
 
-public class TreatmentImpl implements Treatment, CallStatusListener, Serializable {
+public class TreatmentImpl implements Treatment, CallStatusListener {
 
     private static final Logger logger =
         Logger.getLogger(TreatmentImpl.class.getName());
@@ -109,17 +118,27 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
 	} catch (IOException e) {
 	    logger.info("Unable to setup treatment " + setup.treatment
 		+ " " + e.getMessage());
+	    System.out.println("Unable to setup treatment " + setup.treatment
+		+ " " + e.getMessage());
 	    return;
 	}
 
-	PlayerSetup playerSetup = new PlayerSetup();
+	Player player = VoiceImpl.getInstance().getPlayer(id);
 
-	playerSetup.x = setup.x;
-	playerSetup.y = setup.y;
-	playerSetup.z = setup.z;
-	playerSetup.publicSpatializer = setup.spatializer;
+	if (player == null) {
+	    //System.out.println("Creating new player for " + id);
 
-	PlayerImpl player = new PlayerImpl(call.getId(), playerSetup);
+	    PlayerSetup playerSetup = new PlayerSetup();
+
+	    playerSetup.x = setup.x;
+	    playerSetup.y = setup.y;
+	    playerSetup.z = setup.z;
+	    playerSetup.publicSpatializer = setup.spatializer;
+
+	    player = new PlayerImpl(call.getId(), playerSetup);
+	} else {
+	    player.setPublicSpatializer(setup.spatializer);
+	}
 	
 	call.setPlayer(player);
 	player.setCall(call);
@@ -127,12 +146,86 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
         AudioGroupPlayerInfo info = new AudioGroupPlayerInfo(true,
             AudioGroupPlayerInfo.ChatType.PUBLIC);
 
+	info.listenAttenuation = 0;
+
+	AudioGroup[] audioGroups = player.getAudioGroups();
+
+	for (int i = 0; i < audioGroups.length; i++) {
+	    AudioGroup audioGroup = audioGroups[i];
+
+	    AudioGroupPlayerInfo playerInfo = audioGroup.getPlayerInfo(player);
+
+	    if (playerInfo.isSpeaking && 
+		    playerInfo.chatType.equals(ChatType.PUBLIC) == false) {
+
+		info.speakingAttenuation = 0;
+		break;
+	    }
+	}
+
 	VoiceManagerParameters parameters = 
 	    VoiceImpl.getInstance().getVoiceManagerParameters();
+
+	//System.out.println("Treatment Adding " + info + " for " + player.getId());
 
         parameters.stationaryPlayerAudioGroup.addPlayer(player, info);
 
 	VoiceImpl.getInstance().putTreatment(this);
+
+	if (setup.treatmentCreatedListener != null) {
+	    VoiceImpl.getInstance().scheduleTask(
+		new Notifier(setup.treatmentCreatedListener, this, player));
+	}
+    }
+
+    private class Notifier implements KernelRunnable, NonDurableTransactionParticipant {
+	private TreatmentCreatedListener listener;
+	private Treatment treatment;
+	private Player player;
+
+	public Notifier(TreatmentCreatedListener listener, Treatment treatment, Player player) {
+	    this.listener = listener;
+	    this.treatment = treatment;
+	    this.player = player;
+	}
+
+	public String getBaseTaskType() {
+	    return Notifier.class.getName();
+	}
+
+	public void run() throws Exception {
+            VoiceImpl.getInstance().joinTransaction(this);
+
+	    /*
+	     * This runs in a transaction and the txnProxy
+	     * is usable at this point.  It's okay to get a manager
+	     * or another service.
+	     *
+	     * This method could get called multiple times if
+	     * ExceptionRetryStatus is thrown.
+	     */
+	    listener.treatmentCreated(treatment, player);
+        }
+
+        public boolean prepare(Transaction txn) throws Exception {
+            return false;
+	}
+
+        public void abort(Transaction t) {
+	}
+
+	public void prepareAndCommit(Transaction txn) throws Exception {
+            prepare(txn);
+            commit(txn);
+	}
+
+	public void commit(Transaction t) {
+	}
+
+        public String getTypeName() {
+	    return "AudioGroupNotifier";
+	}
+
     }
 
     public String getId() {
@@ -220,24 +313,35 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
 
         case CallStatus.ENDED:
 	    logger.warning("Treatment ended:  " + status);
-
-	    VoiceImpl.getInstance().removeTreatment(this);
-
-	    if (call != null) {
-	        try {
-	            call.end(true);
-	        } catch (IOException e) {
-		    logger.warning("Unable to end call:  " + call + " "
-		        + e.getMessage());
-	        }
-	    }
-	
+	    treatmentEnded();
 	    break;
-        }
+	}
+    }
 
-	//if (listener != null) {
-	//    listener.callStatusChanged(status);
-	//}
+    private boolean treatmentEnded;
+
+    public void treatmentEnded() {
+	//System.out.println("Treatment ended:  " + treatmentEnded);
+
+	if (treatmentEnded) {
+	    return;
+	}
+
+	treatmentEnded = true;
+
+	VoiceImpl.getInstance().removeTreatment(this);
+
+	if (call == null) {
+	    return;
+	}
+
+	try {
+	    call.end(false);
+	} catch (IOException e) {
+	    logger.warning("Unable to end call:  " + call + " "
+		+ e.getMessage());
+	    call = null;
+	}
     }
 
     public void commit(TreatmentWork work) {
@@ -272,11 +376,19 @@ public class TreatmentImpl implements Treatment, CallStatusListener, Serializabl
     }
 
     public String dump() {
-	return "  " + id;
+	return "  " + toString();
+    }
+
+    public boolean equals(Object o) {
+        if (o instanceof Treatment == false) {
+            return false;
+        }
+
+        return ((Treatment) o).getId().equals(id);
     }
 
     public String toString() {
-	return id;
+	return id + ": " + setup.treatment;
     }
 
 }

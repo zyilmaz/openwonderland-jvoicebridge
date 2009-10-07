@@ -513,7 +513,7 @@ public class NewGuiManager implements GuiManagerUI, GuiCallback,
 	/*
 	 * It's a softphone number.  Leave it as is.
 	 */
-	if (callee.indexOf("sip:") == 0) {
+	if (callee.indexOf("sip:") == 0 || callee.indexOf("sips:") == 0) {
 	    return callee;
 	}
 

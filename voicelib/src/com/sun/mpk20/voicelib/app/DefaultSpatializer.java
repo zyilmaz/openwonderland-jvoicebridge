@@ -39,11 +39,6 @@ public class DefaultSpatializer implements Spatializer, Serializable {
 
     private FalloffFunction falloffFunction;
 
-    private static final String MAXIMUM_VOLUME =
-        "com.sun.server.impl.app.VoiceManager.MAXIMUM_VOLUME";
-
-    public static final double DEFAULT_MAXIMUM_VOLUME = .8;
-
     private static final String FALLOFF =
         "com.sun.server.impl.app.VoiceManager.FALLOFF";
 
@@ -66,9 +61,9 @@ public class DefaultSpatializer implements Spatializer, Serializable {
     public DefaultSpatializer() {
 	falloffFunction = new InverseFalloff();
 
-	String s = System.getProperty(MAXIMUM_VOLUME);
+	String s = System.getProperty(Spatializer.MAXIMUM_VOLUME);
 
-	double maximumVolume = DEFAULT_MAXIMUM_VOLUME;
+	double maximumVolume = Spatializer.DEFAULT_MAXIMUM_VOLUME;
 
 	if (s != null) {
 	    try {

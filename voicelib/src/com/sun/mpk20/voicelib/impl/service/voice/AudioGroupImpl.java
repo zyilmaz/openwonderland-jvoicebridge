@@ -55,7 +55,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import java.util.logging.Logger;
 
-public class AudioGroupImpl implements AudioGroup, Serializable {
+public class AudioGroupImpl implements AudioGroup {
 
     private static final Logger logger =
         Logger.getLogger(PlayerImpl.class.getName());
@@ -111,7 +111,24 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
     }
 
     private void addPlayerCommit(Player player, AudioGroupPlayerInfo info) {
+	if (players.get(player.getId()) != null) {
+	    players.put(player.getId(), info);
+	    return;
+	}
+
 	players.put(player.getId(), info);
+
+	Player p = VoiceImpl.getInstance().getPlayer(player.getId());
+
+	if (p == null) {
+	    logger.warning("player null for " + player.getId());
+	} else {
+	    if (p.toString().equals(player.toString()) == false) {
+	       System.out.println("DIFFERENT OBJECTS:  player " + player + " p " + p);
+	    }
+
+	    player = p;
+	}
 
 	((PlayerImpl) player).addAudioGroupCommit(this);
 
@@ -125,10 +142,13 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 
 	player.setPrivateMixes(true);
 
-	logger.info("Added " + player + " to " + this + " call info " + info);
+	//System.out.println("AudioGroup Added " + player.getId() + " to " + this + " call info " + info);
     }
 
     public void removePlayer(Player player) {
+	//System.out.println("Audiogroup removed player " + player + " from " + this);
+	//new Exception("removed player " + player).printStackTrace();
+
 	if (VoiceImpl.getInstance().addWork(new RemovePlayerAudioGroupWork(this, player)) == false) {
 	    removePlayerCommit(player);
 	}
@@ -148,6 +168,8 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 	if (virtualPlayerHandler != null) {
 	    virtualPlayerHandler.playerRemoved(player, info);
 	}
+
+	//System.out.println("AudioGroup removed " + player.getId() + " from " + this);
 
 	if (players.size() == 0) {
 	    VoiceManagerParameters parameters = voiceImpl.getVoiceManagerParameters();
@@ -171,7 +193,7 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 	    Player player = voiceImpl.getPlayer(keys[i]);
 
 	    if (player == null) {
-		System.out.println("Can't find player for " + keys[i]);
+		logger.warning("Can't find player for " + keys[i]);
 		players.remove(keys[i]);
 		continue;
 	    }
@@ -211,7 +233,12 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
     private void setSpeakingAttenuationCommit(Player player, double speakingAttenuation) {
 	AudioGroupPlayerInfo info = players.get(player.getId());
 
-	info.speakingAttenuation = speakingAttenuation;
+	if (info != null) {
+	    info.speakingAttenuation = speakingAttenuation;
+	} else {
+	    logger.warning("No playerInfo for " + player);
+	}
+
 	player.setPrivateMixes(true);
     }
 
@@ -225,6 +252,11 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
 
     private void setListenAttenuationCommit(Player player, double listenAttenuation) {
 	AudioGroupPlayerInfo info = players.get(player.getId());
+
+	if (info == null) {
+	    logger.warning("Unable to set listen attenuation for " + player);
+	    return;
+	}
 
 	info.listenAttenuation = listenAttenuation;
 	player.setPrivateMixes(true);
@@ -251,8 +283,6 @@ public class AudioGroupImpl implements AudioGroup, Serializable {
     }
 
     public void commit(AudioGroupWork work) {
-	AudioGroup audioGroup = work.audioGroup;
-
 	if (work instanceof CreateAudioGroupWork) {
 	    audioGroupImplCommit();
 	    return;

@@ -404,6 +404,13 @@ if (false) {
 
 	done = true;
 
+	if (cipher != null) {
+	    Logger.println("Encrypt time " + encryptTime 
+		+ " packets encrypted " + packetsEncrypted
+		+ " Encrypt ms per packet:  " 
+		+ ((double) encryptTime / packetsEncrypted));
+	}
+
 	if (micRecorder != null) {
 	    micRecorder.done();
 	}
@@ -419,7 +426,7 @@ if (false) {
 	synchronized(this) {
 	    if (isAlive()) {
 	        try {
-		    wait();
+		    wait(3000);
 	        } catch (InterruptedException e) {
 	        }
 	    }
@@ -1251,6 +1258,9 @@ if (false) {
 
     private BufferedOutputStream bo;
 
+    long encryptTime;
+    int packetsEncrypted;
+
     private boolean sendPacket() {
 	/*
 	 * Send RTP data
@@ -1260,8 +1270,13 @@ if (false) {
 	 	byte[] data;
 
 	        try {
+		    long start = System.currentTimeMillis();
+
 	    	    data = cipher.doFinal(rtpSenderData, 0, 
 			rtpSenderData.length);
+
+		    encryptTime += (System.currentTimeMillis() - start);
+		    packetsEncrypted++;
 	        } catch (Exception e) {
                     Logger.println("SipCommunicator Encryption failed:  " 
 		        + e.getMessage());

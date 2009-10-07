@@ -64,7 +64,11 @@ public class VirtualPlayerHandler implements Serializable {
 	this.listener = listener;
     }
 
-    public void playerAdded(Player player, AudioGroupPlayerInfo info) {
+    public void playerAdded(Player player, AudioGroupPlayerInfo playerInfo) {
+	if (playerInfo.isTransientMember) {
+	    return;
+	}
+
 	Player[] players = audioGroup.getPlayers();
 
 	for (int i = 0; i < players.length; i++) {
@@ -74,18 +78,24 @@ public class VirtualPlayerHandler implements Serializable {
 		continue;
 	    }
 		
-	    if (audioGroup.getPlayerInfo(p).chatType == AudioGroupPlayerInfo.ChatType.PUBLIC) {
+	    AudioGroupPlayerInfo info = audioGroup.getPlayerInfo(p);
+
+	    if (info.isTransientMember) {
+		continue;
+	    }
+
+	    if (info.chatType == AudioGroupPlayerInfo.ChatType.PUBLIC) {
 	        logger.info("Creating virtual player for " + p + ": " + player);
 	        createVirtualPlayer(p, player);
 	    }
 
-	    if (info.chatType == AudioGroupPlayerInfo.ChatType.PUBLIC) {
+	    if (playerInfo.chatType == AudioGroupPlayerInfo.ChatType.PUBLIC) {
 	        logger.info("Creating virtual player for " + player + ": " + p);
 	        createVirtualPlayer(player, p);
 	    }
 	}
 
-	if (info.chatType != AudioGroupPlayerInfo.ChatType.PUBLIC) {
+	if (playerInfo.chatType != AudioGroupPlayerInfo.ChatType.PUBLIC) {
 	    removeVirtualPlayers(player);
 	}
     }
@@ -100,7 +110,7 @@ public class VirtualPlayerHandler implements Serializable {
 	    return;
 	}
 
-	Call call = playerWithVp.getCall();
+	Call call = player.getCall();
 
 	if (call.getSetup().externalOutgoingCall == true ||
 		call.getSetup().incomingCall == true) {

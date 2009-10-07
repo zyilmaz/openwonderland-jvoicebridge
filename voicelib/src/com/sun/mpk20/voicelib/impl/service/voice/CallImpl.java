@@ -55,7 +55,7 @@ import java.util.logging.Level;
 import java.io.IOException;
 import java.io.Serializable;
 
-public class CallImpl implements Call, CallStatusListener, Serializable {
+public class CallImpl implements Call, CallStatusListener {
 
     private static final Logger logger =
         Logger.getLogger(CallImpl.class.getName());
@@ -146,6 +146,8 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
     }
 
     private void callImplCommit() {
+	//new Exception("CALL IMPL COMMIT " + this).printStackTrace();
+
 	CallParticipant cp = setup.cp;
 
 	if (cp.getPhoneNumber() != null) {
@@ -172,21 +174,24 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 		voiceImpl.getBridgeManager().initiateCall(cp, setup.bridgeInfo);
 	    } catch (IOException e) {
 		logger.log(Level.INFO, e.getMessage());
+		System.out.println("CALL FAILED " + e.getMessage());
 
 		/*
 		 * TODO:  There's needs to be a way to tell the difference
 		 * between a fatal and a recoverable error.
 		 */
 		voiceImpl.getBridgeManager().addToRecoveryList(id, setup.cp);
-		cleanup();
+		cleanup(true);
 	    } catch (ParseException e) {
 		logger.log(Level.INFO, "Unable to setup call:  " + e.getMessage()
 		    + " " + cp);
 
+		System.out.println("Unable to setup call:  " + e.getMessage()
+		    + " " + cp);
+
 		sendStatus(CallStatus.ENDED, 
 		    " Unable to setup call:  " + e.getMessage() + " " + cp);
-		cleanup();
-		setup.ended = true;
+		cleanup(true);
 		return;
 	    }
 	}
@@ -201,7 +206,13 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
         return;
     }
 
-    private void cleanup() {
+    private void cleanup(boolean removePlayer) {
+	if (setup.ended) {
+	    return;
+	}
+
+	setup.ended = true;
+
 	VoiceImpl voiceImpl = VoiceImpl.getInstance();
 
 	voiceImpl.removeCallStatusListener(this, id);
@@ -215,6 +226,31 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	if (call == this) {
 	    voiceImpl.removeCall(this);
 	} 
+
+	TreatmentImpl treatmentImpl = (TreatmentImpl) VoiceImpl.getInstance().getTreatment(id);
+
+	if (treatmentImpl != null) {
+	    treatmentImpl.treatmentEnded();
+	    treatmentImpl = null;
+	}
+
+	Player player = getPlayer();
+
+	if (removePlayer) {
+	    if (player != null) {
+		AudioGroup[] audioGroups = player.getAudioGroups();
+
+		for (int i = 0; i < audioGroups.length; i++) {
+		    audioGroups[i].removePlayer(player);
+		}
+
+	        VoiceImpl.getInstance().removePlayer(player);
+	    }
+	} else {
+	    if (player != null) {
+	        player.setCall(null);
+	    }
+	}
     }
 
     public String getId() {
@@ -409,6 +445,8 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
     }
 
     public void end(boolean removePlayer) throws IOException {
+	//new Exception("End").printStackTrace();
+
 	VoiceImpl voiceImpl = VoiceImpl.getInstance();
 
 	if (voiceImpl.addWork(new EndCallWork(this, removePlayer)) == false) {
@@ -423,31 +461,17 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
     }
 
     private void endCommit(boolean removePlayer) {
-	if (setup.ended == false) {
-	    try {
-                VoiceImpl.getInstance().getBridgeManager().endCall(id);
-            } catch (IOException e) {
-                logger.log(Level.INFO, "Unable to end call " + id
-                    + " " + e.getMessage());
-            }
+	if (setup.ended) {
+	    return;
 	}
+ 
+	cleanup(removePlayer);
 
-	Player player = getPlayer();
-
-	if (removePlayer) {
-	    if (player != null) {
-		AudioGroup[] audioGroups = player.getAudioGroups();
-
-		for (int i = 0; i < audioGroups.length; i++) {
-		    audioGroups[i].removePlayer(player);
-		}
-
-	        VoiceImpl.getInstance().removePlayer(player);
-	    }
-	} else {
-	    if (player != null) {
-	        player.setCall(null);
-	    }
+	try {
+            VoiceImpl.getInstance().getBridgeManager().endCall(id);
+        } catch (IOException e) {
+            logger.log(Level.INFO, "Unable to end call " + id
+                + " " + e.getMessage());
 	}
     }
 
@@ -503,8 +527,7 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
 	        }
 	    }
 
-	    cleanup();
-	    setup.ended = true;
+	    cleanup(false);
 	    break;
 	}
     }
@@ -633,6 +656,14 @@ public class CallImpl implements Call, CallStatusListener, Serializable {
             logger.info("Unable to parse call status:  " + s
 		+ " " + e.getMessage());
         }
+    }
+
+    public boolean equals(Object o) {
+        if (o instanceof Call == false) {
+            return false;
+        }
+
+        return ((Call) o).getId().equals(id);
     }
 
     public String toString() {

@@ -149,16 +149,16 @@ public class WarmStart {
             warmStartTreatmentGroups = (WarmStartTreatmentGroups) dm.getBinding(
 		WarmStartInfo.DS_WARM_START_TREATMENTGROUPS);
         } catch (NameNotBoundException e) {
-	    System.out.println("There are no treatment groups to restart...");
+	    //System.out.println("There are no treatment groups to restart...");
 	    return;
 	}
 
 	for (String groupId : warmStartTreatmentGroups) {
 	    if (voiceImpl.getTreatmentGroup(groupId) == null) {
 		treatmentGroups.put(groupId, voiceImpl.createTreatmentGroup(groupId));
-		System.out.println("Restarted treatment group " + groupId);
+		//System.out.println("Restarted treatment group " + groupId);
 	    } else {
-		System.out.println("Treatment group is already started:  " + groupId);
+		//System.out.println("Treatment group is already started:  " + groupId);
 	    }
 	}
 
@@ -166,7 +166,7 @@ public class WarmStart {
     }
 
     private void restartTreatments() {
-	System.out.println("Restarting treatments...");
+	//System.out.println("Restarting treatments...");
 
         WarmStartTreatments warmStartTreatments;
 
@@ -176,11 +176,11 @@ public class WarmStart {
             warmStartTreatments = (WarmStartTreatments) dm.getBinding(
 		WarmStartInfo.DS_WARM_START_TREATMENTS);
         } catch (NameNotBoundException e) {
-	    System.out.println("There are no treatments to restart...");
+	    //System.out.println("There are no treatments to restart...");
 	    return;
 	}
 
-	System.out.println("Treatments to restart:  " + warmStartTreatments.size());
+	//System.out.println("Treatments to restart:  " + warmStartTreatments.size());
 
 	Enumeration<String> keys = warmStartTreatments.keys();
 
@@ -202,13 +202,13 @@ public class WarmStart {
                             group.addTreatment(treatment);
 			}
                     }
-		    System.out.println("Created treatment " + treatmentId);
+		    //System.out.println("Created treatment " + treatmentId);
                 } catch (IOException e) {
                     System.out.println("Unable to create treatment " + treatmentId + " "
                     + e.getMessage());
                 }
 	    } else {
-		System.out.println("Treatment is already started:  " + treatmentId);
+		//System.out.println("Treatment is already started:  " + treatmentId);
 	    }
 	}
 

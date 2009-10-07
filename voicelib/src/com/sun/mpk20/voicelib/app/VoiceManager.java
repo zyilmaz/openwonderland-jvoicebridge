@@ -114,7 +114,7 @@ public interface VoiceManager extends Serializable {
 
     public Treatment createTreatment(String id, TreatmentSetup setup) throws IOException;
 
-    public Treatment getTreatment(String id) throws IOException;
+    public Treatment getTreatment(String id);
 
     /*
      * Recorder control
@@ -126,9 +126,6 @@ public interface VoiceManager extends Serializable {
     /*
      * Spatial audio Control
      */
-    public void addWall(double startX, double startY, double endX, double endY,
-        double characteristic);
-
     public void setSpatialAudio(boolean enabled) throws IOException;
 
     public void setSpatialMinVolume(double spatialMinVolume) throws IOException;

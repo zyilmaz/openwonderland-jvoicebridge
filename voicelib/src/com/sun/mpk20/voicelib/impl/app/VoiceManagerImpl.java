@@ -218,7 +218,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	return backingManager.createTreatment(id, setup);
     }
 
-    public Treatment getTreatment(String id) throws IOException {
+    public Treatment getTreatment(String id) {
 	return backingManager.getTreatment(id);
     }
 
@@ -233,10 +233,6 @@ public class VoiceManagerImpl implements VoiceManager {
 
     public Recorder getRecorder(String id) {
 	return backingManager.getRecorder(id);
-    }
-
-    public void addWall(double startX, double startY, double endX, double endY,
-            double characteristic) {
     }
 
     public void setSpatialAudio(boolean enabled) {
