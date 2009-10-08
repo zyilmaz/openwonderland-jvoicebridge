@@ -26,12 +26,8 @@ package com.sun.voip;
 /**
  * notification of recording events
  */
-public interface RecorderListener {
+public interface NewRecorderListener {
 
-    public void recorderStarted();
-
-    public void recorderStopped();
-
-    public void recorderData(byte[] buffer, int offset, int length);
+    public void newRecorder(Recorder recorder);
 
 }
