@@ -41,7 +41,9 @@ import java.util.LinkedList;
  */
 public class Recorder extends Thread {
     
-    private static ArrayList<RecorderListener> recorderListeners = new ArrayList();
+    private static ArrayList<NewRecorderListener> newRecorderListeners = new ArrayList();
+
+    private ArrayList<RecorderListener> recorderListeners = new ArrayList();
 
     private BufferedOutputStream bo;
     private FileOutputStream fo;
@@ -85,6 +87,7 @@ public class Recorder extends Thread {
 
 	openFile(mediaInfo);
 
+	notifyNewRecorderListeners();
         start();
     }
 
@@ -152,7 +155,7 @@ public class Recorder extends Thread {
                     buf[2] = (byte) 0x50;  // P
 
                     bo.write(buf, 0, buf.length);
-		    notifyRecordingData(buf, 0, buf.length);
+		    notifyRecorderDataListeners(buf, 0, buf.length);
                 }
 	    }
         } catch (IOException e) {
@@ -168,11 +171,15 @@ public class Recorder extends Thread {
 	Logger.println("Recording to " + recordFile.getAbsolutePath()
 	    + " recording type is " + (recordRtp ? "RTP" : "Audio"));
 
-	notifyStartRecording();
+	notifyRecorderStartedListeners();
     }
 
     public String getRecordPath() {
 	return recordPath;
+    }
+
+    public MediaInfo getMediaInfo() {
+	return mediaInfo;
     }
 
     public static void checkPermission(String recordPath) 
@@ -245,38 +252,58 @@ public class Recorder extends Thread {
         }
     }
 
-    public static void addRecorderListener(RecorderListener listener) {
+    public static void addNewRecorderListener(NewRecorderListener listener) {
+	synchronized (newRecorderListeners) {
+	    newRecorderListeners.add(listener);
+        }
+    }
+
+    public static void removeNewRecorderListener(NewRecorderListener listener) {
+	synchronized (newRecorderListeners) {
+	    newRecorderListeners.remove(listener);
+        }
+    }
+
+    public void addRecorderListener(RecorderListener listener) {
 	synchronized (recorderListeners) {
 	    recorderListeners.add(listener);
 	}
     }
 
-    public static void removeRecorderListener(RecorderListener listener) {
+    public void removeRecorderListener(RecorderListener listener) {
 	synchronized (recorderListeners) {
 	    recorderListeners.remove(listener);
 	}
     }
 
-    private void notifyStartRecording() {
-	synchronized (recorderListeners) {
-	    for (RecorderListener listener : recorderListeners) {
-	        listener.startRecording(recordPath, mediaInfo);
+    private void notifyNewRecorderListeners() {
+	synchronized (newRecorderListeners) {
+	    for (NewRecorderListener listener : newRecorderListeners) {
+	        listener.newRecorder(this);
 	    }
 	}
     }
 
-    private void notifyStopRecording() {
+    private void notifyRecorderStartedListeners() {
 	synchronized (recorderListeners) {
 	    for (RecorderListener listener : recorderListeners) {
-	        listener.stopRecording(recordPath);
+	        listener.recorderStarted();
 	    }
 	}
     }
 
-    private void notifyRecordingData(byte[] buffer, int offset, int length) {
+    private void notifyRecorderStoppedListeners() {
 	synchronized (recorderListeners) {
 	    for (RecorderListener listener : recorderListeners) {
-	        listener.data(recordPath, buffer, offset, length);
+	        listener.recorderStopped();
+	    }
+	}
+    }
+
+    private void notifyRecorderDataListeners(byte[] buffer, int offset, int length) {
+	synchronized (recorderListeners) {
+	    for (RecorderListener listener : recorderListeners) {
+	        listener.recorderData(buffer, offset, length);
 	    }
 	}
     }
@@ -326,7 +353,7 @@ public class Recorder extends Thread {
         auHeader[23] = (byte)(channels & 0xff);
         
         bo.write(auHeader, 0, auHeader.length);
-        notifyRecordingData(auHeader, 0, auHeader.length);
+        notifyRecorderDataListeners(auHeader, 0, auHeader.length);
     }
     
     public void done() {
@@ -427,7 +454,7 @@ public class Recorder extends Thread {
             synchronized(dataToWrite) {
                 if (dataToWrite.size() == 0) {
 		    if (done) {
-			notifyStopRecording();
+			notifyRecorderStoppedListeners();
 			break;
 		    }
 
@@ -461,7 +488,7 @@ public class Recorder extends Thread {
         try {
 	    synchronized(this) {
                 bo.write(d.data, 0, d.length);
-                notifyRecordingData(d.data, 0, d.length);
+                notifyRecorderDataListeners(d.data, 0, d.length);
 		dataSize += d.length;
             }
         } catch (IOException e) {
