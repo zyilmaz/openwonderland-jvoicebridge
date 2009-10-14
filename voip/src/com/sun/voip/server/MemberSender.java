@@ -410,6 +410,10 @@ public class MemberSender {
 
 	//Logger.println("Call " + cp + " Sending data...");
 
+	for (DataListener listener : dataListeners) {
+	     listener.data(dataToSend, dataToSend.length);
+	}
+
 	if (myMediaInfo.getEncoding() == RtpPacket.PCMU_ENCODING) {
 	    /*
 	     * Convert to ulaw
@@ -480,10 +484,6 @@ public class MemberSender {
 	        }
 	        return false;
 	    }
-	}
-
-	for (DataListener listener : dataListeners) {
-	     listener.rtpData(senderPacket.getData(), senderPacket.getLength());
 	}
 
 	senderPacket.setBuffer(rtpData);

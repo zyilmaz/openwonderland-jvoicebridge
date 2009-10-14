@@ -953,6 +953,20 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	}
     }
 
+    private ArrayList<DataListener> dataListeners = new ArrayList();
+
+    public void addDataListener(DataListener listener) {
+	synchronized (dataListeners) {
+	    dataListeners.add(listener);
+	}
+    }
+
+    public void removeDataListener(DataListener listener) {
+	synchronized (dataListeners) {
+	    dataListeners.remove(listener);
+	}
+    }
+
     public void receive(InetSocketAddress fromAddress, byte[] receivedData, 
 	    int length) {
 
@@ -1366,6 +1380,10 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	    if (speechDetector.processData(data) == true) {
 		callHandler.speakingChanged(speechDetector.isSpeaking());
 	    }
+        }
+
+        for (DataListener listener : dataListeners) {
+             listener.data(data, data.length);
         }
     }
 
