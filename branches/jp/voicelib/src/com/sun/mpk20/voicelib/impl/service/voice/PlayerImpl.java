@@ -610,7 +610,14 @@ public class PlayerImpl implements Player, CallStatusListener {
 	    return;
 	}
 
-	double volume = p1.spatialize(p2);
+	double volume;
+
+	try {
+	    volume = p1.spatialize(p2);
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    return;
+	}
 
 	/*
 	 * Determine if p1 can hear us or not.

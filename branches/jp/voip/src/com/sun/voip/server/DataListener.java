@@ -25,6 +25,6 @@ package com.sun.voip.server;
 
 public interface DataListener {
 
-    public void rtpData(byte[] buffer, int length);
+    public void data(int[] buffer, int length);
 
 }

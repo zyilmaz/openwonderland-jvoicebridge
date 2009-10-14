@@ -258,6 +258,10 @@ public class SipCommunicator extends Thread implements
                 mediaManager = MediaManagerFactory.getInstance(false);
 		mediaManager.initialize(encryptionKey, encryptionAlgorithm,
 		    !openAudio());
+
+		if (treatment != null) {
+		    playTreatment(treatment, 99999);
+		}
             } catch (IOException e) {
                 Logger.println("Unable to start audio:  " + e.getMessage());
 		e.printStackTrace();
