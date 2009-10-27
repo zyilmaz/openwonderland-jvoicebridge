@@ -228,22 +228,19 @@ public class Recorder extends Thread {
 		    throw new ParseException("Can't write file:  "
 			+ recordPath + ".", 0);
 		}
-	    } else {
-		if (recordPath.startsWith(fileSeparator)) {
-		    file.mkdirs();	// try to make intermediate directories
-		} else {
-		    recordPath = defaultRecordDirectory + fileSeparator + recordPath;
-		}
 	    }
+
+	    int i = recordPath.lastIndexOf(fileSeparator);
+
+	    File directory = new File(recordPath.substring(0, i));
+
+	    directory.mkdirs();
 
 	    /*
 	     * Try to create the file 
 	     */
-	    int i = recordPath.lastIndexOf(fileSeparator);
 
-	    String directory = recordPath.substring(0, i);
-
-	    file = File.createTempFile("Record", "tmp", new File(directory));
+	    file = File.createTempFile("Record", "tmp", directory);
 
 	    file.delete();
 	} catch (IOException e) {
