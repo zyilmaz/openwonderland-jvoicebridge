@@ -74,8 +74,10 @@ public class TreatmentManager implements MixDataSource {
 	    File file = new File(s);
 
 	    if (file.exists() == false) {
-		Logger.println("Network audio cache path doesn't exist:  " + s);
-	    } else if (file.isDirectory() == false) {
+		file.mkdirs();
+	    } 
+
+	    if (file.isDirectory() == false) {
 		Logger.println("Network audio cache path is not a directory:  " + s);
 	    } else if (file.canWrite() == false) {
 		Logger.println("Network audio cache path is not writeable:  " + s);

@@ -124,6 +124,7 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 
 	if (bos != null) {
 	    bos.write(header, 0, header.length);
+	    bos.flush();
 	}
 
 	headerLength = header.length;
@@ -168,6 +169,8 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 		if (response == HttpURLConnection.HTTP_NOT_MODIFIED) {
 		    return true;
 		}
+
+		cacheFile.delete();
             } catch (Exception e) {
                 logger.warning("Unable to open connection to " + url);
 	    }
@@ -179,10 +182,11 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 
 	cacheFile = new File(path);
 
+	cacheFile.delete();
+
 	try {
 	    if (cacheFile.createNewFile() == false) {
-		logger.warning("cache file " + path
-			+ " exists but is not readable");
+		logger.warning("can't create cache file " + path);
 	    } else {
 		fos = new FileOutputStream(cacheFile);
 		bos = new BufferedOutputStream(fos, bufferSize);
@@ -224,7 +228,7 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
          * If we haven't passed the buffer time, return silence
 	 */
         if (System.currentTimeMillis() < bufferTimeEnd) {
-            return new int[byteLength];  // silence while we buffer
+            return new int[byteLength / 2];  // silence while we buffer
 	}
 
         int available = pipeIn.available();
@@ -256,7 +260,7 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 	    }
 
             // return silence
-            return new int[byteLength];
+            return new int[byteLength / 2];
         }
        
 	notEnoughDataCount = 0;
@@ -320,6 +324,7 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 
 	if (bos != null) {
 	    try {
+	        bos.flush();
 	        bos.close();
 	    } catch (IOException e) {
 		logger.warning("Unable to close buffered output writer for " + path);
@@ -453,6 +458,7 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
 
 		    if (bos != null) {
 	    		bos.write(buf, 0, buf.length);
+	    	 	bos.flush();
 		    }
 
 		    total += buf.length;

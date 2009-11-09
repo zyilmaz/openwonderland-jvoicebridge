@@ -184,7 +184,7 @@ public class StunClient extends Thread {
 		logger.fine("Sending stun request " + i);
 	        sendStunRequest();
 
-	        waitForReply();
+	        waitForStunResponse();
 		break;
 	    } catch (IOException e) {
 	    }
@@ -268,17 +268,17 @@ public class StunClient extends Thread {
 	}
     }
 
-    private void waitForReply() throws IOException, SocketTimeoutException {
+    private void waitForStunResponse() throws IOException, SocketTimeoutException {
 	byte[] response = new byte[1000];
 
 	/*
 	 * Since ports are multiplexed with STUN and data,
 	 * it is possible for a us to send a BINDING_REQUEST
 	 * and not immediately get a BINDING_RESPONSE but instead
-	 * get data.  We will toss data for <retries> times,
-	 * then return an error so the STUN request can be resent.
+	 * get data.  We will toss that data.  We'll either get the right
+	 * response or the receive will timeout and another request will be sent.
 	 */
-	for (int i = 0; i < retries; i++) {
+	while (true) {
 	    int length;
 
 	    if (datagramSocket != null) {
@@ -307,8 +307,6 @@ public class StunClient extends Thread {
 	    logger.fine("BAD STUN response, length " + length 
 		    + " TCP " + (input != null));
 	}
-
-	throw new IOException("Didn't receive BINDING_RESPONE");
     }
 
 }

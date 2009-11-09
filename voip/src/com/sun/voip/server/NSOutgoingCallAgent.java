@@ -71,6 +71,7 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
 
 	if (cp.getInputTreatment() != null) {
 	    if (cp.getInputTreatment().length() > 0) {
+if (false) {
 	        try {
 		    /*
 		     * Just make sure we can open the file
@@ -85,6 +86,7 @@ public class NSOutgoingCallAgent extends CallSetupAgent {
 		    throw new IOException(
 		        "Invalid input treatment:  " + cp.getInputTreatment());
 	        }
+}
 	    }
 
 	    /*

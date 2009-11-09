@@ -671,7 +671,7 @@ public class PlayerImpl implements Player, CallStatusListener {
 	//logger.warning("groups size " + getAudioGroups().length + " for " + this);
 	//logger.warning("groups size " + playerAudioGroups.length + " for " + p);
 
-	if (p.getCall() == null) {
+	if (getCall() == null || p.getCall() == null) {
 	    return 0;
 	}
 
