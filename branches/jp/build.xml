@@ -15,8 +15,8 @@
             description="Build all jar files"/>
     
     <target name="jar-common" description="Build common jar files">
-        <ant dir="${stun.dir}" antfile="build.xml" target="jar"/>
         <ant dir="${common.dir}" antfile="build.xml" target="jar"/>
+        <ant dir="${stun.dir}" antfile="build.xml" target="jar"/>
     </target>
         
     <target name="jar-bridge" depends="jar-common"
