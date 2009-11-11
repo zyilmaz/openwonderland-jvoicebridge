@@ -39,36 +39,24 @@ public class BridgeStatusNotifier extends Thread {
 
     public static int DEFAULT_LISTENER_PORT = 6668;
 
+    private String listener;
+    private int listenerPort = DEFAULT_LISTENER_PORT;
+
     public BridgeStatusNotifier(String server) {
         String[] tokens = server.split(":");
 
-	int port = DEFAULT_LISTENER_PORT;
+	listener = tokens[0];
 
         if (tokens.length < 2) {
             Logger.println("Missing server port for listener: " + server
-		+ " defaulting to " + DEFAULT_LISTENER_PORT);
+		+ " defaulting to " + listenerPort);
 	} else {
 	    try {
-	        port = Integer.parseInt(tokens[1]);
+	        listenerPort = Integer.parseInt(tokens[1]);
 	    } catch (NumberFormatException e) {
 	        Logger.println("Invalid server port for listener:  " + server
-		    + " defaulting to " + DEFAULT_LISTENER_PORT);
+		    + " defaulting to " + listenerPort);
 	    }
-	}
-
-	try {
-	    isa = new InetSocketAddress(InetAddress.getByName(tokens[0]), port);
-	} catch (UnknownHostException e) {
-	    Logger.println("Invalid listener host " + tokens[0] + ":  " 
-		+ e.getMessage());
-	}
-
-	try {
-	    socket = new Socket();
-	    socket.connect(isa);
-	} catch (IOException e) {
-	    Logger.println("retrying once a second to notify server " + isa
-		+ " that this bridge is online:  " + e.getMessage());
 	}
 
 	start();
@@ -102,6 +90,22 @@ public class BridgeStatusNotifier extends Thread {
 
     public void run() {
 	boolean firstTime = true;
+
+	try {
+	    isa = new InetSocketAddress(InetAddress.getByName(listener), listenerPort);
+	} catch (UnknownHostException e) {
+	    Logger.println("Invalid listener host " + listener + ":  " 
+		+ e.getMessage());
+	    return;
+	}
+
+	try {
+	    socket = new Socket();
+	    socket.connect(isa);
+	} catch (IOException e) {
+	    Logger.println("retrying once a second to notify server " + isa
+		+ " that this bridge is online:  " + e.getMessage());
+	}
 
         while (!done) {
 	    try {
