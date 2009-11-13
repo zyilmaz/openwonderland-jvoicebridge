@@ -1049,10 +1049,6 @@ if (false) {
     }
 
     public void setRemoteSdpData(String remoteSdpData) {
-	if (remoteSdpInfo != null) {
-	    return;
-	}
-
 	try {
 	    remoteSdpInfo = sdpManager.parseSdp(remoteSdpData);
 
