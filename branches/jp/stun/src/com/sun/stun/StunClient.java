@@ -183,10 +183,19 @@ public class StunClient extends Thread {
 	    try {
 		logger.fine("Sending stun request " + i);
 	        sendStunRequest();
+	    } catch (IOException e) {
+		logger.warning("Unable to send stun request: "
+		    + e.getMessage());
+	    }
 
+	    try {
 	        waitForStunResponse();
 		break;
+	    } catch (SocketTimeoutException e) {
+		logger.warning("No Response to STUN request:  " 
+		    + e.getMessage());
 	    } catch (IOException e) {
+		logger.warning("Receive failed:  " + e.getMessage());
 	    }
 	}
 
@@ -278,7 +287,7 @@ public class StunClient extends Thread {
 	 * get data.  We will toss that data.  We'll either get the right
 	 * response or the receive will timeout and another request will be sent.
 	 */
-	while (true) {
+	for (int i = 0; i < 50; i++) {
 	    int length;
 
 	    if (datagramSocket != null) {
@@ -307,6 +316,8 @@ public class StunClient extends Thread {
 	    logger.fine("BAD STUN response, length " + length 
 		    + " TCP " + (input != null));
 	}
+
+	throw new SocketTimeoutException("BAD STUN RESPONSE");
     }
 
 }
