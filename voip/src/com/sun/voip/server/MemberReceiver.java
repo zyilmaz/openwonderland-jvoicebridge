@@ -970,7 +970,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
     public void receive(InetSocketAddress fromAddress, byte[] receivedData, 
 	    int length) {
 
-        if ((receivedData[0] & 0x80) != 0x80) {
+	if (RtpPacket.isRtpData(receivedData) == false) {
             Util.dump(cp + ":  Dropping non-Rtp packet" + length, receivedData, 0, 16);
             return;
         }
@@ -1213,7 +1213,6 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	    System.arraycopy(receivedData, offset, data, RtpPacket.HEADER_SIZE, 160);
 
 	    receive(fromAddress, data, 172);
-	    Util.dump("even ", data, 0, 172);
 
 	    length -= 160;
 	    offset += 160;
@@ -1240,7 +1239,6 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	System.arraycopy(receivedData, RtpPacket.HEADER_SIZE, data, 92, 80);
 
 	receive(fromAddress, data, 172);
-	Util.dump("odd with left over", data, 0, 172);
 
 	data = new byte[length - 80];
 	System.arraycopy(receivedData, 0, data, 0, RtpPacket.HEADER_SIZE);
