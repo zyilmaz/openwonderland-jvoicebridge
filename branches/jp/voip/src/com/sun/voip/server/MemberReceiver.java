@@ -970,6 +970,11 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
     public void receive(InetSocketAddress fromAddress, byte[] receivedData, 
 	    int length) {
 
+        if ((receivedData[0] & 0x80) != 0x80) {
+            Util.dump(cp + ":  Dropping non-Rtp packet" + length, receivedData, 0, 16);
+            return;
+        }
+
 	member.getMemberSender().setSendAddress(fromAddress);
 
 	/*
@@ -985,6 +990,9 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 		+ length);
 
 	    packet.setBuffer(receivedData);
+
+	    rtpSequenceNumber = packet.getRtpSequenceNumber();
+	    rtpTimestamp = (int) packet.getRtpTimestamp();
 
 	    /*
 	     * TODO:  Get the synchonization source for this call.
@@ -1033,6 +1041,21 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	packet.setLength(length);
 
 	byte payload = packet.getRtpPayload();
+
+	/*
+	 * Workaround for SIP Communicator alpha3 problem.
+	 * It is sending 30ms of data instead of the default of 20ms.
+	 */
+	if (payload == myMediaInfo.getPayload()) {
+            if (myMediaInfo.getEncoding() == RtpPacket.PCMU_ENCODING &&
+		    myMediaInfo.getSampleRate() == 8000) {
+
+		if (length != 172) {
+		    handleNonStandardLength(fromAddress, receivedData, length);
+		    return;
+		}
+	    }
+	}
 
 	int elapsedTime = (int)
 	    (timeCurrentPacketReceived - timePreviousPacketReceived);
@@ -1145,6 +1168,99 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
 	packet.updateRtpHeader(rtpTimestampAdjustment);
 	timePreviousPacketReceived = timeCurrentPacketReceived;
+    }
+
+    /*
+     * Work around for various ulaw packet sizes
+     */
+    private byte[] leftoverData;
+    private short rtpSequenceNumber;
+    private int rtpTimestamp;
+
+    int b = 0;
+
+    private void handleNonStandardLength(InetSocketAddress fromAddress, byte[] receivedData, 
+	    int length) {
+
+	int dataLength = length - RtpPacket.HEADER_SIZE;
+
+	if ((dataLength % 80) != 0) {
+	    Logger.println("Can't handle ulaw packet of length " + length);
+	    Util.dump("Bad length", receivedData, 0, length);
+	    return;
+	}
+
+	if ((dataLength % 160) == 0) {
+	    handleEvenPacket(fromAddress, receivedData, length);
+	    return;
+	}
+
+	handleOddPacket(fromAddress, receivedData, length);
+    }
+
+    private void handleEvenPacket(InetSocketAddress fromAddress, byte[] receivedData, int length) {
+	int offset = RtpPacket.HEADER_SIZE;
+
+	length -= RtpPacket.HEADER_SIZE;
+
+	while (length >= 160) {
+	    byte[] data = new byte[172];
+
+	    System.arraycopy(receivedData, 0, data, 0, RtpPacket.HEADER_SIZE);
+
+	    setSeqAndTS(data);
+
+	    System.arraycopy(receivedData, offset, data, RtpPacket.HEADER_SIZE, 160);
+
+	    receive(fromAddress, data, 172);
+	    Util.dump("even ", data, 0, 172);
+
+	    length -= 160;
+	    offset += 160;
+	}
+    }
+
+    private void handleOddPacket(InetSocketAddress fromAddress, byte[] receivedData, int length) {
+	if (leftoverData == null) {
+	    leftoverData = new byte[80];
+	    System.arraycopy(receivedData, length - 80, leftoverData, 0, 80);
+	    handleEvenPacket(fromAddress, receivedData, length - 80);
+	    return;
+	}
+
+	byte[] data = new byte[172];
+
+	System.arraycopy(receivedData, 0, data, 0, RtpPacket.HEADER_SIZE);
+
+	setSeqAndTS(data);
+
+	System.arraycopy(leftoverData, 0, data, RtpPacket.HEADER_SIZE, 80);
+	leftoverData = null;
+
+	System.arraycopy(receivedData, RtpPacket.HEADER_SIZE, data, 92, 80);
+
+	receive(fromAddress, data, 172);
+	Util.dump("odd with left over", data, 0, 172);
+
+	data = new byte[length - 80];
+	System.arraycopy(receivedData, 0, data, 0, RtpPacket.HEADER_SIZE);
+	System.arraycopy(receivedData, 92, data, RtpPacket.HEADER_SIZE, 
+	    length - 80 - RtpPacket.HEADER_SIZE);
+	handleEvenPacket(fromAddress, data, length - 80);
+    }
+
+    private void setSeqAndTS(byte[] data) {
+	data[2] = (byte) ((rtpSequenceNumber >> 8) & 0xff);
+	data[3] = (byte) (rtpSequenceNumber & 0xff);
+
+	rtpSequenceNumber++;
+
+	data[4] = (byte) ((rtpTimestamp >> 24) & 0xff);
+	data[5] = (byte) ((rtpTimestamp >> 16) & 0xff);
+	data[6] = (byte) ((rtpTimestamp >> 8) & 0xff);
+	data[7] = (byte) (rtpTimestamp & 0xff);
+
+	rtpTimestamp += 160;
     }
 
     private void receiveComfortPayload(RtpReceiverPacket packet, 
