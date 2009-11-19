@@ -104,6 +104,11 @@ public class SdpParser {
 	for (int i = 0 ; i < sdp.length; i++) {
 	    s = sdp[i];
 
+	    if (s.indexOf("a=ptime:") == 0) {
+		Logger.println("ptime attribute is not supported! " + sdpData);
+		continue;
+	    }
+
 	    if (s.indexOf("a=rtpmap:") != 0) {
 		continue;
 	    }
