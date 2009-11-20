@@ -451,7 +451,6 @@ public class Recorder extends Thread {
             synchronized(dataToWrite) {
                 if (dataToWrite.size() == 0) {
 		    if (done) {
-			notifyRecorderStoppedListeners();
 			break;
 		    }
 
@@ -479,6 +478,7 @@ public class Recorder extends Thread {
 	}
                 
 	writeDataSize();
+	notifyRecorderStoppedListeners();
     }
 
     private void writeData(DataToWrite d) {
