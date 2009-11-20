@@ -57,6 +57,8 @@ public class RtpPacket {
      */
     public static final int DATA = HEADER_SIZE;
 
+    public static final int RTP_VERSION_BIT = 0x80;
+
     /*
      * Header extension bit
      */
@@ -181,6 +183,10 @@ public class RtpPacket {
         packet = new DatagramPacket(buffer, bufferSize);
 
 	dataSize = getDataSize(encoding, sampleRate, channels);
+    }
+
+    public static boolean isRtpData(byte[] data) {
+	return (data[0] & RTP_VERSION_BIT) != 0;
     }
 
     public int getDataSize() {
