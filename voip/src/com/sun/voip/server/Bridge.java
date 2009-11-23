@@ -331,7 +331,24 @@ public class Bridge extends Thread {
             
 	    if (localHostAddress.startsWith("127.")) {
 		Logger.println("WARNING:  THE BRIDGE'S IP ADDRESS IS " 
-		    + localHostAddress + ".  THE BRIDGE WILL ONLY WORK LOCALLY!");
+		    + localHostAddress + ".  THE BRIDGE WILL ONLY WORK "
+		    + "WITH CLIENTS ON THIS MACHINE!");
+	    }
+
+	    /*
+	     * For some reason on Linux, the local hostname is set to 127.0.1.1
+	     * in /etc/hosts.
+	     */
+	    if (localHostAddress.startsWith("127.0.1.1")) {
+		String hostname = InetAddress.getLocalHost().getHostName();
+
+		Logger.println("\n------------WARNING-------------\n"
+		    + "   The voicebridge local address is 127.0.1.1.\n"
+		    + "   Notice this is not the same as   127.0.0.1 \n"
+		    + "   This will only work if all clients use 127.0.1.1.\n"
+		    + "   If audio does not work, edit /etc/hosts and change the entry\n"
+		    + "   for '" + hostname + "' to the real IP address.\n"
+		    + "------------WARNING-------------\n");
 	    }
 
             privateHost = InetAddress.getByName(localHostAddress).getHostAddress();

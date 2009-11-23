@@ -273,6 +273,18 @@ public class Recorder extends Thread {
 	}
     }
 
+    private RecorderDoneListener recorderDoneListener;
+
+    public void addRecorderDoneListener(RecorderDoneListener listener) {
+	recorderDoneListener = listener;
+    }
+
+    public void recorderDone() {
+	if (recorderDoneListener != null) {
+	    recorderDoneListener.recorderDone();
+	}
+    }
+
     private void notifyNewRecorderListeners() {
 	synchronized (newRecorderListeners) {
 	    for (NewRecorderListener listener : newRecorderListeners) {
