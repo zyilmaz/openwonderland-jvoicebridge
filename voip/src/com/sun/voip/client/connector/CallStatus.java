@@ -66,6 +66,7 @@ public class CallStatus implements Serializable {
     public static final int MUTED	    = 937;
     public static final int UNMUTED	    = 938;
     public static final int INFO	    = 888;
+    public static final int RECORDERDONE    = 958;
     public static final int UNKNOWN         = 999;
     
     /** the version */
@@ -222,6 +223,8 @@ public class CallStatus implements Serializable {
 		return "Muted";
 	    case UNMUTED:
 		return "Unmuted";
+	    case RECORDERDONE:
+		return "Recorder Done";
 	    case INFO:
 		return "Info";
             default:
