@@ -47,8 +47,9 @@ public class CallEvent {
     public static final int MUTED		  = 17;
     public static final int UNMUTED		  = 18;
     public static final int INFO                  = 19;
+    public static final int RECORDER_DONE	  = 20;
 
-    private static final int LAST_EVENT = 19;
+    private static final int LAST_EVENT = 20;
 
     private static String[] eventString = {
         "000 New Connection",
@@ -70,6 +71,7 @@ public class CallEvent {
         "920 H323 is not implemented",
 	"937 MUTED",
 	"938 UNMUTED",
+	"958 RECORDER DONE",
 	""
     };
 
