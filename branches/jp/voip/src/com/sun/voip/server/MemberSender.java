@@ -824,8 +824,6 @@ public class MemberSender implements RecorderDoneListener {
 	    return;
 	}
 
-	Logger.println("Sending recorder done event");
-
         CallEvent callEvent = new CallEvent(CallEvent.RECORDER_DONE);
         callHandler.sendCallEventNotification(callEvent);
     }
