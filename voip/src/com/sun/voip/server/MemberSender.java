@@ -25,9 +25,11 @@ package com.sun.voip.server;
 
 import com.sun.voip.AudioConversion;
 import com.sun.voip.CallParticipant;
+import com.sun.voip.CallEvent;
 import com.sun.voip.Logger;
 import com.sun.voip.MediaInfo;
 import com.sun.voip.Recorder;
+import com.sun.voip.RecorderDoneListener;
 import com.sun.voip.RtpPacket;
 import com.sun.voip.RtpSenderPacket;
 import com.sun.voip.SampleRateConverter;
@@ -54,7 +56,7 @@ import java.text.ParseException;
 /**
  * Send RTP data to this ConferenceMember, 
  */
-public class MemberSender {
+public class MemberSender implements RecorderDoneListener {
     private ConferenceManager conferenceManager;
     private CallHandler callHandler;
     private CallParticipant cp;		             // caller parameters
@@ -812,6 +814,22 @@ public class MemberSender {
 	    + " " + memberAddress);
     }
 
+    public void recorderDone() {
+	String callId = cp.getCallId();
+
+	CallHandler callHandler = CallHandler.findCall(callId);
+	
+	if (callHandler == null) {
+	    Logger.println("No callHandler for callId " + callId);
+	    return;
+	}
+
+	Logger.println("Sending recorder done event");
+
+        CallEvent callEvent = new CallEvent(CallEvent.RECORDER_DONE);
+        callHandler.sendCallEventNotification(callEvent);
+    }
+
     /**
      * Member is leaving a conference.  Print statistics for the member.
      */
@@ -985,6 +1003,8 @@ public class MemberSender {
 		
             recorder = new Recorder(cp.getRecordDirectory(),
 		recordingFile, recordingType, myMediaInfo);
+
+	    recorder.addRecorderDoneListener(this);
 
             cp.setToRecordingFile(recordingFile);
             cp.setToRecordingType(recordingType);
