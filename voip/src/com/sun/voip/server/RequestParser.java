@@ -1090,6 +1090,7 @@ public class RequestParser {
 	/*
 	 * The treatment is the string up to the last ":".
 	 */
+	System.out.println("Treatment is " + s);
 	return s;
     }
 
