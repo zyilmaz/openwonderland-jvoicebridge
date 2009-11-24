@@ -46,8 +46,8 @@ public class CallEvent {
     public static final int H323_NOT_IMPLEMENTED  = 16;
     public static final int MUTED		  = 17;
     public static final int UNMUTED		  = 18;
-    public static final int INFO                  = 19;
-    public static final int RECORDER_DONE	  = 20;
+    public static final int RECORDER_DONE	  = 19;
+    public static final int INFO                  = 20;
 
     private static final int LAST_EVENT = 20;
 
