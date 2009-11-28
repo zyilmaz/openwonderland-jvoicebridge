@@ -1434,12 +1434,12 @@ public class SipCommunicator extends Thread implements
 		    sdpData += "a=userName:" + userName + "\r\n";
 		}
 
-		if (conferenceId != null) {
+		if (conferenceId != null && conferenceId.length() > 0) {
 		    sdpData += "a=conferenceId:" + conferenceId + "\r\n";
 		} else {
 		    conferenceId = 
 			Utils.getPreference("com.sun.mc.softphone.LAST_CONFERENCE");
-		    if (conferenceId != null) {
+		    if (conferenceId != null && conferenceId.length() > 0) {
 		        sdpData += "a=conferenceId:" + conferenceId + "\r\n";
 		    }
 		}
