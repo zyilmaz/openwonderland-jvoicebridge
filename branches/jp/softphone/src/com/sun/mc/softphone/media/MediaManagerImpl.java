@@ -1052,6 +1052,7 @@ if (false) {
 	try {
 	    remoteSdpInfo = sdpManager.parseSdp(remoteSdpData);
 
+if (false) {
 	    String conferenceId = remoteSdpInfo.getConferenceId();
 
             if (conferenceId != null) {
@@ -1062,6 +1063,7 @@ if (false) {
                         conferenceId);
 		}
             }
+}
 	} catch (ParseException e) {
 	    Logger.println("Invalid SDP! " + e.getMessage());
 	    return;
