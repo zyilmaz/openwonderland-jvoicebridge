@@ -1437,11 +1437,13 @@ public class SipCommunicator extends Thread implements
 		if (conferenceId != null && conferenceId.length() > 0) {
 		    sdpData += "a=conferenceId:" + conferenceId + "\r\n";
 		} else {
+if (false) {
 		    conferenceId = 
 			Utils.getPreference("com.sun.mc.softphone.LAST_CONFERENCE");
 		    if (conferenceId != null && conferenceId.length() > 0) {
 		        sdpData += "a=conferenceId:" + conferenceId + "\r\n";
 		    }
+}
 		}
             } catch (IOException ex) {
                 console.showError("Failed to Generate an SDP description "
