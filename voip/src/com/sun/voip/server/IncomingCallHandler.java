@@ -96,20 +96,14 @@ public class IncomingCallHandler extends CallHandler
 
 	addCallEventListener(this);
 
-	if (cp.getConferenceId() == null) {
+	if (cp.getConferenceId() == null || cp.getConferenceId().length() == 0) {
 	    Logger.println("Don't have conf...");
 	    if (directConferencing == true) {
 		Logger.println("direct");
 	        incomingConferenceHandler = new IncomingConferenceHandler(this);
 	    }
 	} else {
-	    if (cp.getConferenceId().length() > 0) {
-	        Logger.println("Have conf " + cp.getConferenceId());
-	    } else {
-	        Logger.println(
-		    "Conference id length is 0, using 'DefaultConference'");
-		cp.setConferenceId("DefaultConference");
-	    }
+	    Logger.println("Have conf " + cp.getConferenceId());
             haveIncomingConferenceId = true;
 	}
 

@@ -358,7 +358,13 @@ public class SipServer implements SipListener {
 		if (s != null) {
 		    String[] tokens = s.split(":");
 
-		    cp.setConferenceId(tokens[0].trim());
+		    String conferenceId = tokens[0].trim();
+
+		    if (conferenceId.length() == 0) {
+			conferenceId = null;
+		    }
+
+		    cp.setConferenceId(conferenceId);
 
 		    if (tokens.length > 1) {
                         cp.setMediaPreference(tokens[1]);
