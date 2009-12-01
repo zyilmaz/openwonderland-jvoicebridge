@@ -987,7 +987,12 @@ public class SipCommunicator extends Thread implements
 
 	Calendar now = Calendar.getInstance();
 
-	outFile += Logger.getDate();
+	String s = Logger.getDate();
+
+	s = s.replaceAll(" ", "_");
+	s = s.replaceAll(":", ".");
+
+	outFile += s;
 
 	FileWriter writer;
 
