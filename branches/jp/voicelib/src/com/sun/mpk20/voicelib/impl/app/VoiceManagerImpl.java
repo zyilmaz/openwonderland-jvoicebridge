@@ -156,7 +156,7 @@ public class VoiceManagerImpl implements VoiceManager {
     }
 
     public void removeCallBeginEndListener(CallBeginEndListener listener) {
-	removeCallBeginEndListener(listener);
+	backingManager.removeCallBeginEndListener(listener);
     }
   
     /*
