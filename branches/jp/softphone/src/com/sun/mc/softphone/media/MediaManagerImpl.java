@@ -727,9 +727,9 @@ if (false) {
 	    micVuMeterCount = 0;
 
 	    if (isMuted) {
-	        System.out.println("VuMeterData:" + 0.0);
+	        System.out.println("MicVuMeterData:" + 0.0);
 	    } else {
-	        System.out.println("VuMeterData:" + micVuMeterVolume);
+	        System.out.println("MicVuMeterData:" + micVuMeterVolume);
 	    }
 
 	    micVuMeterVolume = 0;
@@ -773,6 +773,8 @@ if (false) {
 	    } else {
 	        System.out.println("SpeakerVuMeterData:" + speakerVuMeterVolume);
 	    }
+
+	    speakerVuMeterVolume = 0;
 	} else {
 	    double volume = LevelTest.processChunk(linearData, offset, length,
                 speaker.getSampleSizeInBits() / 8 * speaker.getChannels());

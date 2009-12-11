@@ -540,7 +540,7 @@ public class SipCommunicator extends Thread implements
             return;
         }
 
-	if (command.indexOf("StartVuMeter=") >= 0) {
+	if (command.indexOf("StartMicVuMeter=") >= 0) {
 	    if (mediaManager == null) {
 		return;
 	    }
@@ -548,9 +548,9 @@ public class SipCommunicator extends Thread implements
             String tokens[] = command.split("=");
 
 	    if (tokens[1].equalsIgnoreCase("true")) {
-	        mediaManager.startVuMeter(true);
+	        mediaManager.startMicVuMeter(true);
 	    } else {
-		mediaManager.startVuMeter(false);
+		mediaManager.startMicVuMeter(false);
 	    }
 	    return;
 	}
