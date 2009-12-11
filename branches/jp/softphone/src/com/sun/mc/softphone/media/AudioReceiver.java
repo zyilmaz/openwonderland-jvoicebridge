@@ -284,6 +284,10 @@ public class AudioReceiver extends Thread implements AudioFileDoneListener {
 	return jitterManager.getPacketListSize();
     }
 
+    public int getSpeakerVolumeLevel() {
+	return 1;
+    }
+
     /*
      * Stop receiving data 
      */

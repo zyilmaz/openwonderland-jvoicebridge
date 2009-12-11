@@ -23,8 +23,6 @@
 
 package com.sun.mc.softphone.media.javasound;
 
-import java.io.IOException;
-
 import  javax.sound.sampled.AudioFormat;
 import  javax.sound.sampled.AudioSystem;
 import  javax.sound.sampled.DataLine;
@@ -37,6 +35,7 @@ import  com.sun.mc.softphone.common.Utils;
 
 import  com.sun.mc.softphone.media.MediaManager;
 import  com.sun.mc.softphone.media.Speaker;
+import  com.sun.mc.softphone.media.SpeakerListener;
 
 import  com.sun.voip.Logger;
 import	com.sun.voip.RtpPacket;
@@ -46,6 +45,8 @@ import  com.sun.voip.TreatmentManager;
 import  java.io.BufferedReader;
 import  java.io.InputStreamReader;
 import  java.io.IOException;
+
+import	java.util.ArrayList;
 
 /**
  * Manages the Speaker
@@ -337,6 +338,33 @@ public class SpeakerJavasoundImpl implements Speaker {
         return volumeLevel;
     }
 
+    ArrayList listeners = new ArrayList();
+
+    public void addListener(SpeakerListener listener) {
+        synchronized (listeners) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removeListener(SpeakerListener listener) {
+        synchronized (listeners) {
+            listeners.remove(listener);
+        }
+    }
+
+    private void notifyListeners(byte[] linearData,
+            int offset, int length) {
+
+        synchronized (listeners) {
+            for (int i = 0; i < listeners.size(); i++) {
+                SpeakerListener listener = (SpeakerListener)
+                    listeners.get(i);
+
+                listener.speakerData(linearData, offset, length);
+            }
+        }
+    }
+
     public synchronized int write(byte[] buffer, int offset, int length) {
 	if (speaker == null) {
 	    return 0;
@@ -366,6 +394,8 @@ public class SpeakerJavasoundImpl implements Speaker {
 
             applyVolume(buffer, offset, writeLength);
   
+	    notifyListeners(buffer, offset, writeLength);
+
 	    speaker.write(buffer, offset, writeLength);
 
 	    offset += writeLength;
