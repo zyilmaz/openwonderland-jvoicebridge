@@ -76,6 +76,10 @@ public interface Speaker {
 
     public double getVolumeLevel();
 
+    public void addListener(SpeakerListener listener);
+
+    public void removeListener(SpeakerListener listener);
+
     public void printStatistics();
 
 }

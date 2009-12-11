@@ -27,6 +27,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 
+import java.util.ArrayList;
+
 import  com.sun.mc.softphone.common.Utils;
 
 import	com.sun.voip.DotAuAudioSource;
@@ -37,6 +39,7 @@ import	com.sun.voip.TreatmentManager;
 
 import	com.sun.mc.softphone.media.MediaManager;
 import	com.sun.mc.softphone.media.Speaker;
+import	com.sun.mc.softphone.media.SpeakerListener;
 
 /**
  * Manages the Speaker
@@ -165,6 +168,33 @@ public class SpeakerCoreAudioImpl implements Speaker {
         return volumeLevel;
     }
 
+    ArrayList listeners = new ArrayList();
+
+    public void addListener(SpeakerListener listener) {
+        synchronized (listeners) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removeListener(SpeakerListener listener) {
+        synchronized (listeners) {
+            listeners.remove(listener);
+        }
+    }
+
+    private void notifyListeners(byte[] linearData,
+            int offset, int length) {
+
+        synchronized (listeners) {
+            for (int i = 0; i < listeners.size(); i++) {
+                SpeakerListener listener = (SpeakerListener)
+                    listeners.get(i);
+
+                listener.speakerData(linearData, offset, length);
+            }
+        }
+    }
+
     public synchronized int write(byte[] buffer, int offset, int length) {
 	if (done) {
 	    return 0;
@@ -202,6 +232,8 @@ public class SpeakerCoreAudioImpl implements Speaker {
     private int writeChunk(byte[] buffer, int offset, int length) {
         buffer = applyVolume(buffer, offset, length);
   
+	notifyListeners(buffer, offset, length);
+
         byte[] data = buffer;
 
 	if (sampleRateConverter != null) {

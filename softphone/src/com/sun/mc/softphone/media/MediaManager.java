@@ -111,4 +111,8 @@ public interface MediaManager {
 
     public void startVuMeter(boolean startVuMeter);
 
+    public int getSpeakerVolumeLevel();
+
+    public void startSpeakerVuMeter(boolean startVuMeter);
+
 }

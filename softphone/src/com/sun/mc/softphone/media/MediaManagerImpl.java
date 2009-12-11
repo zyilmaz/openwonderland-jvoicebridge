@@ -109,7 +109,7 @@ import java.text.ParseException;
  * @version 1.1
  *
  */
-public class MediaManagerImpl implements MediaManager, MicrophoneListener {
+public class MediaManagerImpl implements MediaManager, MicrophoneListener, SpeakerListener {
     private static Console console = Console.getConsole(MediaManagerImpl.class);
     private ArrayList listeners = new ArrayList();
 
@@ -591,6 +591,7 @@ if (false) {
 	    if (Logger.logLevel >= Logger.LOG_MOREINFO) {
 	        Logger.println("closing speaker");
 	    }
+	    speaker.removeListener(this);
 	    speaker.done();
 	    speaker = null;
 	}
@@ -713,16 +714,74 @@ if (false) {
 	}
     }
 
+    private static final int VU_COUNT = 10;
+    private int micVuMeterCount = 0;
+    private double micVuMeterVolume;
+
     public void microphoneData(byte[] linearData, int offset, int length) {
 	if (microphone == null) {
 	    return;
 	}
 
-	if (isMuted) {
-	    System.out.println("VuMeterData:" + 0.0);
+	if (micVuMeterCount++ >= VU_COUNT) {
+	    micVuMeterCount = 0;
+
+	    if (isMuted) {
+	        System.out.println("VuMeterData:" + 0.0);
+	    } else {
+	        System.out.println("VuMeterData:" + micVuMeterVolume);
+	    }
+
+	    micVuMeterVolume = 0;
 	} else {
-	    System.out.println("VuMeterData:" + LevelTest.processChunk(linearData, offset, length,
-	        microphone.getSampleSizeInBits() / 8 * microphone.getChannels()));
+	    double volume = LevelTest.processChunk(linearData, offset, length,
+	            microphone.getSampleSizeInBits() / 8 * microphone.getChannels());
+
+	    volume = Math.abs(volume);
+
+	    if (volume > micVuMeterVolume) {
+		micVuMeterVolume = volume;
+	    }
+	}
+    }
+
+    public void startSpeakerVuMeter(boolean startSpeakerVuMeter) {
+	if (speaker == null) {
+	    return;
+	}
+
+	if (startSpeakerVuMeter == true) {
+	    speaker.addListener(this);
+	} else {
+	    speaker.removeListener(this);
+	}
+    }
+
+    private int speakerVuMeterCount = 0;
+    private double speakerVuMeterVolume;
+
+    public void speakerData(byte[] linearData, int offset, int length) {
+	if (speaker == null) {
+	    return;
+	}
+
+	if (speakerVuMeterCount++ >= VU_COUNT) {
+	    speakerVuMeterCount = 0;
+
+	    if (isMuted) {
+	        System.out.println("SpeakerVuMeterData:" + 0.0);
+	    } else {
+	        System.out.println("SpeakerVuMeterData:" + speakerVuMeterVolume);
+	    }
+	} else {
+	    double volume = LevelTest.processChunk(linearData, offset, length,
+                speaker.getSampleSizeInBits() / 8 * speaker.getChannels());
+
+            volume = Math.abs(volume);
+
+            if (volume > speakerVuMeterVolume) {
+                speakerVuMeterVolume = volume;
+            }
 	}
     }
 
@@ -911,6 +970,14 @@ if (false) {
 	}
 
 	return audioTransmitter.getMicVolumeLevel();
+    }
+
+    public int getSpeakerVolumeLevel() {
+	if (audioReceiver == null) {
+	    return 0;
+	}
+
+	return audioReceiver.getSpeakerVolumeLevel();
     }
 
     public int getPacketsReceived() {

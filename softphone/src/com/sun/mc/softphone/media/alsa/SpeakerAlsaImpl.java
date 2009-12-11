@@ -27,6 +27,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 
+import java.util.ArrayList;
+
 import  com.sun.mc.softphone.common.Utils;
 
 import	com.sun.voip.DotAuAudioSource;
@@ -36,6 +38,7 @@ import	com.sun.voip.TreatmentManager;
 
 import	com.sun.mc.softphone.media.MediaManager;
 import	com.sun.mc.softphone.media.Speaker;
+import	com.sun.mc.softphone.media.SpeakerListener;
 
 /**
  * Manages the Speaker
@@ -192,8 +195,10 @@ public class SpeakerAlsaImpl implements Speaker {
 
 	System.arraycopy(buffer, offset, data, 0, length);
 
-        buffer = applyVolume(data, 0, length);
+        buffer = adjustVolume(data, 0, length);
   
+	notifyListeners(buffer, offset, length);
+
 	int len = 0;
 
 	try {
@@ -227,7 +232,7 @@ public class SpeakerAlsaImpl implements Speaker {
 	return len;
     }
 
-    private byte[] applyVolume(byte[] buffer, int offset, int length) {
+    private byte[] adjustVolume(byte[] buffer, int offset, int length) {
         if (volumeLevel != 1.0D) {
 	    int inIx = offset;
 
@@ -253,6 +258,33 @@ public class SpeakerAlsaImpl implements Speaker {
         return buffer;
     }
     
+    ArrayList listeners = new ArrayList();
+
+    public void addListener(SpeakerListener listener) {
+        synchronized (listeners) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removeListener(SpeakerListener listener) {
+        synchronized (listeners) {
+            listeners.remove(listener);
+        }
+    }
+
+    private void notifyListeners(byte[] linearData,
+            int offset, int length) {
+
+        synchronized (listeners) {
+            for (int i = 0; i < listeners.size(); i++) {
+                SpeakerListener listener = (SpeakerListener)
+                    listeners.get(i);
+
+                listener.speakerData(linearData, offset, length);
+            }
+        }
+    }
+
     public void start() {
     }
 
