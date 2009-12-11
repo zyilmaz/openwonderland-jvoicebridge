@@ -109,7 +109,7 @@ public interface MediaManager {
 
     public int getMicVolumeLevel();
 
-    public void startVuMeter(boolean startVuMeter);
+    public void startMicVuMeter(boolean startVuMeter);
 
     public int getSpeakerVolumeLevel();
 
