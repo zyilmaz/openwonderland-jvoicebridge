@@ -702,7 +702,7 @@ if (false) {
 	initialize();
     }
 
-    public void startVuMeter(boolean startVuMeter) {
+    public void startMicVuMeter(boolean startVuMeter) {
 	if (microphone == null) {
 	    return;
 	}
