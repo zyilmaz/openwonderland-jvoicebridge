@@ -768,11 +768,7 @@ if (false) {
 	if (speakerVuMeterCount++ >= VU_COUNT) {
 	    speakerVuMeterCount = 0;
 
-	    if (isMuted) {
-	        System.out.println("SpeakerVuMeterData:" + 0.0);
-	    } else {
-	        System.out.println("SpeakerVuMeterData:" + speakerVuMeterVolume);
-	    }
+	    System.out.println("SpeakerVuMeterData:" + speakerVuMeterVolume);
 
 	    speakerVuMeterVolume = 0;
 	} else {
