@@ -66,6 +66,7 @@ import javax.sip.*;
 import javax.sip.address.*;
 import javax.sip.header.*;
 import javax.sip.message.*;
+import com.sun.mc.softphone.SipCommunicator;
 import com.sun.mc.softphone.common.*;
 import com.sun.mc.softphone.sip.security.SipSecurityException;
 
@@ -187,21 +188,13 @@ class RegisterProcessing
 
 	    okToShowDialogBox = false;
 
-	    Logger.println(
-		"The softphone was unable to register with the server.\n"
-		+ "The softphone will not work!"
-		+ "This could be a network problem such as being unable\n"
-		+ "to send and receive UDP packets through a firewall,\n"
-		+ "or perhaps the server is not running.\n"
-		+ "What follows is the SIP REGISTER request.\n\n\n" + request);
-
-	    Console.showErrorUI("Softphone Error!",
-		"The softphone was unable to register with the server.\n"
-		+ "The softphone will not work!",
-		"This could be a network problem such as being unable\n"
-		+ "to send and receive UDP packets through a firewall,\n"
-		+ "or perhaps the server is not running.\n"
-		+ "Below is the SIP REGISTER request\n\n\n" + request);
+	    SipCommunicator.softphoneProblem(
+		" The softphone was unable to register with the server."
+		+ " The softphone will not work."
+		+ " This could be a network problem such as being unable "
+		+ "to send and receive UDP packets through a firewall"
+		+ " or perhaps the server is not running.\n"
+		+ "What follows is the SIP REGISTER request. " + request);
         }
         finally {
             console.logExit();

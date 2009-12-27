@@ -444,14 +444,15 @@ public class SipManager
                         //choose another port between 1024 and 65000
                         Logger.println("error binding stack to port " + localPort 
 			    + ". Will try another port. " + ex.getMessage());
-                        Logger.exception("Error assinging address", ex);
+                        Logger.exception("Error assigning address", ex);
                         
                         localPort = (int) ( (65000 - 1024) * Math.random()) +
                             1024;
                         continue;
                     }
 		    catch (IOException e) {
-			Logger.println("Unable to get public address:  " 
+			SipCommunicator.softphoneProblem("Network Problem."
+			    + " Unable to get public address:  " 
 			    + e.getMessage());
 		    }
                     successfullyBound = true;

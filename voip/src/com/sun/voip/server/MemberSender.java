@@ -413,7 +413,7 @@ public class MemberSender implements RecorderDoneListener {
 	//Logger.println("Call " + cp + " Sending data...");
 
 	for (DataListener listener : dataListeners) {
-	     listener.data(dataToSend, dataToSend.length);
+	     listener.linearData(dataToSend, dataToSend.length);
 	}
 
 	if (myMediaInfo.getEncoding() == RtpPacket.PCMU_ENCODING) {
@@ -441,6 +441,10 @@ public class MemberSender implements RecorderDoneListener {
 	} else {
 	    AudioConversion.intsToBytes(dataToSend, rtpData, 
 		RtpPacket.HEADER_SIZE);
+	}
+
+	for (DataListener listener : dataListeners) {
+	     listener.rtpData(rtpData, senderPacket.getLength());
 	}
 
 	recordPacket(rtpData, senderPacket.getLength());

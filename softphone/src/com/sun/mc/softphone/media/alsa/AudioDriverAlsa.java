@@ -31,6 +31,8 @@ import java.util.ArrayList;
 
 import com.sun.voip.Logger;
 
+import com.sun.mc.softphone.SipCommunicator;
+
 import com.sun.mc.softphone.common.Utils;
 
 import com.sun.mc.softphone.media.Microphone;
@@ -104,8 +106,8 @@ public class AudioDriverAlsa extends Object implements AudioDriver {
 		bufferSize);
 
 	    if (ret < 0) {
-		Logger.println("Unable to initialize microphone:  " + device
-		    + " error " + ret);
+		SipCommunicator.softphoneProblem("Unable to initialize microphone. " 
+		   + device + " error " + ret);
 
 		throw new IOException("Unable to initialize microphone:  " 
 		    + device + " error " + ret);
@@ -145,8 +147,8 @@ public class AudioDriverAlsa extends Object implements AudioDriver {
 		bufferSize);
 
 	    if (ret < 0) {
-		Logger.println("Unable to initialize speaker:  " + device
-		    + " error " + ret);
+		SipCommunicator.softphoneProblem("Unable to initialize speaker. " 
+		    + device + " error " + ret);
 
 		throw new IOException("Unable to initialize speaker:  " 
 		    + device + " error " + ret);

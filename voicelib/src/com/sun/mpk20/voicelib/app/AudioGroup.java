@@ -48,6 +48,8 @@ public interface AudioGroup extends Serializable {
 
     public void removePlayers();
 
+    public void removeAudioGroupListener(AudioGroupListener listener);
+
     public void setSpeakingAttenuation(Player player, 
 	double speakingAttenuation);
 

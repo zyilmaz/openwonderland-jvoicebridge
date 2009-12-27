@@ -1284,6 +1284,10 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
 	long start = 0;
 
+        for (DataListener listener : dataListeners) {
+             listener.rtpData(receivedData, length);
+        }
+
 	int[] data = decodeToLinear(receivedData, length);
 
 	if (inputVolume != 1.0) {
@@ -1494,10 +1498,6 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	    if (speechDetector.processData(data) == true) {
 		callHandler.speakingChanged(speechDetector.isSpeaking());
 	    }
-        }
-
-        for (DataListener listener : dataListeners) {
-             listener.data(data, data.length);
         }
     }
 
