@@ -32,6 +32,8 @@ import java.util.ArrayList;
 
 import com.sun.voip.Logger;
 
+import com.sun.mc.softphone.SipCommunicator;
+
 import com.sun.mc.softphone.common.Utils;
 
 import com.sun.mc.softphone.media.alsa.AlsaAudioServiceProvider;
@@ -79,9 +81,10 @@ public class AudioFactory {
 	    try {
                 audioServiceProvider = new CoreAudioAudioServiceProvider();
             } catch (Throwable e) {
-		System.err.println("Unable to load Mac Core Audio "
-		    + "native library: " + e.getMessage());
-		Logger.println("THE SOFTPHONE WILL NOT WORK PROPERLY!");
+		SipCommunicator.softphoneProblem("Unable to initialize the audio system."
+		    + "Unable to load Mac Core Audio "
+		    + "native library: " + e.getMessage()
+		    + ". Audio will not work.");
 
 		e.printStackTrace();
 	    }

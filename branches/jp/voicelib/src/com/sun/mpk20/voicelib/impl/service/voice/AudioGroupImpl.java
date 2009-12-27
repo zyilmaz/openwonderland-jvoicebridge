@@ -145,6 +145,10 @@ public class AudioGroupImpl implements AudioGroup {
 	//System.out.println("AudioGroup Added " + player.getId() + " to " + this + " call info " + info);
     }
 
+    public void removeAudioGroupListener(AudioGroupListener listener) {
+	listeners.remove(listener);
+    }
+
     public void removePlayer(Player player) {
 	//System.out.println("Audiogroup removed player " + player + " from " + this);
 	//new Exception("removed player " + player).printStackTrace();
@@ -171,7 +175,7 @@ public class AudioGroupImpl implements AudioGroup {
 
 	//System.out.println("AudioGroup removed " + player.getId() + " from " + this);
 
-	if (players.size() == 0) {
+	if (setup.removeWhenLastPlayerRemoved && players.size() == 0) {
 	    VoiceManagerParameters parameters = voiceImpl.getVoiceManagerParameters();
 
 	    if (this.equals(parameters.livePlayerAudioGroup) == false &&

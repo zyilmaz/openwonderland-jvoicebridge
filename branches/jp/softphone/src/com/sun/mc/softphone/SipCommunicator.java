@@ -263,7 +263,8 @@ public class SipCommunicator extends Thread implements
 		    playTreatment(treatment, 99999);
 		}
             } catch (IOException e) {
-                Logger.println("Unable to start audio:  " + e.getMessage());
+		softphoneProblem("Unable to start audio. "
+		    + e.getMessage());
 		e.printStackTrace();
             }
 
@@ -343,6 +344,10 @@ public class SipCommunicator extends Thread implements
         }
     }
  
+    public static void softphoneProblem(String problem) {
+	Logger.println("Softphone Problem:  " + problem);
+    }
+
     private void setPrivateLocalAddress() {
 	String s = Utils.getPreference("com.sun.mc.stun.LOCAL_IP_ADDRESS");
 
@@ -350,7 +355,7 @@ public class SipCommunicator extends Thread implements
 	    try {
 	        privateLocalAddress = InetAddress.getByName(s);
 	    } catch (UnknownHostException e) {
-		Logger.println("Invalid local host name:  " + s 
+		softphoneProblem("Invalid local host name:  " + s + "."
 		    + e.getMessage());
 	    }
 	}
@@ -378,7 +383,7 @@ public class SipCommunicator extends Thread implements
 		Logger.println("Using InetAddress.getLocalHost():  "
 		    + privateLocalAddress);
 	    } catch (UnknownHostException e) {
-		Logger.println("Can't get localhost! " + e.getMessage());
+		softphoneProblem("Can't get localhost. " + e.getMessage());
 	    }
 	}
     }
@@ -474,8 +479,8 @@ public class SipCommunicator extends Thread implements
                     continue;
                 }
 
-                Logger.println("Sip Communicator terminating.  "
-                    + "Unable to read heart beat from MC");
+                softphoneProblem("Sip Communicator terminating.  "
+                    + "Unable to read heart beat.");
 
                 shutDown();
                 break;
@@ -508,7 +513,7 @@ public class SipCommunicator extends Thread implements
                 String command = bufferedReader.readLine();
 		
 		if (command == null) {
-		    Logger.println("Sip Communicator terminating.  "
+		    softphoneProblem("Sip Communicator terminating.  "
 			+ "End of input stream");
 
 		    System.exit(1);
@@ -516,8 +521,8 @@ public class SipCommunicator extends Thread implements
 		
 		processCommand(command);
 	    } catch (IOException e) {
-		Logger.println("Sip Communicator terminating.  "
-		    + "Unable to read heart beat from MC");
+		softphoneProblem("Sip Communicator terminating.  "
+		    + "Unable to read heart beat");
 		    
 		shutDown();
 		break;
@@ -528,6 +533,22 @@ public class SipCommunicator extends Thread implements
     private int previousLogLevel;
 
     public void processCommand(String command) {
+	if (command.indexOf("ping") >= 0) {
+	    if (firstTime) {
+		firstTime = false;
+		Logger.println("softphone got ping from MC:  " + command);
+	    }
+
+	    synchronized (timeoutLock) {
+		ping_timeout_count = 0;
+	    }
+	    return;
+	}
+
+	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
+	    Logger.println("Got command '" + command + "'");
+	}
+
 	if (command.indexOf("logLevel=") >= 0) {
             String tokens[] = command.split("=");
 
@@ -542,6 +563,7 @@ public class SipCommunicator extends Thread implements
 
 	if (command.indexOf("StartMicVuMeter=") >= 0) {
 	    if (mediaManager == null) {
+		System.out.println("Can't start Mic VuMeter, Media Manager is null...");
 		return;
 	    }
 
@@ -587,22 +609,6 @@ public class SipCommunicator extends Thread implements
 	if (command.indexOf("endCalls") >= 0) {
 	    endCalls();
   	    return;
-	}
-
-	if (command.indexOf("ping") >= 0) {
-	    if (firstTime) {
-		firstTime = false;
-		Logger.println("softphone got ping from MC:  " + command);
-	    }
-
-	    synchronized (timeoutLock) {
-		ping_timeout_count = 0;
-	    }
-	    return;
-	}
-
-	if (Logger.logLevel >= Logger.LOG_MOREINFO) {
-	    Logger.println("Got command '" + command + "'");
 	}
 
 	if (command.indexOf("Shutdown") >= 0) {
@@ -721,7 +727,7 @@ public class SipCommunicator extends Thread implements
 
             String callee = number[1];
 
-	    System.out.println(
+	    Logger.println(
 		"Dialing Conference id " + conferenceId
 		    + " userName " + userName
 		    + " callee " + callee);
@@ -1947,10 +1953,6 @@ if (false) {
 	        }
             } else if (evt.getNewState() == Call.CONNECTED) {
 	        if (Logger.logLevel >= Logger.LOG_MOREINFO) {
-		    Logger.println("Connected...");
-		}
-
-	        if (Logger.logLevel >= Logger.LOG_MOREINFO) {
 		    Logger.println("Setting remote sdp...");
 		}
 
@@ -1965,9 +1967,12 @@ if (false) {
             		    guiManager.muted(mediaManager.isMuted());
 			}
 		    }
+
+		    Logger.println("Softphone Connected...");
+
                 } catch (IOException ex) {
-                    console.showError(
-                        "The following exception occurred while trying to open media connection:\n"
+                    softphoneProblem("Unable to start audio system."
+                        + " The following exception occurred while trying to open media connection:\n"
                         + ex.getMessage());
 
 		    if (Logger.logLevel >= Logger.LOG_INFO) {
@@ -1983,7 +1988,7 @@ if (false) {
 //                }
 //		  shutDown();
             } else if (evt.getNewState() == Call.DISCONNECTED) {
-		Logger.println("Disconnected");
+		Logger.println("Softphone Disconnected");
 
                 // restart the global media manager
                 try {

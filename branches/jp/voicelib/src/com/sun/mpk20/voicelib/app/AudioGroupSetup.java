@@ -32,4 +32,6 @@ public class AudioGroupSetup implements Serializable {
 
     public VirtualPlayerListener virtualPlayerListener;
 
+    public boolean removeWhenLastPlayerRemoved = true;
+
 }

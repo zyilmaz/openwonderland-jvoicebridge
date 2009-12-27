@@ -566,10 +566,8 @@ if (false) {
 	        microphoneSampleRate, microphoneChannels, microphoneBufferSize,
 	        speakerBufferSize);
 	} catch (IOException e) {
-	    Console.showErrorUI("Softphone Error!",
-		   "The softphone couldn't initialize the audio system.\n"
-		   + "The softphone will not work!",
-		   e.getMessage());
+	    SipCommunicator.softphoneProblem("Unable to initialize the audio system."
+		   + " The softphone will not work." + e.getMessage());
 	    throw e;
 	}
 
@@ -704,14 +702,15 @@ if (false) {
 
     public void startMicVuMeter(boolean startVuMeter) {
 	if (microphone == null) {
+	    Logger.println("startMicVuMeter:  Microphone is null");
 	    return;
 	}
 
+	microphone.removeListener(this);
+
 	if (startVuMeter == true) {
 	    microphone.addListener(this);
-	} else {
-	    microphone.removeListener(this);
-	}
+	} 
     }
 
     private static final int VU_COUNT = 10;
@@ -750,10 +749,10 @@ if (false) {
 	    return;
 	}
 
+	speaker.removeListener(this);
+
 	if (startSpeakerVuMeter == true) {
 	    speaker.addListener(this);
-	} else {
-	    speaker.removeListener(this);
 	}
     }
 
@@ -1157,7 +1156,8 @@ if (false) {
 		    new InetSocketAddress(registrarAddress, registrarPort), 
 		    rtpSocket.getDatagramSocket());
 	    } catch (IOException e) {
-	        Logger.println("generateSdp couldn't get public address "
+	        SipCommunicator.softphoneProblem("Network problem."
+		    + " generateSdp couldn't get public address: "
 		    + e.getMessage());
 	    }
 	}
@@ -1213,20 +1213,20 @@ if (false) {
 		remoteSdpInfo.getRemotePort()), 
 	        rtpSocket.getDatagramSocket());
 	} catch (IOException e) {
-	    Logger.println("generateSdp couldn't get public address "
-		+ e.getMessage());
+	    SipCommunicator.softphoneProblem("Network Problem."
+		+ " generateSdp couldn't get public address: " + e.getMessage());
 
 	    if (sipManager.isRegistrarStunServer()) {
-		Console.showErrorUI("Softphone Error!",
-		   "The softphone couldn't get the public address for "
+		SipCommunicator.softphoneProblem("Network Problem."
+		   + "The softphone couldn't get the public address for "
 		   + rtpSocket.getDatagramSocket().getLocalAddress() + ":"
-		   + rtpSocket.getDatagramSocket().getLocalPort() + "\n"
-		   + "The softphone will not work!",
-		   "No response from STUN server "
+		   + rtpSocket.getDatagramSocket().getLocalPort()
+		   + ". The softphone will not work."
+		   + " No response from STUN server "
 		   + remoteSdpInfo.getRemoteHost() + ":"
-		   + remoteSdpInfo.getRemotePort() + "\n\n"
-		   +  "This could be a network problem such as being unable\n"
-                   + "to send and receive UDP packets through a firewall\n");
+		   + remoteSdpInfo.getRemotePort() 
+		   + ". This could be a network problem such as being unable"
+                   + " to send and receive UDP packets through a firewall\n");
 	    }
 	}
 

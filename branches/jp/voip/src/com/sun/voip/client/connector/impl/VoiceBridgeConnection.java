@@ -619,7 +619,7 @@ public class VoiceBridgeConnection implements Runnable {
      *
      * @param message the message to send
      */
-    protected void sendMessage(String message) throws IOException {
+    public void sendMessage(String message) throws IOException {
         logger.finest("Send message: " + message);
         
         if (!isConnected(socket) || output == null) {

@@ -409,6 +409,12 @@ public class Bridge extends Thread {
 	if (publicHost.startsWith("127.") ||
 	        publicHost.equalsIgnoreCase("localhost")) {
 
+	    if (privateHost.startsWith("127.") == false) {
+		Logger.println("WARNING:  Invalid public address " + publicHost
+		   + " obtained from resolving " + s + ". Using private address "
+		   + privateHost);
+	    }
+
 	    /*
 	     * This can't be a public address so use the same address as localHost
 	     */
