@@ -36,6 +36,8 @@ import java.net.UnknownHostException;
 
 import com.sun.voip.Util;
 
+import com.sun.mc.softphone.common.Utils;
+
 import com.sun.mc.softphone.media.AudioFactory;
 import com.sun.mc.softphone.media.Microphone;
 import com.sun.mc.softphone.media.Speaker;
@@ -48,7 +50,7 @@ public class AudioTestTcp {
 
     private InetSocketAddress isa;
 
-    private String device = "plughw:0,0";
+    private String device = "plughw:1,0 ";
     private int sampleRate = 16000;
     private int channels = 2;
 
@@ -85,7 +87,12 @@ public class AudioTestTcp {
                     System.exit(1);
                 }
             } else if (arg.equalsIgnoreCase("-device") && args.length > ++i) {
-                device = args[i];
+		/*
+		 * Must have a space after it.  
+		 */
+                device = args[i] + " ";
+		Utils.setPreference(Microphone.MICROPHONE_PREFERENCE, device);
+		Utils.setPreference(Speaker.SPEAKER_PREFERENCE, device);
             } else if (arg.equalsIgnoreCase("-port") && args.length > ++i) {
 		server = true;
 
@@ -139,7 +146,8 @@ public class AudioTestTcp {
 	    ServerSocket serverSocket = null;
 
 	    try {
-		System.out.println("Server socket is listening on port " + serverPort);
+		System.out.println("Server socket is listening on port " 
+		    + serverPort);
 
                 serverSocket = new ServerSocket(serverPort);
             } catch (IOException e) {
@@ -150,7 +158,8 @@ public class AudioTestTcp {
 
 	    try {
                 socket = serverSocket.accept(); // wait for connection
-		System.out.println("Accepted a connection from " + socket.getInetAddress());
+		System.out.println("Accepted a connection from " 
+		    + socket.getInetAddress());
             } catch (IOException e) {
                 System.out.println("Unable to handle connection:  "
                     + e.getMessage());
@@ -158,20 +167,20 @@ public class AudioTestTcp {
             }
 	} else { 
             try {
-            	isa = new InetSocketAddress(InetAddress.getByName(serverAddress), serverPort);
+            	isa = new InetSocketAddress(InetAddress.getByName(serverAddress), 
+		    serverPort);
 	    } catch (UnknownHostException e) {
             	System.out.println("UnknownHost: " + serverAddress);
             	System.exit(1);
             }
 
-	    socket = new Socket();
-
 	    boolean firstTime = true;
 
-	    System.out.println("Connecting to " + isa);
+	    System.out.println("Connecting to ... " + isa);
 
 	    while (true) {
 		try {
+	    	    socket = new Socket();
 		    socket.connect(isa);
 		    break;
 		} catch (IOException e) {
@@ -264,7 +273,7 @@ public class AudioTestTcp {
 			System.out.println("writing tcp socket...");
 		    }
 
-	 	    Util.dump("mic data", microphoneData, 0, 16);
+	 	    //Util.dump("mic data", microphoneData, 0, 16);
 
 	            output.write(microphoneData);   
 		    output.flush();
@@ -329,7 +338,7 @@ public class AudioTestTcp {
 			System.out.println("Back from reading TCP data");
 		    }
 
-		    Util.dump("speaker data ", receiveBuffer, 0, 16);
+		    //Util.dump("speaker data ", receiveBuffer, 0, 16);
 	        } catch (IOException e) {
 		    System.out.println(
 			"Unable to read socket! " + e.getMessage());
