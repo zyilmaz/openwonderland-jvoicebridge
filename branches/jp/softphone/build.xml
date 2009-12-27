@@ -223,15 +223,6 @@
             </manifest> 
         </jar>
 
-        <signjar alias="signSoftphone"
-                keystore="joestore"
-                lazy="true"
-                storepass="foobar">
-            <fileset dir="build/lib">
-                <include name="softphone.jar"/>
-            </fileset>
-        </signjar>
-
     </target>
     
     <!-- == Netbeans integration == -->
