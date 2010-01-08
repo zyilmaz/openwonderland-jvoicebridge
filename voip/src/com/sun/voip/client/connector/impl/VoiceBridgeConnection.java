@@ -432,19 +432,34 @@ public class VoiceBridgeConnection implements Runnable {
     }
 
     /**
-     * Record the audio of a call
+     * Record the audio that's being sent to a call
      */
-    public void recordCall(String recordingFile, String callId) throws IOException {
-		String s = "recordMemberSpeech=true:" + callId +":"+ recordingFile + "\n";
-		System.out.println("****\n"+s+"\n****");
-	    sendMessage(s);
+    public void recordToCall(String recordingFile, String callId) throws IOException {
+	String s = "recordToMember=true:" + callId +":"+ recordingFile + ":Au" + "\n";
+	sendMessage(s);
     }
     
     /**
      * Stop recording the audio of a call
      */
-    public void stopRecordingCall(String callId) throws IOException {
-        String s = "recordMemberSpeech=false:" + callId;
+    public void stopRecordingToCall(String callId) throws IOException {
+        String s = "recordTomember=false:" + callId + "\n";
+        sendMessage(s);
+    }
+    
+    /**
+     * Record the audio that's being received from a call
+     */
+    public void recordFromCall(String recordingFile, String callId) throws IOException {
+	String s = "recordFromMember=true:" + callId +":"+ recordingFile + ":Au" + "\n";
+	sendMessage(s);
+    }
+    
+    /**
+     * Stop recording the audio from a call
+     */
+    public void stopRecordingFromCall(String callId) throws IOException {
+        String s = "recordFrommember=false:" + callId + "\n";
         sendMessage(s);
     }
     
