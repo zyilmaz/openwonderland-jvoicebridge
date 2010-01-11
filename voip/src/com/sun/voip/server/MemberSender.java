@@ -988,6 +988,7 @@ public class MemberSender implements RecorderDoneListener {
 	    if (enabled == false) {
 	        if (recorder != null) {
 		    recorder.done();
+		    recorder.recorderDone();
 	        }
 	        cp.setToRecordingFile(null);
 		return;
