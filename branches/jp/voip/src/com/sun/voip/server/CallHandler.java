@@ -248,6 +248,10 @@ public abstract class CallHandler extends Thread {
 
     public void addCallEventListener(CallEventListener listener) {
         synchronized (callEventListeners) {
+	    if (callEventListeners.contains(listener)) {
+		return;
+	    }
+
             callEventListeners.add(listener);
         }
     }

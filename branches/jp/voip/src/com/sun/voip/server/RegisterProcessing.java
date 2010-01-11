@@ -434,7 +434,7 @@ class RegisterProcessing implements SipListener {
         }
 
         try {
-            SipURI contactURI = (SipURI) addressFactory.createURI( loginInfo);
+            SipURI contactURI = (SipURI) addressFactory.createURI(loginInfo);
 
             contactURI.setTransportParam(
 		sipProvider.getListeningPoint().getTransport());

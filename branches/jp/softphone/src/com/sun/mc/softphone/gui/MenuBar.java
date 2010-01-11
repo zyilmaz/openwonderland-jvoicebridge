@@ -388,6 +388,11 @@ class MenuBar extends JMenuBar {
         callMenu.add(perfMon);
     }
 
+    void addTestUDPAction(Action action) {
+        JMenuItem testUDP = new JMenuItem(action);
+        callMenu.add(testUDP);
+    }
+
     void addExitCallAction(Action action) {
         callMenu.addSeparator();
         callMenu.add(action);

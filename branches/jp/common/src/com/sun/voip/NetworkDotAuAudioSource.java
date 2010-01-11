@@ -104,6 +104,8 @@ public class NetworkDotAuAudioSource extends DotAuAudioSource {
      * Read audio data from a URL.
      */
     public NetworkDotAuAudioSource(String path) throws IOException {
+	path = path.replaceAll(" ", "%20");
+
 	url = new URL(path);
 
 	try {

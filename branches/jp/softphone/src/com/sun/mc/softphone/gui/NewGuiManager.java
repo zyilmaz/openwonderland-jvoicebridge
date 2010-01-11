@@ -122,6 +122,8 @@ public class NewGuiManager implements GuiManagerUI, GuiCallback,
 
     private PerfMonDialog perfMonDialog = null;
 
+    private TestUDPFrame testUDPFrame = null;
+
     private Process audioControlProcess = null;
 
     private VolumeControl volumeControl = null;
@@ -170,6 +172,7 @@ public class NewGuiManager implements GuiManagerUI, GuiCallback,
 	( (MenuBar) phoneFrame.jMenuBar1).addRecordAction(new RecordAction());
 	( (MenuBar) phoneFrame.jMenuBar1).addPlaybackAction(new PlaybackAction());
 	( (MenuBar) phoneFrame.jMenuBar1).addPerfMonAction(new PerfMonAction());
+	( (MenuBar) phoneFrame.jMenuBar1).addTestUDPAction(new TestUDPAction());
 	( (MenuBar) phoneFrame.jMenuBar1).addExitCallAction(new ExitAction());
 	configFrame.setLocationRelativeTo(phoneFrame);
         //phoneFrame.participantsTable.setModel(interlocutors);
@@ -729,6 +732,20 @@ public class NewGuiManager implements GuiManagerUI, GuiCallback,
             }
 
 	    perfMonDialog.setVisible(true);
+        }
+    }
+
+    private class TestUDPAction extends AbstractAction {
+        public TestUDPAction() {
+            super("Test UDP");
+        }
+
+        public void actionPerformed(ActionEvent evt) {
+            if (testUDPFrame == null) {
+                testUDPFrame = new TestUDPFrame();
+            }
+
+	    testUDPFrame.setVisible(true);
         }
     }
 

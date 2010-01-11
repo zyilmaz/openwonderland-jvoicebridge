@@ -792,6 +792,10 @@ class RequestHandler extends Thread implements CallEventListener {
     public void monitorOutgoingCalls(boolean monitor) {
         synchronized(outgoingCallListeners) {
             if (monitor == true) {
+		if (outgoingCallListeners.contains(this)) {
+		    return;
+		}
+
                 outgoingCallListeners.add(this);
             } else {
                 outgoingCallListeners.remove(this);
@@ -809,9 +813,20 @@ class RequestHandler extends Thread implements CallEventListener {
 	notifyConferenceMonitors(callEvent);
     }
 
-    public static void outgoingCallNotification(CallEvent callEvent) {
+    public static void outgoingCallNotification(CallEventListener listener,
+	    CallEvent callEvent) {
+
         synchronized(outgoingCallListeners) {
 	    for (RequestHandler requestHandler : outgoingCallListeners) {
+                /*
+                 * If the listener is also monitoring outgoing call status,
+                 * no need to send the status here.  It will be sent
+                 * to the listener separately from this.
+                 */
+                if (listener.equals(requestHandler)) {
+                    continue;
+                }
+
                 requestHandler.callEventNotification(callEvent);
             }
         }

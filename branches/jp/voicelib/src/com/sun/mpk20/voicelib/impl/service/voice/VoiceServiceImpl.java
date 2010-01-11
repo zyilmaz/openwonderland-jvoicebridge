@@ -837,6 +837,12 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	return VoiceImpl.getInstance().dump(command);
     }
 
+    public void testUDPPort(String host, int port, int duration) throws IOException {
+	BridgeConnection bc = bridgeManager.getBridgeConnection();
+
+	bc.sendMessage("testUDP=" + host + ":" + port + ":" + duration + "\n");
+    }
+
     /**
      * Inner class that is used to track state associated with a single
      * transaction. This is indexed in the local transaction map.

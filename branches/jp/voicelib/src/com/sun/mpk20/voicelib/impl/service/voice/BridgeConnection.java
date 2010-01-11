@@ -882,7 +882,7 @@ if (false) {
         }
     }
 
-    public String stopRecordingToCall(String callId) throws IOException {
+    public void stopRecordingToCall(String callId) throws IOException {
 	String cmd = "recordToMember=f:" + callId + "\n";
 
         BridgeResponse br = sendWithResponse(cmd);
@@ -892,7 +892,8 @@ if (false) {
         switch (br.getStatus()) {
         case SUCCESS:
             logger.finest("stop recording success: " + cmd);
-            return br.getMessage();
+            //return br.getMessage();
+            return; 
 
         default:
             throw new IOException("stop recording failed:  " + cmd

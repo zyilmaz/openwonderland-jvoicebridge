@@ -110,11 +110,7 @@ public class SipUtil {
 	String s = System.getProperty("com.sun.voip.server.PUBLIC_IP_ADDRESS");
 
 	if (s != null && s.length() > 0) {
-	    try {
-	        ourPublicIpAddress = InetAddress.getByName(s).getHostAddress();
-	    } catch (UnknownHostException e) {
-		Logger.println("Invalid public IP address, using " + ourIpAddress);
-	    }
+	    ourPublicIpAddress = s;
 	}
 
 	Logger.println("Bridge public address:    " + ourPublicIpAddress);
@@ -135,6 +131,9 @@ public class SipUtil {
 
 	supportedMedia.add(new MediaInfo(
             (byte)0, RtpPacket.PCMU_ENCODING, 8000, 1, false));
+
+	supportedMedia.add(new MediaInfo(
+	    (byte)116, RtpPacket.PCM_ENCODING, 8000, 1, false));
 
         supportedMedia.add(new MediaInfo(
             (byte)101, RtpPacket.PCM_ENCODING, 8000, 1, true));
@@ -183,20 +182,6 @@ if (false) {
         supportedMedia.add(new MediaInfo(
             (byte)115, RtpPacket.PCMU_ENCODING, 32000, 2, false));
 
-if (false) {
-        supportedMedia.add(new MediaInfo(
-            (byte)116, RtpPacket.PCMU_ENCODING, 44100, 1, false));
-
-        supportedMedia.add(new MediaInfo(
-            (byte)117, RtpPacket.PCMU_ENCODING, 44100, 2, false));
-
-        supportedMedia.add(new MediaInfo(
-            (byte)118, RtpPacket.PCMU_ENCODING, 48000, 1, false));
-
-        supportedMedia.add(new MediaInfo(
-            (byte)119, RtpPacket.PCMU_ENCODING, 48000, 2, false));
-}
-
         supportedMedia.add(new MediaInfo(
             (byte)120, RtpPacket.SPEEX_ENCODING, 8000, 1, false));
 
@@ -223,13 +208,9 @@ if (false) {
     public ClientTransaction sendInvite(CallParticipant cp, InetSocketAddress isa)
 	    throws InvalidArgumentException, SipException, ParseException {
 
-	if (Bridge.getPublicHost().equals(isa.getAddress()) == false) {
-	    isa = new InetSocketAddress(Bridge.getPublicHost(), isa.getPort());
-	}
-	
 	String callee = cp.getPhoneNumber();
 
-	String sdp = generateSdp(cp, isa);
+	String sdp = generateSdp(cp, Bridge.getPublicHost(), isa.getPort());
 
  	InetAddress remoteAddress = null;
 
@@ -253,8 +234,9 @@ if (false) {
                         + "because callee doesn't have host in it:  " + callee);
                 } else {
 		    server = server.substring(0, ix);
-                    remoteAddress = InetAddress.getByName(server);
-		    sdp = generateSdp(cp, isa);
+		    remoteAddress = InetAddress.getByName(server);
+		    sdp = generateSdp(cp, Bridge.getPublicHost(), 
+			isa.getPort());
                 }
             }
         } catch (Exception e) {
@@ -265,8 +247,8 @@ if (false) {
         return sendInvite(cp, sdp);
     }
 
-    public String generateSdp(CallParticipant cp, InetSocketAddress isa) {
-        String sdp = sdpManager.generateSdp("MeetingCentral", isa);
+    public String generateSdp(CallParticipant cp, String host, int port) {
+        String sdp = sdpManager.generateSdp("MeetingCentral", host, port);
 
 	String s = "a=conferenceId:" + cp.getConferenceId();
 

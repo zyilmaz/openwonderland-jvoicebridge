@@ -45,7 +45,7 @@ public class MediaInfo {
             (byte)0, RtpPacket.PCMU_ENCODING, 8000, 1, false));
 
         supportedMedia.add(new MediaInfo(
-            (byte)119, RtpPacket.PCM_ENCODING, 8000, 1, false));
+            (byte)116, RtpPacket.PCM_ENCODING, 8000, 1, false));
 
         supportedMedia.add(new MediaInfo(
             (byte)101, RtpPacket.PCM_ENCODING, 8000, 1, true));
@@ -93,20 +93,6 @@ if (false) {
 
         supportedMedia.add(new MediaInfo(
             (byte)115, RtpPacket.PCMU_ENCODING, 32000, 2, false));
-
-if (false) {
-        supportedMedia.add(new MediaInfo(
-            (byte)116, RtpPacket.PCMU_ENCODING, 44100, 1, false));
-
-        supportedMedia.add(new MediaInfo(
-            (byte)117, RtpPacket.PCMU_ENCODING, 44100, 2, false));
-
-        supportedMedia.add(new MediaInfo(
-            (byte)118, RtpPacket.PCMU_ENCODING, 48000, 1, false));
-
-        supportedMedia.add(new MediaInfo(
-            (byte)119, RtpPacket.PCMU_ENCODING, 48000, 2, false));
-}
 
         supportedMedia.add(new MediaInfo(
             (byte)120, RtpPacket.SPEEX_ENCODING, 8000, 1, false));

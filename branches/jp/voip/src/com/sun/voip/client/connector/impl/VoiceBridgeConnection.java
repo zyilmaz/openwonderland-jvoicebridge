@@ -434,7 +434,7 @@ public class VoiceBridgeConnection implements Runnable {
     /**
      * Record the audio that's being sent to a call
      */
-    public void recordToCall(String recordingFile, String callId) throws IOException {
+    public void recordToCall(String callId, String recordingFile) throws IOException {
 	String s = "recordToMember=true:" + callId +":"+ recordingFile + ":Au" + "\n";
 	sendMessage(s);
     }
@@ -450,7 +450,7 @@ public class VoiceBridgeConnection implements Runnable {
     /**
      * Record the audio that's being received from a call
      */
-    public void recordFromCall(String recordingFile, String callId) throws IOException {
+    public void recordFromCall(String callId, String recordingFile) throws IOException {
 	String s = "recordFromMember=true:" + callId +":"+ recordingFile + ":Au" + "\n";
 	sendMessage(s);
     }

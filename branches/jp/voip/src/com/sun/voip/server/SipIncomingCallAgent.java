@@ -69,7 +69,9 @@ public class SipIncomingCallAgent extends CallSetupAgent implements SipListener 
     /**
      * Constructor
      */
-    public SipIncomingCallAgent(CallHandler callHandler, Object o) throws Exception {
+    public SipIncomingCallAgent(CallHandler callHandler, Object o) 
+	    throws Exception {
+
 	super(callHandler);
 
         sipServerCallback = SipServer.getSipServerCallback();
