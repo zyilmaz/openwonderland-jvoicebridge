@@ -296,4 +296,13 @@ public class VoiceManagerImpl implements VoiceManager {
 	return backingManager.dump(command);
     }
 
+    public void testUDPPort(String host, int port, int duration) {
+	try {
+	    backingManager.testUDPPort(host, port, duration);
+	} catch (IOException e) {
+	    logger.warning("Unable to test UDP Port " + port 
+		+ ": " + e.getMessage());
+	}
+    }
+
 }

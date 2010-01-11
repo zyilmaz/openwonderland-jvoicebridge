@@ -111,7 +111,8 @@ if (false) {
 	    isa = callHandler.getReceiveAddress();
 	}
 
-	return sipUtil.generateSdp(cp, isa);
+	return sipUtil.generateSdp(cp, isa.getAddress().getHostAddress(), 
+	    isa.getPort());
     }
 
     public void setRemoteMediaInfo(String sdp) throws ParseException {

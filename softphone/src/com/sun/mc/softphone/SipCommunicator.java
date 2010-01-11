@@ -966,6 +966,11 @@ public class SipCommunicator extends Thread implements
                 }
                 return;
             }
+
+	    if (command.indexOf("TestUDPPort") == 0) {
+		new TestUDPFrame();
+		return;
+	    }
 	}
 
 	Logger.println("Unrecognized command:  " + command);
@@ -1401,7 +1406,16 @@ public class SipCommunicator extends Thread implements
         }
     }
 
-    private synchronized void answerCall(Interlocutor interlocutor) {
+    private synchronized void answerCall(final Interlocutor interlocutor) {
+	java.awt.EventQueue.invokeLater(new Runnable() {
+	    public void run() {
+		answerCallLater(interlocutor);
+	    }
+	});
+    }
+
+    private void answerCallLater(Interlocutor interlocutor) {
+
 	try {
 	    console.logEntry();
 
@@ -1500,7 +1514,15 @@ if (false) {
         }
     }
 
-    public synchronized void handleHangupRequest(UserCallControlEvent evt) {
+    public synchronized void handleHangupRequest(final UserCallControlEvent evt) {
+	java.awt.EventQueue.invokeLater(new Runnable() {
+	    public void run() {
+		handleHangupRequestLater(evt);
+	    }
+	});
+    }
+
+    public synchronized void handleHangupRequestLater(UserCallControlEvent evt) {
         try {
             sipManager.endCall(evt.getAssociatedInterlocutor().getID());
 	    callInProgressInterlocutor = null;

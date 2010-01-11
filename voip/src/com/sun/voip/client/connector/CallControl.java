@@ -269,12 +269,23 @@ public interface CallControl {
     public void removeCallStatusListener(CallStatusListener listener);
     
     /**
-     * Record the audio of a call
+     * Record the audio sent to a call
      */
-    public void recordCall(String recordingFile) throws IOException;
+    public void recordToCall(String recordingFile) throws IOException;
     
     /**
-     * Stop recording the audio of a call
+     * Stop recording the audio sent to a call
      */
-    public void stopRecordingCall() throws IOException;
+    public void stopRecordingToCall() throws IOException;
+
+    /**
+     * Record the audio from a call
+     */
+    public void recordFromCall(String recordingFile) throws IOException;
+    
+    /**
+     * Stop recording the audio from a call
+     */
+    public void stopRecordingFromCall() throws IOException;
+
 }

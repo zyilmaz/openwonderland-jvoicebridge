@@ -144,4 +144,6 @@ public interface VoiceManager extends Serializable {
 
     public String dump(String command);
 
+    public void testUDPPort(String host, int port, int duration) throws IOException;
+
 }

@@ -24,6 +24,7 @@
 package com.sun.voip.server;
 
 import com.sun.voip.BridgeVersion;
+import com.sun.voip.CallEvent;
 import com.sun.voip.FreeTTSClient;
 import com.sun.voip.Logger;
 import com.sun.voip.NetworkTester;
@@ -39,6 +40,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 import java.util.ArrayList;
@@ -392,36 +395,8 @@ public class Bridge extends Thread {
 		+ e.getMessage());
         }
 
-	publicHost = privateHost;
-
-	s = System.getProperty("com.sun.voip.server.PUBLIC_IP_ADDRESS");
-
-	try {
-	    if (s != null && s.length() > 0) {
-		publicHost = InetAddress.getByName(s).getHostAddress();
-	    }
-	} catch (UnknownHostException e) {
-	    Logger.println("Invalid public IP Address:  " + s 
-		+ ".  Defaulting to private address " + privateHost + " " 
-		+ e.getMessage());
-	}
-
-	if (publicHost.startsWith("127.") ||
-	        publicHost.equalsIgnoreCase("localhost")) {
-
-	    if (privateHost.startsWith("127.") == false) {
-		Logger.println("WARNING:  Invalid public address " + publicHost
-		   + " obtained from resolving " + s + ". Using private address "
-		   + privateHost);
-	    }
-
-	    /*
-	     * This can't be a public address so use the same address as localHost
-	     */
-	    publicHost = privateHost;
-
-	    System.setProperty("com.sun.voip.server.PUBLIC_IP_ADDRESS", publicHost);
-	}
+	publicHost = System.getProperty("com.sun.voip.server.PUBLIC_IP_ADDRESS",
+	    privateHost);
 
 	s = System.getProperty(
 	    "com.sun.voip.server.BRIDGE_PUBLIC_CONTROL_PORT", 
@@ -554,6 +529,102 @@ public class Bridge extends Thread {
 		datagramSocket = null;
 	    }
         }
+    }
+
+    private static final int MAX_SECONDS_TO_SEND = 300;
+
+    public static void testUdp(RequestHandler requestHandler, InetAddress dest, 
+	    int port, int seconds) {
+
+	new UdpTester(requestHandler, dest, port, seconds);
+    }
+
+    static class UdpTester extends Thread {
+
+	private RequestHandler requestHandler;
+	private InetAddress dest;
+	private int port;
+	private int seconds;
+
+	public UdpTester(RequestHandler requestHandler, InetAddress dest, int port, int seconds) {
+	    this.requestHandler = requestHandler;
+	    this.dest = dest;
+	    this.port = port;
+	    this.seconds = seconds;
+
+	    start();
+	}
+
+	public void run() {
+	    if (seconds > MAX_SECONDS_TO_SEND) {
+	        Logger.println("Setting time to test udp to Max " + MAX_SECONDS_TO_SEND);
+	        seconds = MAX_SECONDS_TO_SEND;
+	    }
+
+	    InetSocketAddress isa = new InetSocketAddress(getPrivateHost(), 0);
+
+	    DatagramSocket datagramSocket;
+
+	    try {
+	        datagramSocket = new DatagramSocket(isa);
+		datagramSocket.setSoTimeout(3000);
+	    } catch (SocketException e) {
+		println("Unable to create Datagram Socket " + isa + " " + e.getMessage());
+		return;
+	    }
+
+	    byte[] buf = new byte[1260];
+
+	    int packetNumber = 0;
+
+	    long endTime = System.currentTimeMillis() + seconds * 1000;
+
+	    while (System.currentTimeMillis() < endTime) {
+                println("Sending packet " + packetNumber + ", length "
+                    + buf.length + " bytes " + "to " + port + ".  ");
+
+                buf[0] = (byte) (packetNumber >> 24);
+                buf[1] = (byte) (packetNumber >> 16);
+                buf[2] = (byte) (packetNumber >> 8);
+                buf[3] = (byte) (packetNumber & 0xff);
+
+                DatagramPacket p = new DatagramPacket(buf, buf.length, dest, port);
+
+                try {
+                    datagramSocket.send(p);
+		} catch (IOException e) {
+		    println("Unable to send to " + dest + " " + port);
+		    return;
+		}
+
+		try {
+		    datagramSocket.receive(p);
+		    packetNumber++;
+		} catch (SocketTimeoutException e) {
+		    println("Receive timed out on port " + port + "!");
+		} catch (IOException e) {
+		    println("received failed on port " + port + " " + e.toString());
+		    return;
+		}
+
+	        try {
+		    Thread.sleep(1000);
+	        } catch (InterruptedException e) {
+		}
+	    }
+
+	    println("Done testing UDP port " + port);
+	}
+
+	private void println(String message) {
+	    Logger.println(message);
+
+	    CallEvent callEvent = new CallEvent(CallEvent.TEST_UDP_PORT);
+
+	    callEvent.setInfo(message);
+	    requestHandler.writeToSocket(callEvent.toString());
+	}
+
     }
 
 }

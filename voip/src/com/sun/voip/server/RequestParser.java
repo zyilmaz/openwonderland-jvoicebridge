@@ -44,7 +44,9 @@ import com.sun.voip.client.BridgeConnector;
 import com.sun.stun.StunClient;
 import com.sun.stun.StunServerImpl;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -2405,6 +2407,20 @@ public class RequestParser {
         } catch (ParameterException e) {
         }
 
+        try {
+            value = getValue("rmpmx" , "removeMyPrivateMixes", request);
+ 
+            CallHandler callHandler = CallHandler.findCall(value);
+ 
+             if (callHandler == null) {
+                 throw new ParseException("Invalid callId:  " + value, 0);
+             }
+ 
+             callHandler.getMember().removeMyPrivateMixes();
+             return true;
+        } catch (ParameterException e) {
+        }
+
 	try {
             String s = getValue("recordConference" , "rc", request);
 
@@ -2964,6 +2980,13 @@ public class RequestParser {
 	} catch (ParameterException e) {
 	}
 
+         try {
+             IncomingCallHandler.setIncomingConferenceId(
+                getValue("IncomingConferenceId", "icid", request));
+                return true;
+        } catch (ParameterException e) {
+        }
+
         try {
             value = getValue("defaultProtocol", "dp", request);
 
@@ -3071,6 +3094,44 @@ public class RequestParser {
 	    return true;
 	} catch (ParameterException e) {
 	}
+
+	try {
+	    String s = getValue("testUdp", "tu", request);
+
+	    String tokens[] = s.split(":");
+
+            if (tokens.length != 3) {
+                throw new ParseException("invalid number of parameters " + s, 0);
+            }
+
+	    InetAddress ia;
+
+	    try {
+		ia = InetAddress.getByName(tokens[0]);
+	    } catch (UnknownHostException e) {
+                throw new ParseException("Unknown host " + tokens[0] + " " + e.getMessage(), 0);
+	    }
+
+	    int port;
+
+	    try {
+		port = Integer.parseInt(tokens[1]);
+	    } catch (NumberFormatException e) {
+                throw new ParseException("Invalid port number:  " + tokens[1], 0);
+	    }
+
+	    int seconds;
+
+	    try {
+		seconds = Integer.parseInt(tokens[2]);
+	    } catch (NumberFormatException e) {
+                throw new ParseException("Invalid number of seconds:  " + tokens[2], 0);
+	    }
+
+	    Bridge.testUdp(requestHandler, ia, port, seconds);
+	    return true;
+        } catch (ParameterException e) {
+        }
 
 	try {
 	    parameterMatch("tuneableparameters" , "tp", request);
@@ -3289,6 +3350,9 @@ public class RequestParser {
 
         requestHandler.writeToSocket("callAnswerTimeout		= "
             + CallSetupAgent.getDefaultCallAnswerTimeout());
+
+	requestHandler.writeToSocket("incomingConferenceId	= "
+	    + IncomingCallHandler.getIncomingConferenceId());
 
 	requestHandler.writeToSocket("defaultProtocol  		= "
 	    + Bridge.getDefaultProtocol());

@@ -241,15 +241,19 @@ public class SdpManager {
     }
 
     public String generateSdp(String name, InetSocketAddress isa) {
+	return generateSdp(name, isa.getAddress().getHostAddress(), isa.getPort());
+    }
+
+    public String generateSdp(String name, String host, int port) {
 	String sdp =
 	    "v=0\r\n"
             + "o=" + name + " 1 1 IN IP4 "
-            + isa.getAddress().getHostAddress() + "\r\n"
+            + host + "\r\n"
             + "s=SIP Call\r\n"
             + "c=IN IP4 " 
-	    + isa.getAddress().getHostAddress() + "\r\n"
+	    + host + "\r\n"
             + "t=0 0 \r\n"
-            + "m=audio " + isa.getPort()
+            + "m=audio " + port
             + " RTP/AVP " + "13 " + getSupportedMedia() + "\r\n"
 	    + "a=rtpmap:13 CN/8000" + "\r\n"
             + getRtpmaps();

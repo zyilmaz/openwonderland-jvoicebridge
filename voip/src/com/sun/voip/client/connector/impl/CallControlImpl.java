@@ -441,20 +441,39 @@ public class CallControlImpl implements CallControl, CallStatusListener {
     }  
     
     /**
-     * Record the audio of a call
+     * Record the audio sent to a call
      */
-    public void recordCall(String recordingFile) throws IOException {
+    public void recordToCall(String recordingFile) throws IOException {
         if (connection != null) {
-            connection.recordCall(recordingFile, getCallId());
+            connection.recordToCall(getCallId(), recordingFile);
         }
     }
     
     /**
-     * Stop recording the audio of a call
+     * Stop recording the audio sent to a call
      */
-    public void stopRecordingCall() throws IOException {
+    public void stopRecordingToCall() throws IOException {
         if (connection != null) {
-            connection.stopRecordingCall(getCallId());
+            connection.stopRecordingFromCall(getCallId());
         }
     }
+
+    /**
+     * Record the audio received from a call
+     */
+    public void recordFromCall(String recordingFile) throws IOException {
+        if (connection != null) {
+            connection.recordFromCall(getCallId(), recordingFile);
+        }
+    }
+    
+    /**
+     * Stop recording the audio received from a call
+     */
+    public void stopRecordingFromCall() throws IOException {
+        if (connection != null) {
+            connection.stopRecordingFromCall(getCallId());
+        }
+    }
+
 }

@@ -47,9 +47,10 @@ public class CallEvent {
     public static final int MUTED		  = 17;
     public static final int UNMUTED		  = 18;
     public static final int RECORDER_DONE	  = 19;
-    public static final int INFO                  = 20;
+    public static final int TEST_UDP_PORT	  = 20;
+    public static final int INFO                  = 21;
 
-    private static final int LAST_EVENT = 20;
+    private static final int LAST_EVENT = 21;
 
     private static String[] eventString = {
         "000 New Connection",
@@ -72,6 +73,7 @@ public class CallEvent {
 	"937 MUTED",
 	"938 UNMUTED",
 	"958 RECORDER DONE",
+	"977 TEST UDP PORT",
 	""
     };
 
