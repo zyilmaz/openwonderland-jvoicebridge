@@ -59,7 +59,7 @@ public class IncomingCallHandler extends CallHandler
 
     boolean haveIncomingConferenceId;
 
-    private static String defaultIncomingConferenceId = 
+    private static String incomingConferenceId = 
 	"IncomingCallsConference";
 
     private static String incomingCallTreatment;
@@ -68,6 +68,13 @@ public class IncomingCallHandler extends CallHandler
 
     private static boolean directConferencing = true;
     private IncomingConferenceHandler incomingConferenceHandler;
+
+    private static String joinTreatment = "joinClick.au";
+
+    static {
+	joinTreatment = System.getProperty("com.sun.voip.server.INCOMING_JOIN_TREATMENT",
+	    "joinClick.au");
+    }
 
     public IncomingCallHandler(CallEventListener listener, 
 	   CallParticipant cp) {
@@ -110,6 +117,14 @@ public class IncomingCallHandler extends CallHandler
 	start();
     }
 
+    public static void setIncomingConferenceId(String incomingConferenceId) {
+	IncomingCallHandler.incomingConferenceId = incomingConferenceId;
+    }
+
+    public static String getIncomingConferenceId() {
+	return incomingConferenceId;
+    }
+
     public static void setDirectConferencing(boolean directConferencing) {
 	IncomingCallHandler.directConferencing = directConferencing;
     }
@@ -142,7 +157,7 @@ public class IncomingCallHandler extends CallHandler
 
 	    if (!done && member != null) {
 		if (member.getCallParticipant().getConferenceId().indexOf(
-		        defaultIncomingConferenceId) == 0) {
+		        incomingConferenceId) == 0) {
 
 		    Logger.println("Incoming call " + member 
 			+ " call transfer timedout");
@@ -158,12 +173,18 @@ public class IncomingCallHandler extends CallHandler
      */
     public void run() {
 	if (haveIncomingConferenceId == false) {
-	    cp.setConferenceId(defaultIncomingConferenceId);
+	    cp.setConferenceId(incomingConferenceId);
 	}
 
 	synchronized (ConferenceManager.getConferenceList()) {
-	    conferenceManager = 
-	    	ConferenceManager.getConference(cp.getConferenceId());
+	    String[] tokens = cp.getConferenceId().split(":");
+
+	    if (tokens.length == 2) {
+		cp.setConferenceId(tokens[0]);
+		cp.setMediaPreference(tokens[1]);
+	    }
+
+	    conferenceManager = ConferenceManager.getConference(cp);
 
 	    if (conferenceManager == null) {
 	        Logger.error("Couldn't start conference " 
@@ -225,23 +246,20 @@ public class IncomingCallHandler extends CallHandler
 	    try {
 	        csa.initiateCall();
 	    } catch (IOException e) {
-		Logger.println("initiateCall failed:  " + e.getMessage());
-		
-		CallEvent callEvent = 
-		    new CallEvent(CallEvent.CANT_CREATE_MEMBER);
-
-		callEvent.setInfo(e.getMessage());
-	        sendCallEventNotification(callEvent);
+		endCall(CallEvent.CANT_CREATE_MEMBER, e.getMessage());
                 return;
 	    }
 	} else if (protocol.equalsIgnoreCase("SIP")) {
-	    csa = new SipIncomingCallAgent(this, requestEvent);
+	    try {
+	        csa = new SipIncomingCallAgent(this, requestEvent);
+	    } catch (Exception e) {
+		endCall(CallEvent.CANT_CREATE_MEMBER, e.getMessage());
+                return;
+	    }
         } else {
             // XXX csa = new H323Agent(this);
-            Logger.println("H.323 support isn't implemented yet!");
-
-            sendCallEventNotification(
-		new CallEvent(CallEvent.H323_NOT_IMPLEMENTED));
+	    endCall(CallEvent.H323_NOT_IMPLEMENTED,
+		"H.323 support isn't implemented yet!");
             return;
 	}
 
@@ -259,6 +277,19 @@ public class IncomingCallHandler extends CallHandler
 	    }
 	}
 
+	endCall();
+    }
+
+    private void endCall(int event, String message) {
+	Logger.println("initiateCall failed:  " + message);
+		
+	CallEvent callEvent = new CallEvent(event);
+	callEvent.setInfo(message);
+	sendCallEventNotification(callEvent);
+	endCall();
+    }
+
+    private void endCall() {
 	Logger.println("Call " + cp + " ended...");
 	conferenceManager.leave(member); // Remove member from conference.
 
@@ -427,7 +458,9 @@ public class IncomingCallHandler extends CallHandler
 	playTreatmentToCall("you-are-caller-num.au;" + s);
 	setMuted(false);
 
-	playTreatmentToConference("joinCLICK.au");
+	if (joinTreatment.length() > 0) {
+	    playTreatmentToConference(joinTreatment);
+	}
 
 	return conferenceManager;
     }
@@ -486,10 +519,12 @@ public class IncomingCallHandler extends CallHandler
 	callHandler.setConferenceManager(newConferenceManager);
 
         try {
-            newConferenceManager.addTreatment("joinCLICK.au");
+	    if (joinTreatment.length() > 0) {
+                newConferenceManager.addTreatment(joinTreatment);
+	    }
         } catch (IOException e) {
             Logger.println("Call " + cp
-                + " unable to play joinCLICK.au " + e.getMessage());
+                + " unable to play " + joinTreatment + ": " + e.getMessage());
         }
 
 	CallEvent event = new CallEvent(CallEvent.CALL_TRANSFERRED);
@@ -499,7 +534,7 @@ public class IncomingCallHandler extends CallHandler
 	    + " ConferencePayload='" 
 	    +  newConferenceManager.getMediaInfo().getPayload() + "'"
 	    +  " BridgeIPAddress='"
-	    + Bridge.getPrivateHost() + "'");
+	    + Bridge.getPublicHost() + "'");
 
 	callHandler.sendCallEventNotification(event);
 
@@ -512,7 +547,9 @@ public class IncomingCallHandler extends CallHandler
 	}
 
 	try {
-	    newConferenceManager.addTreatment("joinCLICK.au");
+	    if (joinTreatment.length() > 0) {
+	        newConferenceManager.addTreatment(joinTreatment);
+	    }
 	} catch (IOException e) {
 	    Logger.println("Call " + this 
 		+ " unable to play treatment " + treatment

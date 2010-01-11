@@ -308,6 +308,11 @@ public class SipServer implements SipListener {
 	     * If there's an existing listener pass the request there.
 	     */
             if (sipListener != null) {
+	        if (request.getMethod().equals(Request.INVITE)) {
+		    duplicateInvite(request);
+		    return;
+		}
+
                 sipListener.processRequest(requestEvent);
 		return;
             } else {
@@ -326,18 +331,7 @@ public class SipServer implements SipListener {
 	     */
 	    if (request.getMethod().equals(Request.INVITE)) {
 		if (SipIncomingCallAgent.addSipCallId(sipCallId) == false) {
-		    FromHeader fromHeader = (FromHeader) 
-			request.getHeader(FromHeader.NAME);
-
-        	    ToHeader toHeader = (ToHeader) 
-			request.getHeader(ToHeader.NAME);
-        
-        	    String from = fromHeader.getAddress().toString();
-        	    String to = toHeader.getAddress().toString();
-
-		    Logger.writeFile("SipServer:  duplicate INVITE from "
-			+ from + " to " + to);
-
+		    duplicateInvite(request);
 		    return;
 		}
 
@@ -402,6 +396,18 @@ public class SipServer implements SipListener {
              */
 	    Logger.exception("processRequest", e);
         }
+    }
+
+    private void duplicateInvite(Request request) {
+	FromHeader fromHeader = (FromHeader) request.getHeader(FromHeader.NAME);
+
+        ToHeader toHeader = (ToHeader) request.getHeader(ToHeader.NAME);
+        
+	String from = fromHeader.getAddress().toString();
+        String to = toHeader.getAddress().toString();
+
+	Logger.writeFile("SipServer:  duplicate INVITE from "
+	    + from + " to " + to);
     }
 
     private void handleRegister(Request request, RequestEvent requestEvent) 

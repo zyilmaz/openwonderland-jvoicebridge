@@ -333,7 +333,7 @@ public class OutgoingCallHandler extends CallHandler
 	}
         
         if (suppressEvent(callEvent) == false) {
-            RequestHandler.outgoingCallNotification(callEvent);
+            RequestHandler.outgoingCallNotification(csl, callEvent);
 	    csl.callEventNotification(callEvent);
         } 
     }
