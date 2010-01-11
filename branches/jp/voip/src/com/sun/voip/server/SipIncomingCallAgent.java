@@ -69,7 +69,7 @@ public class SipIncomingCallAgent extends CallSetupAgent implements SipListener 
     /**
      * Constructor
      */
-    public SipIncomingCallAgent(CallHandler callHandler, Object o) {
+    public SipIncomingCallAgent(CallHandler callHandler, Object o) throws Exception {
 	super(callHandler);
 
         sipServerCallback = SipServer.getSipServerCallback();
@@ -115,7 +115,7 @@ public class SipIncomingCallAgent extends CallSetupAgent implements SipListener 
      * to the conference.  Send an OK reply with the socket address
      * of the conference receiver.  
      */
-    private void handleInvite(RequestEvent requestEvent) {
+    private void handleInvite(RequestEvent requestEvent) throws Exception {
 	setState(CallState.INVITED);
 
 	Request request = requestEvent.getRequest();
@@ -175,6 +175,7 @@ public class SipIncomingCallAgent extends CallSetupAgent implements SipListener 
             Logger.println("SipIncomingCallAgent:  " + request);
 	    e.printStackTrace();
 	    terminateCall();
+	    throw e;
         } 
     }
 

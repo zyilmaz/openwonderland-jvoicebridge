@@ -1318,7 +1318,7 @@ public class ConferenceMember implements TreatmentDoneListener,
 	printStatistics();
     }
 
-    private void removeMyPrivateMixes() {
+    public void removeMyPrivateMixes() {
 	ArrayList pmToRemove = new ArrayList();
 
 	/*

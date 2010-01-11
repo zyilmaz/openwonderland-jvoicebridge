@@ -227,6 +227,10 @@ public class StunClient extends Thread {
  	    port = socket.getLocalPort();
 	}
 
+	if (stunServer.getAddress() == null) {
+	    throw new IOException("Invalid stun server address:  null");
+	}
+
 	logger.fine("StunClient:  asking STUN server "
 	    + stunServer.getAddress().getHostAddress() + ":" 
 	    + stunServer.getPort()

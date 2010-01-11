@@ -1144,6 +1144,12 @@ public class SipCommunicator extends Thread implements
             SipCommunicator sipCommunicator = new SipCommunicator(args);
 	} catch (ParseException e) {
 	    usage();
+
+	    try {
+		Thread.sleep(10000);
+	    } catch (InterruptedException ee) {
+	    }
+
 	    System.exit(1);
 	}
     }
