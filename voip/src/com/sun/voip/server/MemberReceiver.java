@@ -33,6 +33,7 @@ import com.sun.voip.Logger;
 import com.sun.voip.MediaInfo;
 import com.sun.voip.MixDataSource;
 import com.sun.voip.Recorder;
+import com.sun.voip.RecorderDoneListener;
 import com.sun.voip.RtcpReceiver;
 import com.sun.voip.RtpPacket;
 import com.sun.voip.RtpSocket;
@@ -72,7 +73,8 @@ import java.awt.Point;
  * Receive RTP data for this ConferenceMember, add it to the mix
  * and keep statistics.
  */
-public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
+public class MemberReceiver implements MixDataSource, TreatmentDoneListener,
+	RecorderDoneListener {
 
     private ConferenceManager conferenceManager;
     private ConferenceMember member;
@@ -580,6 +582,20 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
     private InputTreatment iTreatment;
 
     private Object lock = new Object();
+
+    public void recorderDone() {
+	String callId = cp.getCallId();
+
+	CallHandler callHandler = CallHandler.findCall(callId);
+
+	if (callHandler == null) {
+	    Logger.println("No callHandler for callId " + callId);
+	    return;
+	}
+
+        CallEvent callEvent = new CallEvent(CallEvent.RECORDER_DONE);
+        callHandler.sendCallEventNotification(callEvent);
+    }
 
     class InputTreatment extends Thread {
 
@@ -2299,6 +2315,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
         if (recorder != null) {
 	    recorder.done();
+	    recorder.recorderDone();
 	    recorder = null;
         }
 
@@ -2343,6 +2360,9 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
                 recorder = new Recorder(cp.getRecordDirectory(),
 		    recordingFile, recordingType, m);
+
+                // add a listener to get events when recording is stopped
+                recorder.addRecorderDoneListener(this);
 
                 cp.setFromRecordingFile(recordingFile);
                 cp.setFromRecordingType(recordingType);
