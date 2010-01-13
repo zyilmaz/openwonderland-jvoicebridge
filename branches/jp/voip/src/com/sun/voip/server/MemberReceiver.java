@@ -33,7 +33,7 @@ import com.sun.voip.Logger;
 import com.sun.voip.MediaInfo;
 import com.sun.voip.MixDataSource;
 import com.sun.voip.Recorder;
-import com.sun.voip.RecorderDoneListener;
+import com.sun.voip.RecorderListener;
 import com.sun.voip.RtcpReceiver;
 import com.sun.voip.RtpPacket;
 import com.sun.voip.RtpSocket;
@@ -74,7 +74,7 @@ import java.awt.Point;
  * and keep statistics.
  */
 public class MemberReceiver implements MixDataSource, TreatmentDoneListener,
-	RecorderDoneListener {
+	RecorderListener {
 
     private ConferenceManager conferenceManager;
     private ConferenceMember member;
@@ -579,15 +579,31 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener,
 	}
     }
 
-    private InputTreatment iTreatment;
+    public void newRecorder(Recorder recorder) {
+    }
 
-    private Object lock = new Object();
+    public void recorderStarted() {
+    }
+
+    public void recorderStopped() {
+	String callId = cp.getCallId();
+
+	CallHandler callHandler = CallHandler.findCall(callId);
+	
+	if (callHandler == null) {
+	    Logger.println("No callHandler for callId " + callId);
+	    return;
+	}
+
+        CallEvent callEvent = new CallEvent(CallEvent.RECORDER_STOPPED);
+        callHandler.sendCallEventNotification(callEvent);
+    }
 
     public void recorderDone() {
 	String callId = cp.getCallId();
 
 	CallHandler callHandler = CallHandler.findCall(callId);
-
+	
 	if (callHandler == null) {
 	    Logger.println("No callHandler for callId " + callId);
 	    return;
@@ -596,6 +612,13 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener,
         CallEvent callEvent = new CallEvent(CallEvent.RECORDER_DONE);
         callHandler.sendCallEventNotification(callEvent);
     }
+
+    public void recorderData(byte[] buffer, int offset, int length) {
+    }
+
+    private InputTreatment iTreatment;
+
+    private Object lock = new Object();
 
     class InputTreatment extends Thread {
 
@@ -2315,7 +2338,6 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener,
 
         if (recorder != null) {
 	    recorder.done();
-	    recorder.recorderDone();
 	    recorder = null;
         }
 
@@ -2362,7 +2384,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener,
 		    recordingFile, recordingType, m);
 
                 // add a listener to get events when recording is stopped
-                recorder.addRecorderDoneListener(this);
+                recorder.addRecorderListener(this);
 
                 cp.setFromRecordingFile(recordingFile);
                 cp.setFromRecordingType(recordingType);

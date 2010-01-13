@@ -67,6 +67,7 @@ public class CallStatus implements Serializable {
     public static final int UNMUTED	    = 938;
     public static final int INFO	    = 888;
     public static final int RECORDERDONE    = 958;
+    public static final int RECORDERSTOPPED = 959;
     public static final int TEST_UDP_PORT   = 978;
     public static final int UNKNOWN         = 999;
     
@@ -226,6 +227,8 @@ public class CallStatus implements Serializable {
 		return "Unmuted";
 	    case RECORDERDONE:
 		return "Recorder Done";
+	    case RECORDERSTOPPED :
+		return "Recorder Stopped";
 	    case TEST_UDP_PORT:
 		return "Test UDP Port";
 	    case INFO:

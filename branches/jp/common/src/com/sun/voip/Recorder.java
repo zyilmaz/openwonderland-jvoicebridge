@@ -41,10 +41,6 @@ import java.util.LinkedList;
  */
 public class Recorder extends Thread {
     
-    private static ArrayList<NewRecorderListener> newRecorderListeners = new ArrayList();
-
-    private ArrayList<RecorderListener> recorderListeners = new ArrayList();
-
     private BufferedOutputStream bo;
     private FileOutputStream fo;
     
@@ -249,6 +245,10 @@ public class Recorder extends Thread {
         }
     }
 
+    private static ArrayList<NewRecorderListener> newRecorderListeners = new ArrayList();
+
+    private ArrayList<RecorderListener> recorderListeners = new ArrayList();
+ 
     public static void addNewRecorderListener(NewRecorderListener listener) {
 	synchronized (newRecorderListeners) {
 	    newRecorderListeners.add(listener);
@@ -273,18 +273,6 @@ public class Recorder extends Thread {
 	}
     }
 
-    private RecorderDoneListener recorderDoneListener;
-
-    public void addRecorderDoneListener(RecorderDoneListener listener) {
-	recorderDoneListener = listener;
-    }
-
-    public void recorderDone() {
-	if (recorderDoneListener != null) {
-	    recorderDoneListener.recorderDone();
-	}
-    }
-
     private void notifyNewRecorderListeners() {
 	synchronized (newRecorderListeners) {
 	    for (NewRecorderListener listener : newRecorderListeners) {
@@ -305,6 +293,14 @@ public class Recorder extends Thread {
 	synchronized (recorderListeners) {
 	    for (RecorderListener listener : recorderListeners) {
 	        listener.recorderStopped();
+	    }
+	}
+    }
+
+    public void recorderDone() {
+	synchronized (recorderListeners) {
+	    for (RecorderListener listener : recorderListeners) {
+	        listener.recorderDone();
 	    }
 	}
     }

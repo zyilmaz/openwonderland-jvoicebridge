@@ -28,6 +28,9 @@ package com.sun.voip;
  */
 public interface NewRecorderListener {
 
+    /*
+     * Notification of a new Recorder
+     */
     public void newRecorder(Recorder recorder);
 
 }
