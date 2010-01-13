@@ -28,10 +28,26 @@ package com.sun.voip;
  */
 public interface RecorderListener {
 
+    /*
+     * Notification that recording has started
+     */
     public void recorderStarted();
 
+    /*
+     * Notification that recording has stopped and the recording file is closed.
+     * The CallStatus RECORDERSTOPPED is sent.
+     */
     public void recorderStopped();
 
+    /*
+     * Notification that recorderDone() has been called.
+     * The CallStatus RECORDERDONE is sent.
+     */
+    public void recorderDone();
+
+    /*
+     * Recorder audio data
+     */
     public void recorderData(byte[] buffer, int offset, int length);
 
 }

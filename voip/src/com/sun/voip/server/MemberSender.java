@@ -29,7 +29,7 @@ import com.sun.voip.CallEvent;
 import com.sun.voip.Logger;
 import com.sun.voip.MediaInfo;
 import com.sun.voip.Recorder;
-import com.sun.voip.RecorderDoneListener;
+import com.sun.voip.RecorderListener;
 import com.sun.voip.RtpPacket;
 import com.sun.voip.RtpSenderPacket;
 import com.sun.voip.SampleRateConverter;
@@ -56,7 +56,7 @@ import java.text.ParseException;
 /**
  * Send RTP data to this ConferenceMember, 
  */
-public class MemberSender implements RecorderDoneListener {
+public class MemberSender implements RecorderListener {
     private ConferenceManager conferenceManager;
     private CallHandler callHandler;
     private CallParticipant cp;		             // caller parameters
@@ -818,6 +818,26 @@ public class MemberSender implements RecorderDoneListener {
 	    + " " + memberAddress);
     }
 
+    public void newRecorder(Recorder recorder) {
+    }
+
+    public void recorderStarted() {
+    }
+
+    public void recorderStopped() {
+	String callId = cp.getCallId();
+
+	CallHandler callHandler = CallHandler.findCall(callId);
+	
+	if (callHandler == null) {
+	    Logger.println("No callHandler for callId " + callId);
+	    return;
+	}
+
+        CallEvent callEvent = new CallEvent(CallEvent.RECORDER_STOPPED);
+        callHandler.sendCallEventNotification(callEvent);
+    }
+
     public void recorderDone() {
 	String callId = cp.getCallId();
 
@@ -830,6 +850,9 @@ public class MemberSender implements RecorderDoneListener {
 
         CallEvent callEvent = new CallEvent(CallEvent.RECORDER_DONE);
         callHandler.sendCallEventNotification(callEvent);
+    }
+
+    public void recorderData(byte[] buffer, int offset, int length) {
     }
 
     /**
@@ -988,7 +1011,6 @@ public class MemberSender implements RecorderDoneListener {
 	    if (enabled == false) {
 	        if (recorder != null) {
 		    recorder.done();
-		    recorder.recorderDone();
 	        }
 	        cp.setToRecordingFile(null);
 		return;
@@ -1007,7 +1029,7 @@ public class MemberSender implements RecorderDoneListener {
             recorder = new Recorder(cp.getRecordDirectory(),
 		recordingFile, recordingType, myMediaInfo);
 
-	    recorder.addRecorderDoneListener(this);
+	    recorder.addRecorderListener(this);
 
             cp.setToRecordingFile(recordingFile);
             cp.setToRecordingType(recordingType);
