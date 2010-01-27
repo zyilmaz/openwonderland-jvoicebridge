@@ -894,7 +894,7 @@ if (false) {
 	        Logger.println("Media manager started");
 	    }
 	} catch (LineUnavailableException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
 	    throw new IOException("Line unavailable " + e.getMessage());
         }
     }
@@ -1055,10 +1055,18 @@ if (false) {
     }
 
     public void startPlayingFile(String file) throws IOException {
-        startPlayingFile(file, 0);
+        startPlayingFile(file, 0, 1);
     }
 
-    public void startPlayingFile(String file, int repeatCount) 
+    public void startPlayingFile(String file, int repeatCount) throws IOException {
+	startPlayingFile(file, repeatCount, 1D);
+    }
+
+    public void startPlayingFile(String file, double volume) throws IOException {
+        startPlayingFile(file, 0, volume);
+    }
+
+    public void startPlayingFile(String file, int repeatCount, double volume) 
         throws IOException 
     {
 	if (disableAudio == true) {
@@ -1069,6 +1077,11 @@ if (false) {
             player.done();
         }
         
+	if (audioReceiver != null) {
+	    audioReceiver.playAudioFile(file, volume);
+	    return;
+	}
+
         player = new AudioFilePlayer(file, repeatCount, getSpeaker());
     }
 

@@ -320,10 +320,26 @@ public class AudioReceiver extends Thread implements AudioFileDoneListener {
 
     private DtmfBuffer dtmfBuffer;
 
+    private AudioFilePlayer audioFilePlayer;
+
+    private double previousVolume;
+
     public void playAudioFile(String file) {
+	playAudioFile(file, 1.0D);
+    }
+
+    public void playAudioFile(String file, double volume) {
 	if (speaker == null) {
 	    return;
 	}
+
+	if (audioFilePlayer != null) {
+	    return;
+	}
+
+	previousVolume = speaker.getVolumeLevel();
+
+	speaker.setVolumeLevel(volume);
 
 	if (comfortNoisePlayer != null) {
 	    comfortNoisePlayer.done();
@@ -332,14 +348,16 @@ public class AudioReceiver extends Thread implements AudioFileDoneListener {
 	dropMicrophoneData = true;
 
 	try {
-	    new AudioFilePlayer(file, 0, speaker, this);
+	    audioFilePlayer = new AudioFilePlayer(file, 0, speaker, this);
 	} catch (IOException e) {
 	    Logger.println("Unable to play " + file + ": " + e.getMessage());
 	}
     }
 
     public void audioFilePlayerDone() {
+	speaker.setVolumeLevel(previousVolume);
 	dropMicrophoneData = false;
+	audioFilePlayer = null;
     }
 
     /*
