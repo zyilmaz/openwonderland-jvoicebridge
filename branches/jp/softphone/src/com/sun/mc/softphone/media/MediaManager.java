@@ -79,6 +79,8 @@ public interface MediaManager {
     public void startPlayingFile(String file) throws IOException;
     public void startPlayingFile(String file, int repeatCount) 
         throws IOException;
+    public void startPlayingFile(String file, double volume) 
+        throws IOException;
     public void stopPlayingAllFiles();
     public void stopPlayingFile();
 

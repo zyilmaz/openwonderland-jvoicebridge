@@ -852,18 +852,49 @@ public class SipCommunicator extends Thread implements
 	    if (mediaManager != null) {
 		mediaManager.pauseRecording(false);
 	    }
-
+	    return;
 	}
+
 	if (command.indexOf("resumeRecordingReceivedAudio") >= 0) {
 	    if (mediaManager != null) {
 		mediaManager.resumeRecording(false);
 	    }
+	    return;
 	}
 
 	if (command.indexOf("stopRecordingReceivedAudio") >= 0) {
 	    if (mediaManager != null) {
 		mediaManager.stopRecording(false);
 	    }
+	    return;
+	}
+
+	if (command.indexOf("playFile") >= 0) {
+	    if (mediaManager != null) {
+	        String tokens[] = command.split("=");
+
+		if (tokens.length != 3) {
+		    Logger.println("Invalid argument " + command);
+		    return;
+		}
+
+		double volume;
+		
+		try {
+		    volume = Double.parseDouble(tokens[2]);
+		} catch (NumberFormatException e) {
+		    Logger.println("Invalid volume " + command);
+		    return;
+		}
+
+		try {
+		    mediaManager.startPlayingFile(tokens[1], volume);
+		} catch (IOException e) {
+		    Logger.println("Unable to play file " + command 
+			+ ": " + e.getMessage());
+		}
+	    }
+	    return;
 	}
 
         //** 1.5 only!
