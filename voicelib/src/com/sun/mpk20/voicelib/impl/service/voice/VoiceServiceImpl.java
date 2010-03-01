@@ -51,25 +51,17 @@ import com.sun.mpk20.voicelib.app.DefaultSpatializer;
 import com.sun.mpk20.voicelib.app.VoiceManager;
 import com.sun.mpk20.voicelib.app.VoiceManagerParameters;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import java.io.IOException;
 import java.io.Serializable;
 
 import java.text.ParseException;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Properties;
 
 import java.util.concurrent.ConcurrentHashMap;
-
-import java.util.concurrent.atomic.AtomicLong;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -78,7 +70,6 @@ import com.sun.voip.CallParticipant;
 
 import com.sun.voip.client.connector.CallStatus;
 import com.sun.voip.client.connector.CallStatusListener;
-import com.sun.voip.client.connector.impl.VoiceBridgeConnection;
 
 /**
  * This is an implementation of <code>VoiceService</code> that works on a
@@ -88,7 +79,7 @@ import com.sun.voip.client.connector.impl.VoiceBridgeConnection;
  * @author Joe Provino
  */
 public class VoiceServiceImpl implements VoiceManager, Service,
-	CallStatusListener, BridgeOfflineListener, NonDurableTransactionParticipant {
+	CallStatusListener, NonDurableTransactionParticipant {
 
    private ThreadLocal<ArrayList<Work>> localWorkToDo =
        new ThreadLocal<ArrayList<Work>>() {
@@ -138,27 +129,11 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     // the transient map for all recurring tasks' handles
     private ConcurrentHashMap<String, RecurringTaskHandle> recurringMap;
 
-    private ArrayList<BridgeConnection> bridgeConnections = 
-	new ArrayList<BridgeConnection>();
-
-    private ConcurrentHashMap<String, CallParticipant> recoveryList =
-	new ConcurrentHashMap<String, CallParticipant>();
-
-    /*
-     * Map of callId's to callInfo
-     */
-    private ConcurrentHashMap<String, CallInfo> callConnectionMap =
-	new ConcurrentHashMap<String, CallInfo>();
-
     private Properties properties;
 
     private TaskOwner defaultOwner;
 
-    private PrivateMixHandler privateMixHandler;
-
-    private BridgeOnlineWatcher bridgeOnlineWatcher;
-
-    private Reconnector reconnector;
+    private BridgeManager bridgeManager;
 
     /**
      * Creates an instance of <code>VoiceServiceImpl</code>. 
@@ -177,35 +152,15 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         // the scheduler is the only system component that we use
         taskScheduler = systemRegistry.getComponent(TaskScheduler.class);
 
-	privateMixHandler = new PrivateMixHandler(this, callConnectionMap);
-
-	bridgeOnlineWatcher = new BridgeOnlineWatcher(this);
-
-	reconnector = new Reconnector(this);
-    }
-
-    public ConcurrentHashMap<String, CallParticipant> getRecoveryList() {
-	return recoveryList;
+	bridgeManager = new BridgeManager(this);
     }
 
     public void monitorConference(String conferenceId) throws IOException {
-	synchronized (bridgeConnections) {
-	    for (BridgeConnection bc : bridgeConnections) {
-	        bc.monitorConference(conferenceId);
-	    }
-	}
+	bridgeManager.monitorConference(conferenceId);
     }
 
     public String getVoiceBridge() {
-	BridgeConnection bc;
-
-	try {
-	    bc = getBridgeConnection();
-	} catch (IOException e) {
-	    return "";
-	}
-
-	return bc.getPublicAddress();
+	return bridgeManager.getVoiceBridge();
     }
 
     public void setupCall(CallParticipant cp, double x, double y, double z,
@@ -215,8 +170,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	getTxnState();
 
         localWorkToDo.get().add(new Work(cp, bridgeInfo));
-
-	//dump("Setup call to " + cp.toString());
     }
 
     public void setSpatializer(String callId, Spatializer spatializer) {
@@ -259,116 +212,69 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     public void playTreatmentToCall(String callId, String treatment) 
 	    throws IOException {
 
-	BridgeConnection bc = getBridgeConnection(callId);
-
-	bc.playTreatmentToCall(callId, treatment);
+	bridgeManager.playTreatmentToCall(callId, treatment);
     }
 
     public void pauseTreatmentToCall(String callId, String treatment)
 	     throws IOException {
 
-	BridgeConnection bc = getBridgeConnection(callId);
-
-	bc.pauseTreatmentToCall(callId, treatment);
+	bridgeManager.pauseTreatmentToCall(callId, treatment);
     }
 
     public void stopTreatmentToCall(String callId, String treatment)
 	     throws IOException {
 
-	BridgeConnection bc = getBridgeConnection(callId);
-
-	bc.stopTreatmentToCall(callId, treatment);
+	bridgeManager.stopTreatmentToCall(callId, treatment);
     }
 
     public void disconnectCall(String callId) throws IOException {
 	endCall(callId);
     }
 
-    public void endCall(String callId) throws IOException {
-	endCall(null, callId, true);
-    }
-
-    public void endCall(String callId, boolean tellBridge) throws IOException {
-	endCall(null, callId, tellBridge);
-    }
-
-    private void endCall(BridgeConnection bc, String callId, boolean tellBridge) 
+    public void endCall(String callId, boolean tellBackingManager) 
 	    throws IOException {
 
-	logger.info("call ended:  " + callId + " on " + bc);
+	endCall(callId);
+    }
 
-	if (tellBridge) {
-	    if (bc == null) {
-                bc = getBridgeConnection(callId);
-	    }
-
-	    try {
- 	        bc.endCall(callId);
-	    } catch (IOException e) {
-	        logger.info("Unable to end call:  " + e.getMessage());
-	    }
-	}
-
-	callConnectionMap.remove(callId);
-
-	privateMixHandler.endCall(callId);
+    public void endCall(String callId) throws IOException {
+	bridgeManager.endCall(callId);
     }
 
     public void muteCall(String callId, boolean isMuted) throws IOException {
-        BridgeConnection bc = getBridgeConnection(callId);
- 	bc.muteCall(callId, isMuted);
+ 	bridgeManager.muteCall(callId, isMuted);
     }
 
     public void setSpatialAudio(boolean enabled) throws IOException {
-	synchronized (bridgeConnections) {
-	    for (BridgeConnection bc : bridgeConnections) {
-	        bc.setSpatialAudio(enabled);
-	    }
-	}
+	bridgeManager.setSpatialAudio(enabled);
     }
 
     public void setSpatialMinVolume(double spatialMinVolume) 
 	    throws IOException {
 
-	synchronized (bridgeConnections) {
-	    for (BridgeConnection bc : bridgeConnections) {
-	        bc.setSpatialMinVolume(spatialMinVolume);
-	    }
-	}
+	bridgeManager.setSpatialMinVolume(spatialMinVolume);
     }
 
     public void setSpatialFallOff(double spatialFallOff) throws IOException {
-	synchronized (bridgeConnections) {
-	    for (BridgeConnection bc : bridgeConnections) {
-	        bc.setSpatialFallOff(spatialFallOff);
-	    }
-	}
+	bridgeManager.setSpatialFallOff(spatialFallOff);
     }
 
-    public void setSpatialEchoDelay(double spatialEchoDelay) throws IOException {
-	synchronized (bridgeConnections) {
-	    for (BridgeConnection bc : bridgeConnections) {
-	        bc.setSpatialEchoDelay(spatialEchoDelay);
-	    }
-	}
+    public void setSpatialEchoDelay(double spatialEchoDelay) 
+	    throws IOException {
+
+	bridgeManager.setSpatialEchoDelay(spatialEchoDelay);
     }
 
-    public void setSpatialEchoVolume(double spatialEchoVolume) throws IOException {
-	synchronized (bridgeConnections) {
-	    for (BridgeConnection bc : bridgeConnections) {
-	        bc.setSpatialEchoVolume(spatialEchoVolume);
-	    }
-	}
+    public void setSpatialEchoVolume(double spatialEchoVolume) 
+	    throws IOException {
+
+	bridgeManager.setSpatialEchoVolume(spatialEchoVolume);
     }
 
     public void setSpatialBehindVolume(double spatialBehindVolume) 
 	    throws IOException {
 
-	synchronized (bridgeConnections) {
-	    for (BridgeConnection bc : bridgeConnections) {
-	        bc.setSpatialBehindVolume(spatialBehindVolume);
-	    }
-	}
+	bridgeManager.setSpatialBehindVolume(spatialBehindVolume);
     }
 
     public void setPrivateMix(String sourceCallId, String targetCallId,
@@ -390,7 +296,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	    + "," + privateMixParameters[1] + "," + privateMixParameters[2]
 	    + "," + privateMixParameters[3]);
 
-	localWorkToDo.get().add(
+	//localWorkToDo.get().add(
+	bridgeManager.setPrivateMix(
 	    new Work(sourceCallId, targetCallId, privateMixParameters));
     }
 
@@ -435,12 +342,11 @@ public class VoiceServiceImpl implements VoiceManager, Service,
     }
 
     public void setLogLevel(Level level) {
-	logger.info("Setting log level to " + level);
 	logger.setLevel(level);
     }
 
     public void addCallStatusListener(ManagedCallStatusListener mcsl) {
-	logger.finest("VS:  addCallStatusListener " + mcsl);
+	logger.finest("addCallStatusListener " + mcsl);
 
         CallStatusListeners listeners =
             dataService.getServiceBinding(DS_CALL_STATUS_LISTENERS,
@@ -488,28 +394,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
 	logger.info("Default owner is " + defaultOwner);
 
-        String s = properties.getProperty(
-            "com.sun.server.impl.services.voice.BRIDGE_SERVERS");
-
-        if (s != null) {
-            logger.info("Using specified bridge servers:  " + s);
-
-            String[] bridgeServers = s.split(",");
-
-            for (int i = 0; i < bridgeServers.length; i++) {
-                try {
-                    connect(bridgeServers[i]);
-                } catch (IOException e) {
-                    logger.info(e.getMessage());
-                }
-            }
-        }
-
-	boolean firstTime = true;
-
-	if (bridgeConnections.size() == 0) {
-	    logger.info("There are currently no voice bridges available");
-	}
+	bridgeManager.configure(properties);
 
 	CallStatusListeners listeners = null;
 
@@ -531,201 +416,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	logger.fine("Done configuring voice.");
     }
 
-    public void connect(String bridgeServer) throws IOException {
-	String[] tokens = bridgeServer.split(":");
-
-        String privateHost = tokens[0];
-
-	try {
-            privateHost =
-                InetAddress.getByName(tokens[0]).getHostAddress();
-	} catch (UnknownHostException e) {
-            throw new IOException("Unknown host " + tokens[0]);
-        }
-
-	bridgeServer = privateHost;
-
-	int sipPort = 5060;
-	int controlPort = 6666;
-
-	if (tokens.length >= 2) {
-	    try {
-		sipPort = Integer.parseInt(tokens[1]);
-	    } catch (NumberFormatException e) {
-		logger.warning("Invalid sip port:  " + bridgeServer
-		    + ".  Defaulting to " + sipPort);
-	    }
-	}
-
-	bridgeServer += ":" + sipPort;
-
-	if (tokens.length >= 3) {
-	    try {
-		controlPort = Integer.parseInt(tokens[2]);
-	    } catch (NumberFormatException e) {
-		logger.warning("Invalid control port:  " + bridgeServer
-		    + ".  Defaulting to " + controlPort);
-	    }
-	}
-
-	bridgeServer += ":" + controlPort;
-
-	BridgeConnection bc = findBridge(bridgeServer);
-
-	if (bc != null) {
-	    /*
-	     * This is a voice bridge we already knew about.
-	     */
-	    if (bc.isConnected()) {
-		/*
-		 * It's already connected.  Tell the bridge connector
-		 * we got a ping from the bridge.
-		 */
-		logger.finest("got ping from " + bc);
-		bc.gotBridgePing();
-		return;
-	    }
-
-	    /*
-	     * This happens if the watchdog isn't running.
-	     */
-	    bridgeOffline(bc);
-
-	    logger.info("Disconnected bridge is now back online: " 
-		+ bridgeServer);
-	} else {
-	    logger.info("Bridge " + (bridgeConnections.size() + 1) 
-	        + " came online:  '" + bridgeServer + "'");
-	}
-
-	try {
-	    /*
-	     * This connection is used to send commands to the bridge
-	     * and get status
-	     */
-	    bc = new BridgeConnection(privateHost, sipPort, controlPort, true);
-
-	    bc.addCallStatusListener(this);
-
-	    bc.addBridgeOfflineListener(this);
-
-	    synchronized (bridgeConnections) {
-		for (BridgeConnection bridgeConnection : bridgeConnections) {
-		    bc.monitorConferences(bridgeConnection.getConferences());
-		}
-	    }
-	} catch (IOException e) {
-	    throw new IOException("Unable to connect to bridge "
-		+ privateHost + ":" + sipPort + ":" + controlPort 
-		+ " " + e.getMessage());
-	}
-
-	synchronized (bridgeConnections) {
-	    if (bc.isConnected() == false) {
-		logger.info("New bridge " + bc + " is no longer connected!");
-		return; 
-	    }
-
-	    bridgeConnections.add(bc);
-
-	    if (bridgeConnections.size() == 1) {
-		/*
-		 * If there are calls to reconnect, do it now.
-		 */
-		synchronized (recoveryList) {
-		    if (recoveryList.size() > 0) {
-			logger.info("A bridge is now online, recover "
-			    + recoveryList.size() + " calls");
-		        recoveryList.notifyAll();
-		    }
-		}
-	    }
-
-	    bridgeConnections.notifyAll();
-	}
-
-	//dump("bridge online " + bc);
-    }
-
-    public ArrayList<BridgeConnection> getBridgeConnections() {
-	return bridgeConnections;
-    }
-
-    private BridgeConnection findBridge(String bridgeInfo) {
-	String[] tokens = bridgeInfo.split(":");
-
-	synchronized (bridgeConnections) {
-	    for (BridgeConnection bc : bridgeConnections) {
-		String s = bc.toString();
-
-		String[] t = s.split(":");
-
-		if (tokens[0].equals(t[0]) && tokens[1].equals(t[1])) {
-		    return bc;
-		}	
-	    }
-	}
-
-	return null;
-    }
-
-    private BridgeConnection getBridgeConnection() throws IOException {
-	BridgeConnection bridgeConnection = null;
-
-	synchronized (bridgeConnections) {
-	    if (bridgeConnections.size() == 0) {
-	        throw new IOException("There are no voice bridges available!");
-	    }
-
-	    for (BridgeConnection bc : bridgeConnections) {
-	        if (bc.isConnected() == false) {
-	            logger.warning("Skipping Voice bridge " + bc 
-		        + " which is DOWN!");
-
-		    continue;
-	        }
-
-	        if (bridgeConnection == null) {
-		    bridgeConnection = bc;
-	        } else {
-		    /*
-		     * Choose bridge with least number of calls
-		     */
-	            if (bc.getNumberOfCalls() < bridgeConnection.getNumberOfCalls()) {
-		        bridgeConnection = bc;
-	            }
-	    	}
-	    } 
-	}
-
-	if (bridgeConnection == null) {
-	    throw new IOException("There are no voice bridges available!");
-	}
-
-	return bridgeConnection;
-    }
-
-    public BridgeConnection getBridgeConnection(String callId) throws IOException {
-
-	return getBridgeConnection(callId, false);
-    }
-
-    private BridgeConnection getBridgeConnection(String callId, boolean allocate) 
-	    throws IOException {
-
-	CallInfo callInfo = callConnectionMap.get(callId);
-
-	if (callInfo == null) {
-	    if (allocate == false) {
-	        throw new IOException("Cannot find bridgeConnection for " + callId);
-	    }
-
-	    return getBridgeConnection();
-	}
-
-	return callInfo.bridgeConnection;
-    }
-
     /*
      * Get voice bridge notification and pass it along.
      * When called, this is not in a transaction or one of the
@@ -734,44 +424,20 @@ public class VoiceServiceImpl implements VoiceManager, Service,
      * The work here must be done in a transaction.
      */
     public void callStatusChanged(CallStatus status) {
-	logger.fine("VS:  Call status changed:  " + status + " " + this);
-
-	if (status == null) {
-	    return;
-	}
-
-	String callId = status.getCallId();
-	
-	if (callId == null) {
-	    return;
-	}
-
-	if (status.getCode() == CallStatus.ESTABLISHED) {
-	    privateMixHandler.callEstablished(callId);
-	} else if (status.getCode() == CallStatus.ENDED) {
-	    synchronized (bridgeConnections) {
-		synchronized (callConnectionMap) {
-		    try {
-			endCall(callId, false);
-		    } catch (IOException e) {
-			logger.warning(e.getMessage());
-		    }
-		}
-	    }
-	} 
+	logger.finest("Call status changed:  " + status);
 
 	/*
 	 * Treat bridge shutdown as a failed bridge which
-	 * the watchdog time will detect.
+	 * the watchdog will detect.
 	 */
-	if (status.toString().indexOf("System shutdown") < 0) {
-	    sendStatus(null, callId, status);
+	if (status.toString().indexOf("System shutdown") >= 0) {
+	    return;
 	}
-    }
 
-    public void sendStatus(CallParticipant cp, String callId, CallStatus status) {
-        CallStatusNotifier notifier = new CallStatusNotifier(cp, status);
-        taskScheduler.scheduleTask(new TransactionRunner(notifier), defaultOwner);
+        CallStatusNotifier notifier = new CallStatusNotifier(status);
+
+        taskScheduler.scheduleTask(new TransactionRunner(notifier), 
+	    defaultOwner);
     }
 
     /**
@@ -809,126 +475,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         // task(s) or have to cancel some task(s) so always return false
 
         return false;
-    }
-
-    public void bridgeOffline(BridgeConnection bc) {
-        synchronized (bridgeConnections) {
-            logger.info("Removing bridge connection for offline bridge " + bc);
-
-            if (bridgeConnections.contains(bc) == false) {
-		/*
-		 * Another voice service is already handling this.
-		 */
-		return;
-	    }
-
-	    bridgeConnections.remove(bc);
-	}
-
-	ArrayList<CallParticipant> calls = bc.getCallParticipantArray();
-
-	bc.disconnect();
-
-	/*
-	 * Notify other bridges that a bridge went down
-	 */
-	synchronized (bridgeConnections) {
-            for (BridgeConnection bridgeConnection: bridgeConnections) {
-		bridgeConnection.bridgeOffline(bc);
-	    }
-	}
-
-	if (calls.size() == 0) {
-	    logger.info("No calls on " + bc + " to reconnect");
-	    return;
-	}
-
-	for (int i = 0; i < calls.size(); i++) {
-	    CallParticipant cp = calls.get(i);
-
-	    String callId = cp.getCallId();
-
-	    try {
-		//dump("Before ending " + callId);
-	        endCall(bc, callId, true);
-		//dump("After ending " + callId);
-	    } catch (IOException e) {
-		logger.info("Unable to end call " + callId);
-	    }
-	}
-
-	/*
-	 * Schedule calls to be reconnected when there's a bridge available
-	 */
-	synchronized (recoveryList) {
-	    logger.info("Adding " + bc + " calls to recovery list so " 
-		+ calls.size() + " calls will be reconnected later");
-
-	    for (CallParticipant c : calls) {
-	        recoveryList.put(c.getCallId(), c);
-	    }
-
-	    recoveryList.notifyAll();
-	}
-    }
-
-    private void dump(String msg) {
-	logger.info(msg);
-
-	synchronized (bridgeConnections) {
-	    synchronized (callConnectionMap) {
-		doDump(msg);
-	    }
-	}
-    }
-
-    private void doDump(String msg) {
-	logger.info("Bridge connections " + bridgeConnections.size());
-
-	for (BridgeConnection bc : bridgeConnections) {
-	    dumpBridgeConnection(bc);
-	}
-
-	privateMixHandler.dumpVirtualCallMap();
-
-	Enumeration<String> keys = callConnectionMap.keys();
-
-	logger.info("Call Connection Map " + callConnectionMap.size());
-
-	while (keys.hasMoreElements()) {
-            String callId = keys.nextElement();
-
-	    CallInfo callInfo = callConnectionMap.get(callId);
-
-	    if (callInfo == null) {
-		logger.info("callInfo is null for " + callId + "!");
-	    } else {
-	        logger.info("  " + callInfo);
-	    }
-	}
-
-	logger.info("Calls waiting to be reconnected");
-
-	Collection<CallParticipant> values = recoveryList.values();
-
-        Iterator<CallParticipant> iterator = values.iterator();
-
-        while (iterator.hasNext()) {
-	    CallParticipant cp = iterator.next();
-	    logger.info("  " + cp);
-	}
-    }
-
-    private void dumpBridgeConnection(BridgeConnection bc) {
-        ArrayList<CallParticipant> cpArray = bc.getCallParticipantArray();
-
-        logger.info("  " + bc.toString()
-            + (bc.isConnected() ? " Connected " : " NOT Connected ")
-            + cpArray.size());
-
-        for (int i = 0; i < cpArray.size(); i++) {
-            logger.info("    " + cpArray.get(i));
-        }
     }
 
     /**
@@ -983,15 +529,12 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 		String callId = work.cp.getCallId();
 
 		try {
-		    initiateCall(work.cp, work.bridgeInfo);
+		    bridgeManager.initiateCall(work.cp, work.bridgeInfo);
 		} catch (IOException e) {
 		    logger.info(e.getMessage());
-		    logger.info("Adding " + work.cp + " to recovery list");
 
-	    	    synchronized (recoveryList) {
-			recoveryList.put(work.cp.getCallId(), work.cp);
-			recoveryList.notifyAll();
-	    	    }
+		    bridgeManager.addToRecoveryList(work.cp.getCallId(), 
+			work.cp);
 		} catch (ParseException e) {
 		    logger.info("Unable to setup call:  " + e.getMessage()
 			+ " " + work.cp);
@@ -999,6 +542,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 		break;
 
 	    case Work.SETPRIVATEMIX:
+		// XXX Shouldn't get here.  Private Mixes are applied immediately
                 logger.finest("commit setting private mix for"
                     + " source " + work.sourceCallId
                     + " target " + work.targetCallId
@@ -1008,15 +552,12 @@ public class VoiceServiceImpl implements VoiceManager, Service,
                     +  work.privateMixParameters[2] + ":"
                     +  work.privateMixParameters[3]);
 
-		privateMixHandler.setPrivateMix(work);
+		bridgeManager.setPrivateMix(work);
 		break;
 
 	    case Work.NEWINPUTTREATMENT:
 		try {
-		    BridgeConnection bc = getBridgeConnection(
-			work.targetCallId, true);
-
-		    bc.newInputTreatment(work.targetCallId,
+		    bridgeManager.newInputTreatment(work.targetCallId,
 			work.treatment);
 		} catch (IOException e) {
 		    logger.warning("Unable to start input treatment "
@@ -1027,10 +568,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
 	    case Work.STOPINPUTTREATMENT:
 		try {
-		    BridgeConnection bc = getBridgeConnection(
-			work.targetCallId);
-
-		    bc.stopInputTreatment(work.targetCallId);
+		    bridgeManager.stopInputTreatment(work.targetCallId);
 		} catch (IOException e) {
 		    logger.warning("Unable to stop input treatment for "
 			+ work.targetCallId);
@@ -1039,10 +577,7 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
 	    case Work.RESTARTINPUTTREATMENT:
 		try {
-		    BridgeConnection bc = getBridgeConnection(
-			work.targetCallId, true);
-
-		    bc.restartInputTreatment(work.targetCallId);
+		    bridgeManager.restartInputTreatment(work.targetCallId);
 		} catch (IOException e) {
 		    logger.warning("Unable to restart input treatment for "
 			+ work.targetCallId + " " + e.getMessage());
@@ -1055,6 +590,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 	}
 
 	localWorkToDo.get().clear();
+
+	bridgeManager.commit();
 
         logger.finest("commit txn succeeded " + txn);
     }
@@ -1091,113 +628,8 @@ public class VoiceServiceImpl implements VoiceManager, Service,
         }
     }
 
-    public void initiateCall(CallParticipant cp) throws IOException, 
-	    ParseException {
-
-	initiateCall(cp, null);
-    }
-
-    private void initiateCall(CallParticipant cp, String bridgeInfo) 
-	    throws IOException, ParseException {
-
-	String callId = cp.getCallId();
-
-	BridgeConnection bc = null;
-
-	if (bridgeInfo == null) {
-	    try {
-	        bc = getBridgeConnection();
-	    } catch (IOException e) {
-	        throw new IOException(
-		    "No voice bridge available, adding to recovery list: "
-		    + cp + " " + e.getMessage());
-	    }
-	} else {
-	    synchronized (bridgeConnections) {
-		String[] tokens = bridgeInfo.split(":");
-
-	        for (BridgeConnection c : bridgeConnections) {
-		    String[] t = c.toString().split(":");
-
-		    if (tokens[0].equals(t[0]) && tokens[1].equals(t[1])) {
-			bc = c;
-			break;
-		    }
-		}
-
-		if (bc == null) {
-		    throw new IOException("Unable to find bridge for '"
-			+ bridgeInfo + "'");
-		}
-	    }
-
-	    /*
-	     * Make sure a call with the same id is ended before starting a new call.
-	     */
-	    try {
-    		endCall(bc, callId, true);
-	    } catch (IOException e) {
-		logger.info("Unable to end call " + callId);
-	    }
-	}
-
-	logger.info("Setting up call " + cp + " on " + bc);
-
-	if (bc.isConnected() == false) {
-	    bridgeOffline(bc);	// mark bridge offline, so we stop using it
-
-	    throw new IOException("Unable to setup call on disconnect bridge" 
-		+ bc);
-	}
-
-	/*
-	 * We have to put this in the map now because we
-	 * could get call status before setupCall() returns.
-	 */
-	callConnectionMap.put(callId, new CallInfo(cp, bc));
-
-	try {
-	    bc.setupCall(cp);
-	} catch (IOException e) {
-	    callConnectionMap.remove(callId);
-
-	    /*
-	     * There needs to be a better way to do this!
-	     * XXX We can't do this because when a bridge
-	     * goes down we get an IOException because the
-	     * socket got closed.  In that case we want to restart
-	     * the call.
-	     */
-	    if (false && e.getMessage().indexOf("CallId " + callId
-		    + " is already in use") < 0) {
-
-		throw new ParseException(
-		    "Invalid call setup Parameters", 0);
-	    }
-
-	    if (e.getMessage().indexOf("CallId " + callId
-		    + " is already in use") < 0) {
-
-		/*
-		 * It's not a duplicate callId so the bridge is most likely dead.
-		 * XXX Not necesesarily!  For example, a bad treatment...
-		 */
-		//logger.info("Marking bridge offline " + bc 
-		//    + " isConnected=" + bc.isConnected());
-
-		//bridgeOffline(bc); // mark bridge offline so we stop using it
-	    }
-
-	    throw new IOException("Failed to setup call " + cp + " " 
-		+ e.getMessage());
-	}
-    }
-
-    private boolean done;
-
     public boolean shutdown() {
 	logger.info("Shutdown Voice service");
-	done = true;
 	return true;
     }
 
@@ -1251,11 +683,9 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 
     private class CallStatusNotifier implements KernelRunnable {
 
-	private final CallParticipant cp;
 	private final CallStatus status;
 
-	public CallStatusNotifier(CallParticipant cp, CallStatus status) {
-	    this.cp = cp;
+	public CallStatusNotifier(CallStatus status) {
 	    this.status = status;
 	}
 
@@ -1295,13 +725,6 @@ public class VoiceServiceImpl implements VoiceManager, Service,
 		} catch (IllegalStateException e) {
 		    logger.info("Can't send status:  " + status 
 			+ " " + e.getMessage());
-		    
-		    //synchronized (recoveryList) {
-		    //	logger.info("Adding " + cp + " to recovery list");
-		    //
-		    //	recoveryList.put(cp.getCallId(), cp);
-            	    //	recoveryList.notifyAll();
-        	    //}
 		}
 	    }
 	}

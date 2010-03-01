@@ -1743,6 +1743,8 @@ public class SipCommunicator extends Thread implements
 //                }
 //		  shutDown();
             } else if (evt.getNewState() == Call.DISCONNECTED) {
+		Logger.println("Disconnected");
+
                 // restart the global media manager
                 try {
                     mediaManager.restart();

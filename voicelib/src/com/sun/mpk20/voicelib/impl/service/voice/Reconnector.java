@@ -47,17 +47,15 @@ public class Reconnector extends Thread {
 
     private static int reconnectorInstance;
 
-    private VoiceServiceImpl voiceService;
-
     private ConcurrentHashMap<String, CallParticipant> recoveryList =
         new ConcurrentHashMap<String, CallParticipant>();
 
     private boolean done;
 
-    public Reconnector(VoiceServiceImpl voiceService) {
-	this.voiceService = voiceService;
+    private BridgeManager bridgeManager;
 
-	recoveryList = voiceService.getRecoveryList();
+    public Reconnector(BridgeManager bridgeManager) {
+	this.bridgeManager = bridgeManager;
 
 	setName("Reconnector-" + reconnectorInstance++);
 	start();
@@ -71,9 +69,54 @@ public class Reconnector extends Thread {
         }
     }
 
+    public void addToRecoveryList(String callId, CallParticipant cp) {
+	logger.fine("Adding " + cp + " to recovery list");
+
+	synchronized (recoveryList) {
+	    recoveryList.put(cp.getCallId(), cp);
+	    recoveryList.notifyAll();
+	}
+    }
+
+    public void bridgeOnline() {
+	/*
+         * If there are calls to reconnect, do it now.
+         */
+         synchronized (recoveryList) {
+             if (recoveryList.size() > 0) {
+                 logger.info("A bridge is now online, recover "
+                     + recoveryList.size() + " calls");
+                 recoveryList.notifyAll();
+             }
+         }
+    }
+
+    public void bridgeOffline(BridgeConnection bc, ArrayList<CallParticipant> 
+	    calls) {
+
+	if (calls.size() == 0) {
+	    logger.info("No calls on " + bc + " to reconnect");
+	    return;
+	}
+
+	/*
+	 * Schedule calls to be reconnected when there's a bridge available
+	 */
+	synchronized (recoveryList) {
+	    logger.info("Adding " + bc + " calls to recovery list so " 
+		+ calls.size() + " calls will be reconnected later");
+
+	    for (CallParticipant c : calls) {
+	        recoveryList.put(c.getCallId(), c);
+	    }
+
+	    recoveryList.notifyAll();
+	}
+    }
+
     private void waitForWork() {
 	try {
-	    logger.info(getName() + " waiting for work");
+	    logger.finer(getName() + " waiting for work");
 	    recoveryList.wait();
 	} catch (InterruptedException ee) {
 	}
@@ -112,12 +155,12 @@ public class Reconnector extends Thread {
 	    	String callId = cp.getCallId();
 
 	    	if (callId.startsWith("V-") == true) {
-		    logger.info("Discarding " + cp);
+		    logger.finer("Discarding " + cp);
 		    recoveryList.remove(callId);	
 		    continue;
 		}
 
-		logger.info("Reconnecting " + cp);
+		logger.fine("Reconnecting " + cp);
 
 		/*
 	 	 * Only input treatments need to be restarted here.
@@ -136,12 +179,12 @@ public class Reconnector extends Thread {
 		     * in which case we wait for a bridge to come online.
 	 	     */
 		    try {
-	     		voiceService.initiateCall(cp);
+	     		bridgeManager.initiateCall(cp);
 	            	sendOfflineStatus(cp);
 	 	    } catch (IOException e) {
 	     	 	logger.info(e.getMessage());
 
-			waitForBridge();
+			bridgeManager.waitForBridge();
 			break;
 		    } catch (ParseException e) {
 			logger.info("Something is very wrong!  "
@@ -149,14 +192,14 @@ public class Reconnector extends Thread {
 			    + e.getMessage() + " " + cp);
 		    }
 		} else {
-		    BridgeConnection bc = waitForBridge();
+		    BridgeConnection bc = bridgeManager.waitForBridge();
 		    sendOfflineStatus(cp, bc);
 		}
 
 		recoveryList.remove(callId);
 	    }
 
-	    logger.info("Recovery list now has " + recoveryList.size());
+	    logger.fine("Recovery list now has " + recoveryList.size());
 
 	    /*
 	     * Send status with no callId to indicate the last bridge down
@@ -197,32 +240,27 @@ public class Reconnector extends Thread {
 
         try {
             callStatus = BridgeConnection.parseCallStatus(s);
+
+            if (callStatus == null) {
+                logger.info("Unable to parse call status:  " + s);
+                return;
+            }
         } catch (IOException e) {
         }
 
-        if (callStatus == null) {
-            logger.info("Unable to parse call status:  " + s);
-            return;
-        }
-
-        voiceService.sendStatus(cp, cp.getCallId(), callStatus);
+        bridgeManager.callStatusChanged(callStatus);
     }
 
-    private BridgeConnection waitForBridge() {
-        ArrayList<BridgeConnection> bridgeConnections = voiceService.getBridgeConnections();
+    public void dump() {
+	logger.info("Calls waiting to be reconnected");
 
-	synchronized (bridgeConnections) {
-	    while (bridgeConnections.size() == 0) {
-		logger.info("Waiting for a bridge to come online "
-		    + " to finish processing calls");
+	Collection<CallParticipant> values = recoveryList.values();
 
-		try {
-		    bridgeConnections.wait();
-		} catch (InterruptedException ex) {
-		}
-	    }
+        Iterator<CallParticipant> iterator = values.iterator();
 
-	    return bridgeConnections.get(0);
+        while (iterator.hasNext()) {
+	    CallParticipant cp = iterator.next();
+	    logger.info("  " + cp);
 	}
     }
 

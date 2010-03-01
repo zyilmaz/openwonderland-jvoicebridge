@@ -793,7 +793,6 @@ if (false) {
 		shutdownAudio();
 
 		notifyCallDoneListeners();
-		Logger.println("Disconnected");
 	    }
                 
 	    if (rtpSocket != null) {
@@ -957,8 +956,12 @@ if (false) {
 	    String conferenceId = remoteSdpInfo.getConferenceId();
 
             if (conferenceId != null) {
-                Utils.setPreference("com.sun.mc.softphone.LAST_CONFERENCE",
-                    conferenceId);
+		String c = Utils.getPreference("com.sun.mc.softphone.LAST_CONFERENCE");
+
+		if (c.equals(conferenceId) == false) {
+                    Utils.setPreference("com.sun.mc.softphone.LAST_CONFERENCE",
+                        conferenceId);
+		}
             }
 	} catch (ParseException e) {
 	    Logger.println("Invalid SDP! " + e.getMessage());

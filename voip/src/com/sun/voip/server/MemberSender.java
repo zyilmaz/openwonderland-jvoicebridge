@@ -25,7 +25,6 @@ package com.sun.voip.server;
 
 import com.sun.voip.AudioConversion;
 import com.sun.voip.CallParticipant;
-import com.sun.voip.CurrentTime;
 import com.sun.voip.Logger;
 import com.sun.voip.MediaInfo;
 import com.sun.voip.Recorder;
@@ -278,7 +277,7 @@ public class MemberSender {
 	    }
 	}
 
-	long start = CurrentTime.getTime();
+	long start = System.nanoTime();
 
 	if (dataToSend == null) { 
 	    if (Logger.logLevel == -77) {
@@ -445,7 +444,7 @@ public class MemberSender {
 	    Logger.println("Call " + cp + " sendLength " + rtpData.length);
 	}
 
-	totalTimeToGetData += CurrentTime.getElapsedSeconds(start);
+	totalTimeToGetData += (System.nanoTime() - start);
 	packetsSent++;
 	senderPacket.updateRtpHeader(rtpData.length);
 	return true;
@@ -791,9 +790,8 @@ public class MemberSender {
 	
 	    if (packetsSent != 0) {
                 Logger.writeFile("Call " + cp + ":  " 
-		    + ((float)totalTimeToGetData /
-		    CurrentTime.getTimeUnitsPerSecond() * 1000 / packetsSent)
-		    + " average ms to get data to send");
+		    + ((float)totalTimeToGetData / 1000000000. / packetsSent)
+		    + " average seconds to get data to send");
 	    }
 
 	    Logger.writeFile("Call " + cp + ":  "
@@ -813,8 +811,8 @@ public class MemberSender {
 		    int bytesEncoded = speexEncoder.getBytesEncoded();
 
                     Logger.writeFile("Average Speex Encode time " +
-                        (((float)encodeTime / encodes) /
-                        CurrentTime.getTimeUnitsPerSecond()) + " ms");
+                        (((float)encodeTime / encodes) / 1000000000.)
+			+ " seconds");
 
                     if (bytesEncoded > 0) {
                         Logger.writeFile("Average compression ratio " +

@@ -44,6 +44,9 @@ public class Player {
 
     public Spatializer spatializer;
 
+    public boolean positionChanged;
+    public boolean orientationChanged;
+
     private ConcurrentHashMap<String, Spatializer> privateSpatializers =
 	new ConcurrentHashMap<String, Spatializer>();
 
@@ -58,25 +61,35 @@ public class Player {
     }
 
     public void setPosition(double x, double y, double z) {
-    	this.x = Math.round(x * 1000) / 1000.;
-	this.y = Math.round(y * 1000) / 1000.;
-	this.z = Math.round(z * 1000) / 1000.;
+    	x = Math.round(x * 100) / 100.;
+	y = Math.round(y * 100) / 100.;
+	z = Math.round(z * 100) / 100.;
+
+	positionChanged = this.x != x || this.y != y | this.z != z;
+
+	this.x = x;
+	this.y = y;
+	this.z = z;
     }
 
     public boolean samePosition(double x, double y, double z) {
-    	x = Math.round(x * 1000) / 1000.;
-	y = Math.round(y * 1000) / 1000.;
-	z = Math.round(z * 1000) / 1000.;
+    	x = Math.round(x * 100) / 100.;
+	y = Math.round(y * 100) / 100.;
+	z = Math.round(z * 100) / 100.;
 
 	return this.x == x && this.y == y && this.z == z;
     }
 	
     public void setOrientation(double orientation) {
-	this.orientation = Math.round(Math.toRadians(orientation) * 1000) / 1000.;
+	orientation = Math.round(Math.toRadians(orientation) * 100) / 100.;
+
+	orientationChanged = this.orientation != orientation;
+
+	this.orientation = orientation;
     }
 
     public boolean sameOrientation(double orientation) {
-	orientation = Math.round(Math.toRadians(orientation) * 1000) / 1000.;
+	orientation = Math.round(Math.toRadians(orientation) * 100) / 100.;
 
 	return this.orientation == orientation;
     }

@@ -476,7 +476,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 		try {
 	            voiceManager.endCall(callId, false);
 		} catch (IOException e) {
-		    logger.info("Unabled to end treatment " + callId
+		    logger.info("Unable to end treatment " + callId
 			+ " " + e.getMessage());
 		}
 	    }
@@ -581,7 +581,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
     }
 
     public void disconnectCall(String callId) {
-	logger.fine("Disconnecting call " + callId);
+	logger.info("Disconnecting call " + callId);
 
         DataManager dm = AppContext.getDataManager();
 
@@ -846,11 +846,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	    treatmentDone(callId, false);
 
-	    //try {
-	    //    voiceManager.endCall(callId);
-	    //} catch (IOException e) {
-	    //}
-
 	    notifyCallBeginEndListeners(callStatus);
 	    break;
 
@@ -870,7 +865,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    TreatmentInfo t = treatmentInfo.get(callId);
 
 	    if (t != null) {
-		logger.info("Restarting treatment " + t.treatment);
+		logger.fine("Restarting treatment " + t.treatment);
 		restartInputTreatments(t.group);
 	    } 
 
@@ -1037,8 +1032,6 @@ public class VoiceHandlerImpl implements VoiceHandler,
 
 	VoiceManagerParameters parameters = voiceManager.getParameters();
 	
-	logger.info("log level is " + getLogLevel());
-
 	parameters.logLevel = getLogLevel();
 	return parameters;
     }
@@ -1076,8 +1069,7 @@ public class VoiceHandlerImpl implements VoiceHandler,
 	    return 5;
 	}
 
-	logger.info("Unknown log level " + logLevel
-	    + " using FINEST");
+	logger.info("Unknown log level " + logLevel + " using FINEST");
 
 	return 5;
     }

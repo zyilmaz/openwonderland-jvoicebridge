@@ -445,6 +445,8 @@ if (false) {
 
 	synchronized(treatmentLock) {
 	    treatmentManager.pause(pause);
+
+	    Logger.println("treatment pause is " + pause);
 	}
     }
 
@@ -782,7 +784,9 @@ if (false) {
 		    synchronized(treatmentLock) {
 		        addAudioData(microphoneData);
 		    }
-	 	}
+	 	} else {
+		    continue;
+		}
 	    } else {
 	        checkVolumeLevel(microphoneData);
 	    }

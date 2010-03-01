@@ -147,7 +147,7 @@ public abstract class FallOffFunction {
     }
 
     public double round(double v) {
-	return Math.round(v * 1000) / (double) 1000;
+	return Math.round(v * 100) / (double) 100;
     }
 
     protected abstract double getVolume(double distance);

@@ -26,7 +26,6 @@ package com.sun.voip.server;
 import com.sun.voip.AudioConversion;
 import com.sun.voip.CallParticipant;
 import com.sun.voip.CallEvent;
-import com.sun.voip.CurrentTime;
 import com.sun.voip.JitterManager;
 import com.sun.voip.JitterObject;
 import com.sun.voip.Logger;
@@ -757,14 +756,15 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
 	if (decryptCipher != null) {
 	    if (traceCall || Logger.logLevel == -1) {
-	        start = CurrentTime.getTime();
+	        start = System.nanoTime();
 	    }
 
 	    receivedData = decrypt(receivedData);
 
 	    if (traceCall || Logger.logLevel == -1) {
 		Logger.println("Call " + cp + " decrypt time " 
-		    + CurrentTime.getElapsedSeconds(start));
+		    + ((System.nanoTime() - start) / 1000000000.)
+		    + " seconds");
 	    }
 	}
 
@@ -842,7 +842,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	     Util.dump("bad payload 18 data", packet.getData(), 0, 16);
 	} else if (payload == myMediaInfo.getPayload()) {
 	    if (traceCall || Logger.logLevel == -1) {
-		start = CurrentTime.getTime();
+		start = System.nanoTime();
 	    }
 
 	    try {
@@ -856,7 +856,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
             if (traceCall || Logger.logLevel == -1) {
                 Logger.println("Call " + cp + " receiveMedia time "
-                    + CurrentTime.getElapsedSeconds(start));
+                    + ((System.nanoTime() - start) / 1000000000.)
+		    + " seconds");
             }
 
 	    int processTime = (int)
@@ -933,12 +934,12 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	}
 
         if (traceCall || Logger.logLevel == -1) {
-            start = CurrentTime.getTime();
+            start = System.nanoTime();
         }
 
 	if (inSampleRateConverter != null) {
             if (traceCall || Logger.logLevel == -1) {
-                start = CurrentTime.getTime();
+                start = System.nanoTime();
             }
 
 	    /*
@@ -960,12 +961,13 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
             if (traceCall || Logger.logLevel == -1) {
                 Logger.println("Call " + cp + " resample time "
-                    + CurrentTime.getElapsedSeconds(start));
+                    + ((System.nanoTime() - start) / 1000000000.)
+		    + " seconds");
             }
 	}
 
 	if (traceCall || Logger.logLevel == -1) {
-	    start = CurrentTime.getTime();
+	    start = System.nanoTime();
 	}
 
 	/*
@@ -983,7 +985,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
 	if (traceCall || Logger.logLevel == -1) {
 	    Logger.println("Call " + cp + " handleMedia time "
-		+ CurrentTime.getElapsedSeconds(start));
+		+ ((System.nanoTime() - start) / 1000000000.)
+		+ " seconds");
 	}
 
 	if (Logger.logLevel >= Logger.LOG_DEBUG) {
@@ -1005,7 +1008,7 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
         if (myMediaInfo.getEncoding() == RtpPacket.PCMU_ENCODING) {
 	    if (traceCall || Logger.logLevel == -1) {
-                start = CurrentTime.getTime();
+                start = System.nanoTime();
             }
 
             /*
@@ -1025,11 +1028,12 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
             if (traceCall || Logger.logLevel == -1) {
                 Logger.println("Call " + cp + " ulawToLinear time "
-                    + CurrentTime.getElapsedSeconds(start));
+                    + ((System.nanoTime() - start) / 1000000000.)
+		    + " seconds");
             }
         } else if (myMediaInfo.getEncoding() == RtpPacket.SPEEX_ENCODING) {
             if (traceCall || Logger.logLevel == -1) {
-                start = CurrentTime.getTime();
+                start = System.nanoTime();
             }
 
             data = speexDecoder.decodeToIntArray(receivedData, 
@@ -1037,7 +1041,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 
             if (traceCall || Logger.logLevel == -1) {
                 Logger.println("Call " + cp + " speex decode time "
-                    + CurrentTime.getElapsedSeconds(start));
+                    + ((System.nanoTime() - start) / 1000000000.) 
+		    + " seconds");
 	    }
 	} else {
 	    AudioConversion.bytesToInts(receivedData, RtpPacket.HEADER_SIZE, 
@@ -1084,13 +1089,14 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	long start = 0;
 
 	if (traceCall || Logger.logLevel == -1) {
-	    start = CurrentTime.getTime();
+	    start = System.nanoTime();
 	}
 
 	synchronized (whisperGroup) {
 	    if (traceCall || Logger.logLevel == -1) {
 		Logger.println("Call " + cp + " handleMedia lock wait time "
-		    + CurrentTime.getElapsedSeconds(start));
+		    + ((System.nanoTime() - start) / 1000000000.)
+		    + " seconds");
 	    }
 
 	    if (joinConfirmationReceived == false) {
@@ -1637,8 +1643,8 @@ public class MemberReceiver implements MixDataSource, TreatmentDoneListener {
 	        if (decodes > 0) {
 		    Logger.writeFile("Call " + cp + ":  "
 		        + "Average Speex decode time "
-                        + (((float)decodeTime / decodes) /
-		        CurrentTime.getTimeUnitsPerSecond()) + " ms");
+                        + (((float)decodeTime / decodes) / 1000000000.)
+			+ " seconds");
 		}
 	    }
 

@@ -23,8 +23,12 @@
 
 package com.sun.mpk20.voicelib.impl.service.voice;
 
+import java.util.ArrayList;
+
+import com.sun.voip.CallParticipant;
+
 public interface BridgeOfflineListener {
 
-    public void bridgeOffline(BridgeConnection bc);
+    public void bridgeOffline(BridgeConnection bc, ArrayList<CallParticipant> calls);
 
 }

@@ -48,6 +48,10 @@ import com.sun.mpk20.voicelib.impl.service.voice.BridgeOfflineListener;
 import java.awt.BorderLayout;
 import java.awt.Point;
 
+import java.util.ArrayList;
+
+import com.sun.voip.CallParticipant;
+
 /**
  *
  * @author  jp
@@ -103,7 +107,7 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 
 	String[] tokens = bridgeText.split(":");
 
-	if (tokens.length != 3) {
+	if (tokens.length < 1) {
 	    logger.info("Syntax is <host>:<sipPort>:<controlPort>");
 	    throw new IOException("Syntax is <host>:<sipPort>:<controlPort>");
 	}
@@ -117,22 +121,26 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 	     	+ e.getMessage());
 	}
  
-	int sipPort;
+	int sipPort = 5060;
 
-	try {
-	    sipPort = Integer.parseInt(tokens[1]);
-	} catch (NumberFormatException e) {
-	    logger.info("Syntax is <host>:<sipPort>:<controlPort>");
-	    throw new IOException("Syntax is <host>:<sipPort>:<controlPort>");
+	if (tokens.length >= 2) {
+	    try {
+	        sipPort = Integer.parseInt(tokens[1]);
+	    } catch (NumberFormatException e) {
+	        logger.info("Syntax is <host>:<sipPort>:<controlPort>");
+	        throw new IOException("Syntax is <host>:<sipPort>:<controlPort>");
+	    }
 	}
 
-	int controlPort;
+	int controlPort = 6666;
 
-	try {
-	    controlPort = Integer.parseInt(tokens[2]);
-	} catch (NumberFormatException e) {
-	    logger.info("Syntax is <host>:<sipPort>:<controlPort>");
-	    throw new IOException("Syntax is <host>:<sipPort>:<controlPort>");
+	if (tokens.length >= 3) {
+	    try {
+	        controlPort = Integer.parseInt(tokens[2]);
+	    } catch (NumberFormatException e) {
+	        logger.info("Syntax is <host>:<sipPort>:<controlPort>");
+	        throw new IOException("Syntax is <host>:<sipPort>:<controlPort>");
+	    }
 	}
 
 	logger.info(" trying to connect to " + server + ":" 
@@ -156,14 +164,14 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 
         String s = monitorButton.getText();
 	
-	try {
-	    connect();
-	} catch (IOException e) {
-	    logger.info("Unable to connect to bridge:  " + e.getMessage());
-	    return;
-	}
-
 	if (s.equalsIgnoreCase("Monitor")) {
+	    try {
+	        connect();
+	    } catch (IOException e) {
+	        logger.info("Unable to connect to bridge:  " + e.getMessage());
+	        return;
+	    }
+
 	    setMonitoring();
 	    showBridgeCalls();
 
@@ -183,6 +191,7 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
         bsp.getMonitorButton().setText("Monitor");
         bsp.getStatusLabel().setText("");
         bsp.getBridgeTextField().setEditable(true);
+	bsp.getEnableButton().setText("Disable");
     }
 
     private void setMonitoring() {
@@ -291,21 +300,22 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 	    return;
 	}
 
+        monitorButtonMouseClicked(null);
+
 	if (s.equalsIgnoreCase("Enable")) {
 	    try {
 	        bc.suspend(false);
 		enableButton.setText("Disable");
 		bsp.getMonitorButton().setEnabled(true);
 	    } catch (IOException e) {
-	        logger.info("Unable to resume " + bsp.getBridgeTextField().getText()
+	        logger.info("Unable to resume " 
+		    + bsp.getBridgeTextField().getText()
 		    + " " + e.getMessage());
 		setOffline();
 	    }
 
 	    return;
 	} 
-
-        monitorButtonMouseClicked(null);
 
 	done();
 
@@ -353,6 +363,10 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 	    }
 
 	    callCount++;
+	}
+
+	if (callCount == 0) {
+	    return;
 	}
 
 	JTable callTable = bsp.getCallTable();
@@ -560,7 +574,9 @@ public class BridgeMonitor implements Runnable, BridgeOfflineListener {
 	}
     }
 
-    public void bridgeOffline(BridgeConnection bc) {
+    public void bridgeOffline(BridgeConnection bc, 
+	    ArrayList<CallParticipant> calls) {
+
 	logger.info("Bridge offline:  " + bc);
 	bc.disconnect();
 	setOffline();
