@@ -2246,6 +2246,13 @@ public class RequestParser {
         }
 
 	try {
+	    value = getValue("xp" , "", request);
+	    RequestHandler.ignorePmx(getBoolean(value));
+	    return true;
+        } catch (ParameterException e) {
+        }
+
+	try {
 	    /*
 	     * pmx = <FrontBack> : <LeftRight> : <upDown> : <volume> : <callId> : <pmCallId>
 	     */

@@ -173,6 +173,10 @@ class RequestHandler extends Thread implements CallEventListener {
 			request.indexOf("privateMix=") == 0 ||
 			request.indexOf("pmx") == 0) {
 
+		     if (ignorePmx == true) {
+			continue;
+		     }
+
 		     Logger.writeFile(request);
 		} else {
 		     if (request.equalsIgnoreCase("gs") == false) {
@@ -292,6 +296,12 @@ class RequestHandler extends Thread implements CallEventListener {
 		}
 	    }
 	}
+    }
+
+    private static boolean ignorePmx;
+
+    public static void ignorePmx(boolean ignorePmx) {
+	RequestHandler.ignorePmx = ignorePmx;
     }
 
     private void removeHandler(RequestHandler handler) {

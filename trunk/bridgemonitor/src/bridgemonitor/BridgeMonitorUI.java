@@ -38,14 +38,20 @@ public class BridgeMonitorUI extends javax.swing.JFrame {
     /** Creates new form BridgeMonitorUI */
 
     public BridgeMonitorUI() {
-        this(0, 0, true);
+        this(null, 0, 0, true);
     }
 
     public BridgeMonitorUI(int x, int y) {
-        this(x, y, false);
+        this(null, x, y, false);
     }
 
-    public BridgeMonitorUI(int x, int y, boolean exitOnClose) {
+    public BridgeMonitorUI(String bridgeToMonitor, int x, int y) {
+        this(bridgeToMonitor, x, y, false);
+    }
+
+    public BridgeMonitorUI(String bridgeToMonitor, int x, int y, 
+	    boolean exitOnClose) {
+
         initComponents();
 
         //callTable.setVisible(true);
@@ -60,7 +66,13 @@ public class BridgeMonitorUI extends javax.swing.JFrame {
 
         setVisible(true);
 
-	bridgeStatusPanel1.getBridgeTextField().setText("localhost:5060:6666");
+	if (bridgeToMonitor != null) {
+	    bridgeStatusPanel1.getBridgeTextField().setText(bridgeToMonitor
+	        + ":5060:6666");
+	} else {
+	    bridgeStatusPanel1.getBridgeTextField().setText(
+		"localhost:5060:6666");
+	}
 
 	bridgeStatusPanel1.setUI(this);
 	bridgeStatusPanel2.setUI(this);

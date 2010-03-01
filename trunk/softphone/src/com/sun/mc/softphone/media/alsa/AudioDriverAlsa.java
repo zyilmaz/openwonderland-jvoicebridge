@@ -134,6 +134,7 @@ public class AudioDriverAlsa extends Object implements AudioDriver {
                 Logger.println("Invalid speaker preference:  " + speaker);
             } else {
                 device = speaker.substring(0, ix);
+		Logger.println("Using speaker preference " + speaker);
             }
         }
 

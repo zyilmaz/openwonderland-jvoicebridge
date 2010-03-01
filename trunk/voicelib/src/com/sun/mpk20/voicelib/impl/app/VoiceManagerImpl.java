@@ -74,6 +74,8 @@ public class VoiceManagerImpl implements VoiceManager {
 
     private static final double LIVE_PLAYER_FALLOFF = .94;
 
+    private static Object lock = new Object();
+
     /**
      * @param backingManager the <code>VoiceManager</code> to call through to
      */
@@ -161,7 +163,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	Player player = findPlayer(callId);
 
         if (player == null) {
-            logger.info("setSpatializer:  no Player for " + callId);
+            logger.info("no Player for " + callId);
             return;
 	}
 
@@ -207,16 +209,14 @@ public class VoiceManagerImpl implements VoiceManager {
         Player targetPlayer = findPlayer(targetCallId);
 
         if (targetPlayer == null) {
-            logger.info("setPrivateSpatializer:  no targetPlayer for " 
-		+ targetCallId);
+            logger.info("no targetPlayer for " + targetCallId);
             return;
         }
 
         Player sourcePlayer = findPlayer(sourceCallId);
 
         if (sourcePlayer == null) {
-            logger.info("setPrivateSpatializer:  no sourcePlayer for " 
-		+ sourceCallId);
+            logger.info("no sourcePlayer for " + sourceCallId);
             return;
         }
 
@@ -233,7 +233,7 @@ public class VoiceManagerImpl implements VoiceManager {
     }
 
     public void callEstablished(String callId) throws IOException {
-	logger.finer("call established: " + callId);
+	logger.fine("call established: " + callId);
 
 	/*
 	 * XXX We don't need to do this any more.  Audio treatments are already
@@ -299,7 +299,7 @@ public class VoiceManagerImpl implements VoiceManager {
     public void endCall(String callId, boolean tellBackingManager) 
 	    throws IOException {
 
-	logger.info("call ending:  " + callId);
+	logger.finer("call ending:  " + callId);
 
 	players.remove(callId);
 
@@ -337,14 +337,14 @@ public class VoiceManagerImpl implements VoiceManager {
 	boolean setPrivateMixes = false;
 
 	if (player.samePosition(x, y, z)) {
-	    //logger.info("same position:  " + player);
+	    logger.finest("same position:  " + player);
 	} else {
 	    player.setPosition(x, y, z);
 	    setPrivateMixes = true;
 	}
 
 	if (player.sameOrientation(orientation)) {
-	    //logger.info("same orientation:  " + player);
+	    logger.finest("same orientation:  " + player);
 	} else {
 	    player.setOrientation(orientation);
 	    setPrivateMixes = true;
@@ -370,7 +370,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
 
 	if (player.samePosition(x, y, z)) {
-	    //logger.info("same position:  " + player);
+	    logger.finest("same position:  " + player);
 	    return;
 	}
 
@@ -388,7 +388,7 @@ public class VoiceManagerImpl implements VoiceManager {
 	}
 
 	if (player.sameOrientation(orientation)) {
-	    //logger.info("same orientation:  " + player);
+	    logger.finest("same orientation:  " + player);
 	    return;
 	}
 
@@ -504,11 +504,7 @@ public class VoiceManagerImpl implements VoiceManager {
 
     private long timeToSetMixes;
 
-    private int n;
-
     private int skipped;
-
-    private long startTime;
 
     private long timeToSpatialize;
 
@@ -522,15 +518,9 @@ public class VoiceManagerImpl implements VoiceManager {
 	// in 3-space relative to each other call
 	// and set the private mix accordingly.
 
-	synchronized (this) {
-	    if (startTime == 0) {
-	        startTime = System.nanoTime();
-	    }
-	}
+	long startTime = System.nanoTime();
 
 	Player[] playersArray = players.values().toArray(new Player[0]);
-
-	long start = System.nanoTime();
 
 	if (changedPlayer == null) {
 	    for (int i = 0; i < playersArray.length; i++) {
@@ -582,7 +572,18 @@ public class VoiceManagerImpl implements VoiceManager {
              	     */
 		    skipped++;
         	} else {
-		    setPrivateMix(p1, changedPlayer);
+		    /*
+		     * If the changed player didn't change position,
+		     * then the mix for other players won't be affected
+		     * because the changed player's orientation has
+	 	     * no effect on the direction other player's hear
+		     * that player's sound coming from.
+		     */
+		    if (changedPlayer.positionChanged == true) {
+		        setPrivateMix(p1, changedPlayer);
+		    } else {
+			skipped++;
+		    }
 		}
 
 		if (changedPlayer.isLivePerson == false) {
@@ -593,38 +594,32 @@ public class VoiceManagerImpl implements VoiceManager {
 	    }
 	}
 
+	if (logger.isLoggable(Level.FINE) == false) {
+	    return;
+	}
+
 	long now = System.nanoTime();
 
-	synchronized (this) {
-	    timeToSetMixes += (now - start);
+	synchronized (lock) {
+	    timeToSetMixes += (now - startTime);
 
-	    if (n++ != 100) {
+	    if (numberOfPrivateMixesSet < 1000) {
 		return;
 	    }
 
-	    if (false && numberOfPrivateMixesSet > 0) {
-	        long elapsed = (now - startTime) * 1000 / 1000000000;
+	    double avg = timeToSetMixes / 1000000000. / numberOfPrivateMixesSet;
 
-	        timeToSetMixes = timeToSetMixes * 1000 / 1000000000;
+	    logger.fine("avg time to set " + numberOfPrivateMixesSet + " mixes "
+		+ avg + ", number of players " + playersArray.length 
+		+ ", avg time to spatialize " 
+		+ (timeToSpatialize / 1000000000. / 
+		  (numberOfPrivateMixesSet + skipped))
+		+ ", out of range " + skipped);
 
-	        double avg = (double) timeToSetMixes / numberOfPrivateMixesSet;
-		    
-	        logger.info("elapsed ms " + elapsed + ", time to set "
-		    + numberOfPrivateMixesSet + " mixes " 
-		    + timeToSetMixes + ", avg time to set a pm " + avg
-		    + ", number of players " + playersArray.length 
-		    + ", avg time to spatialize " 
-		    + (((double) timeToSpatialize) / 
-		      (numberOfPrivateMixesSet + skipped))
-		    + ", out of range " + skipped);
-	    }
-
-	    startTime = 0;
 	    numberOfPrivateMixesSet = 0;
 	    timeToSetMixes = 0;
 	    timeToSpatialize = 0;
 	    skipped = 0;
-	    n = 0;
 	}
     }
 
@@ -649,12 +644,12 @@ public class VoiceManagerImpl implements VoiceManager {
 	    spatializer = defaultSpatializer;
 	}
 
-	long start = System.currentTimeMillis();
+	long start = System.nanoTime();
 
 	double[] privateMixParameters = spatializer.spatialize(
 	    p2.x, p2.y, p2.z, p2.orientation, p1.x, p1.y, p1.z, p1.orientation);
 
-	timeToSpatialize += (System.currentTimeMillis() - start);
+	timeToSpatialize += (System.nanoTime() - start);
 
 	if (privateMixParameters[3] > .1) {
           logger.finest("p1=" + p1 + " p2=" + p2 + " mix " 
@@ -694,14 +689,14 @@ public class VoiceManagerImpl implements VoiceManager {
 		privateMixParameters[3] = 0;
 	    }
 
-	    logger.fine("pmx for " + p1.callId + ": "
+	    logger.finer("pmx for " + p1.callId + ": "
 	        + p2.callId + " vol " 
 		+ privateMixParameters[3]);
  
 	    if (privateMixParameters[3] == 0) {
 		if (p1.isInRange(p2) == false) {
 		    if ((count % 1000) == 0 || logger.isLoggable(Level.FINE)) {
-	    	        logger.info("pmx for " + p1 + ": " + p2 
+	    	        logger.finer("pmx for " + p1 + ": " + p2 
 			    + " already out of range."); 
 		    }
 
@@ -713,18 +708,18 @@ public class VoiceManagerImpl implements VoiceManager {
 		    return;
 	        }
 
-	    	logger.info("pmx for " + p1 + ": "
+	    	logger.fine("pmx for " + p1 + ": "
 	            + p2 + " no longer in range."); 
 
 		p1.removePlayerInRange(p2);   // p2 is not in range any more
 	    } else {
 		if ((count % 1000) == 0 || logger.isLoggable(Level.FINE)) {
-	    	    logger.info("pmx for " + p1 + ": "
+	    	    logger.finer("pmx for " + p1 + ": "
 	                + p2 + " is in range."); 
 		}
 
 		if (p1.isInRange(p2) == false) {
-	    	    logger.info("pmx for " + p1 + ": "
+	    	    logger.fine("pmx for " + p1 + ": "
 	                + p2 + " setting in range."); 
 
 		    p1.addPlayerInRange(p2);  // p2 is in range now
@@ -822,7 +817,7 @@ public class VoiceManagerImpl implements VoiceManager {
     }
 
     public double round(double v) {
-	return Math.round(v * 1000) / (double) 1000;
+	return Math.round(v * 100) / (double) 100;
     }
 
     private void test() throws IOException {

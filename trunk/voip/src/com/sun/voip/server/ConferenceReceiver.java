@@ -23,7 +23,6 @@
 
 package com.sun.voip.server;
 
-import com.sun.voip.CurrentTime;
 import com.sun.voip.Logger;
 import com.sun.voip.RtpPacket;
 
@@ -274,7 +273,7 @@ public class ConferenceReceiver extends Thread {
 		    long start = 0;
 
 		    if (memberReceiver.traceCall()) {
-		        start = CurrentTime.getTime();
+		        start = System.nanoTime();
 		    }
 
 		    /*
@@ -286,7 +285,8 @@ public class ConferenceReceiver extends Thread {
 			memberReceiver.traceCall(false);
 
 			Logger.println("Call " + memberReceiver + " receive time "
-			    + CurrentTime.getElapsedSeconds(start));
+			    + ((System.nanoTime() - start) / 1000000000.) 
+			    + " seconds");
 		    }
 		}
 

@@ -23,7 +23,6 @@
 
 package com.sun.voip.server;
 
-import com.sun.voip.CurrentTime;
 import com.sun.voip.Logger;
 import com.sun.voip.RtpPacket;
 import com.sun.voip.Ticker;
@@ -121,7 +120,7 @@ public class ConferenceSender extends Thread {
         long maxSendTime = 0;
 
 	while (!done) {
-	    long hiresSendStartTime = CurrentTime.getTime();
+	    long startTime = System.nanoTime();
 
             for (SenderCallbackListener listener : senderCallbackList) {
                 listener.senderCallback();
@@ -129,7 +128,7 @@ public class ConferenceSender extends Thread {
 
 	    sendDataToConferences();
 
-	    int elapsed = (int) (CurrentTime.getTime() - hiresSendStartTime);
+	    int elapsed = (int) (System.nanoTime() - startTime);
 
 	    if (elapsed > maxSendTime) {
 	        maxSendTime = elapsed;
@@ -156,18 +155,15 @@ public class ConferenceSender extends Thread {
 	    packetsSent++;
 
 	    if ((packetsSent % 250) == 0) {
-		averageSendTime = (double) (sendTime * 1000. / 
-		       CurrentTime.getTimeUnitsPerSecond() / 250.);
+		averageSendTime = sendTime / 1000000000. / 250.;
 
-		lastMaxSendTime = (double) (maxSendTime * 1000. / 
-		       CurrentTime.getTimeUnitsPerSecond());
+		lastMaxSendTime = maxSendTime / 1000000000.;
 
 	        String s = getName()
-	            + " average time to send a packet to "
-	    	    + ConferenceManager.getTotalMembers() 
-	            + " members in last 5 seconds " 
-		    + averageSendTime + " ms" 
-		    + " maxSendTime " + lastMaxSendTime
+	            + " time to send a packet to " + ConferenceManager.getTotalMembers() 
+	            + " members in last 5 seconds is " + (sendTime / 1000000000.) 
+		    + " seconds, average time " + averageSendTime + " seconds " 
+		    + ", maxSendTime " + lastMaxSendTime
 		    + ", members speaking " + CallHandler.getTotalSpeaking();
 
 	        if (Logger.logLevel >= Logger.LOG_DETAIL) {
@@ -177,13 +173,11 @@ public class ConferenceSender extends Thread {
 	        }
 
 		if (packetsSent > 0) {
-		    timeBetweenSends = (double) 
-			((CurrentTime.getTime() - startTime) * 1000. /
-		        CurrentTime.getTimeUnitsPerSecond() / 250.0D);
+		    timeBetweenSends = (System.nanoTime() - startTime) /
+			1000000000. / 250.;
 		}
 
-		startTime = CurrentTime.getTime();
-
+		startTime = System.nanoTime();
 	        maxSendTime = 0;
 		sendTime = 0;
 	    }
@@ -401,7 +395,7 @@ public class ConferenceSender extends Thread {
 	    long start = 0;
 
             if (Logger.logLevel == -33) {
-                start = CurrentTime.getTime();
+                start = System.nanoTime();
             }
 
 	    try {
@@ -418,7 +412,8 @@ public class ConferenceSender extends Thread {
             if (Logger.logLevel == -33) {
                 Logger.println("Sender sendDataToOneMember time "
                     +  member + " "
-                    + CurrentTime.getElapsedSeconds(start));
+                    + ((System.nanoTime() - start) / 1000000000.) + " seconds");
+
 		Logger.logLevel = 3;
             }
 	}
@@ -503,9 +498,7 @@ public class ConferenceSender extends Thread {
 	if (packetsSent > 0) {
 	    Logger.println(getName()
 		+ " average time to send a packet to every member " 
-		+ ((double)totalSendTime * 1000D / 
-		CurrentTime.getTimeUnitsPerSecond() / 
-		(double) packetsSent) + " milliseconds");
+		+ (totalSendTime / 1000000000. / packetsSent) + " seconds ");
 	}
 
 	ticker.printStatistics();

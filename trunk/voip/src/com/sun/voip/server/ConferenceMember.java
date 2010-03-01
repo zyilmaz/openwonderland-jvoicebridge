@@ -25,7 +25,6 @@ package com.sun.voip.server;
 
 import com.sun.voip.CallParticipant;
 import com.sun.voip.CallEvent;
-import com.sun.voip.CurrentTime;
 import com.sun.voip.Logger;
 import com.sun.voip.MediaInfo;
 import com.sun.voip.MixDataSource;
@@ -96,10 +95,51 @@ public class ConferenceMember implements TreatmentDoneListener,
     private DatagramChannel datagramChannel;
     private RtcpReceiver rtcpReceiver;
 
+    private static long startTime;
+    private static int applyCount;
+    private static int pmCount;
+    private static int replaced;
+    private static long applyTime;
+
     static class CallbackListener implements SenderCallbackListener {
 
         public void senderCallback() {
+	    long start = System.nanoTime();
+
+	    if (startTime == 0) {
+		startTime = start;
+	    }
+
+	    int pmCount = ConferenceMember.pmCount;
+
             applyPrivateMixes();
+
+	    if (pmCount == ConferenceMember.pmCount) {
+		return;
+	    }
+
+	    long now = System.nanoTime();
+
+	    applyTime += (now - start);
+
+	    double secondsToApply = applyTime / 1000000000.;
+
+	    if (++applyCount == 500) {
+		double elapsed = (now - startTime) / 1000000000.;
+
+		Logger.println("elapsed " + elapsed + " seconds, applied " 
+		    + ConferenceMember.pmCount 
+		    + " pm's in " + secondsToApply + " seconds, avg per pm " 
+		    + (secondsToApply / pmCount)
+		    + ", avg time to apply pm's " 
+		    + (secondsToApply / applyCount)
+		    + " seconds, replaced " + replaced);
+
+		applyCount = 0;
+		ConferenceMember.pmCount = 0;
+		applyTime = 0;
+		replaced = 0;
+	    }
         }
 
     }
@@ -831,7 +871,9 @@ public class ConferenceMember implements TreatmentDoneListener,
 		}
 	    }
 
-            mixesToApply.put(member, spatialValues);
+            if (mixesToApply.put(member, spatialValues) != null) {
+		replaced++;
+	    }
         }
     }
 
@@ -861,6 +903,8 @@ public class ConferenceMember implements TreatmentDoneListener,
 			    + spatialValues[1] + ":" + spatialValues[2]
 			    + ":" + spatialValues[3]);
 		    }
+
+		    pmCount++;
 		}
             }
 
@@ -902,38 +946,39 @@ public class ConferenceMember implements TreatmentDoneListener,
 	            mixManager.removeMix(member.getMemberReceiver());
 
 	            member.removePrivateMixForMe(this);
-	        } else {
-	            md = mixManager.setPrivateMix(member.getMemberReceiver(), 
-		        spatialValues);
-
-		    if (Logger.logLevel >= Logger.LOG_INFO) {
-		        Logger.println("Call " + this + " private mix for " 
-			    + member + " " + md);
-		    }
-
-		    if (md == null) {
-		        if (Logger.logLevel >= Logger.LOG_INFO) {
-			    Logger.println(this + " pm already set for " 
-				+ member + " vol " + spatialValues[3]);
-			}
-			return;	
-		    }
-
-	            /*
-	             * Attenuate this private mix.
-	             * No other mix descriptors need to be attenuated.
-	             */
-		    if (member.getWhisperGroup() != null) {
-		        /*
-		         * If member isn't done initializing,
-		         * we can't adjust this descriptor because
-		         * the member is not yet whispering.
-		         */
-	                adjustPrivateMixDescriptor(this, member, md);
-		    }
-
-	            member.setPrivateMixForMe(this);
+		    return;
 	        }
+
+	        md = mixManager.setPrivateMix(member.getMemberReceiver(), 
+		    spatialValues);
+
+		if (Logger.logLevel >= Logger.LOG_INFO) {
+		    Logger.println("Call " + this + " private mix for " 
+			+ member + " " + md);
+		}
+
+		if (md == null) {
+		    if (Logger.logLevel >= Logger.LOG_INFO) {
+			Logger.println(this + " pm already set for " 
+			    + member + " vol " + spatialValues[3]);
+		    }
+		    return;	
+		}
+
+	        /*
+	         * Attenuate this private mix.
+	         * No other mix descriptors need to be attenuated.
+	         */
+		if (member.getWhisperGroup() != null) {
+		    /*
+		     * If member isn't done initializing,
+		     * we can't adjust this descriptor because
+		     * the member is not yet whispering.
+		     */
+	            adjustPrivateMixDescriptor(this, member, md);
+		}
+
+	        member.setPrivateMixForMe(this);
 	    }
 	}
     }

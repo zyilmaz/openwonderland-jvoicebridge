@@ -25,6 +25,11 @@ package com.sun.mpk20.voicelib.impl.service.voice;
 
 import java.io.IOException;
 
+import java.net.Socket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
@@ -32,18 +37,20 @@ import java.util.concurrent.CountDownLatch;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.sun.voip.CallParticipant;
 
-public class PrivateMixHandler extends Thread {
+public class PrivateMixManager extends Thread {
 
     private static final Logger logger = Logger.getLogger(
-	PrivateMixHandler.class.getName());
+	PrivateMixManager.class.getName());
 
     /*
      * Send private mix commands to the bridge.
@@ -56,26 +63,20 @@ public class PrivateMixHandler extends Thread {
 
     private CountDownLatch doneSignal;
 
-    private VoiceServiceImpl voiceService;
-
     private ConcurrentHashMap<String, ConcurrentHashMap<String, Work>> 
 	privateMixMap = new ConcurrentHashMap<String, 
 	ConcurrentHashMap<String, Work>>();
 
-    private ConcurrentHashMap<String, CallInfo> callConnectionMap =
-        new ConcurrentHashMap<String, CallInfo>();
-
     private ConcurrentHashMap<String, ArrayList<String>> virtualCallMap =
         new ConcurrentHashMap<String, ArrayList<String>>();
 
-
     private CallEnder callEnder;
-  
-    public PrivateMixHandler(VoiceServiceImpl voiceService, 
-	ConcurrentHashMap<String, CallInfo> callConnectionMap) {
 
-	this.voiceService = voiceService;
-	this.callConnectionMap = callConnectionMap;
+    private BridgeManager bridgeManager;
+  
+    public PrivateMixManager(BridgeManager bridgeManager) {
+
+	this.bridgeManager = bridgeManager;
 
 	callEnder = new CallEnder();
 
@@ -121,10 +122,14 @@ public class PrivateMixHandler extends Thread {
 	private boolean done;
 	private CountDownLatch doneSignal;
 
+	private long elapsed;
+	private long n;
+
 	public WorkerThread(int i, CountDownLatch doneSignal) {
 	    this.doneSignal = doneSignal;
 
-	    setName("PrivateMixHandler-WorkerThread-" + i);
+	    setName("PrivateMixManager-WorkerThread-" + i);
+
 	    start();
 	}
 
@@ -143,7 +148,24 @@ public class PrivateMixHandler extends Thread {
         	    ConcurrentHashMap<String, Work> pm = 
 		    (ConcurrentHashMap<String, Work>) workToDo.remove();
 
-		    processPrivateMix(pm);
+	    	    long start = System.nanoTime();
+ 
+		    processPrivateMixes(pm);
+
+		    if (logger.isLoggable(Level.FINE)) {
+	    	        elapsed += (System.nanoTime() - start);
+
+	    	        if (++n == 500) {
+			    double seconds = elapsed / 1000000000.;
+
+			    logger.info(this + ": elapsed " + seconds 
+				+ " seconds " + ", n " + n + ", avg " 
+				+ (seconds / n) + " seconds");
+
+		            elapsed = 0;
+		            n = 0;
+			}
+	    	    }
 		} catch (NoSuchElementException e) {
                     synchronized (this) {
                         doneSignal.countDown();
@@ -162,14 +184,17 @@ public class PrivateMixHandler extends Thread {
 	    }
 	}
 
-	private void processPrivateMix(ConcurrentHashMap<String, Work> pm) {
+	HashMap<BridgeConnection, ArrayList<String>>  bridgeMap =
+	    new HashMap<BridgeConnection, ArrayList<String>>();
+
+	private void processPrivateMixes(ConcurrentHashMap<String, Work> pm) {
 	    ArrayList<Work> mixList = new ArrayList<Work>(pm.values());
 
 	    pm.clear();
 
-	    logger.fine(getName() + ":  Mixes to process:  " + mixList.size());
+	    //logger.fine(getName() + ":  Mixes to process:  " + mixList.size());
 
-	   for (Work work : mixList) {
+	    for (Work work : mixList) {
 		BridgeConnection fromBridgeConnection;
 
 		BridgeConnection toBridgeConnection;
@@ -180,22 +205,18 @@ public class PrivateMixHandler extends Thread {
 
 		double[] privateMixParameters = work.privateMixParameters;
 
-		if (logger.isLoggable(Level.FINE) ||
-		     privateMixParameters[3] == 0) {
-
-	            logger.info("setting private mix for"
-	                + " source " + toCallId
-    	                + " target " + fromCallId
-		        + " privateMixParameters " 
-		        + privateMixParameters[0] + ":"
-    		        + privateMixParameters[1] + ":"
-		        + privateMixParameters[2] + ":"
-		        + privateMixParameters[3]);
-		}
+	        //logger.fine("setting private mix for"
+	        //    + " source " + toCallId
+    	        //    + " target " + fromCallId
+		//    + " privateMixParameters " 
+		//    + privateMixParameters[0] + ":"
+    		//    + privateMixParameters[1] + ":"
+		//    + privateMixParameters[2] + ":"
+		//    + privateMixParameters[3]);
 
 		try {
 		    fromBridgeConnection = 
-			voiceService.getBridgeConnection(fromCallId);
+			bridgeManager.getBridgeConnection(fromCallId);
 
 		    if (fromBridgeConnection == null) {
 			logger.info("Unable to get bridge connection "
@@ -211,7 +232,7 @@ public class PrivateMixHandler extends Thread {
 		    } 
 
 		    toBridgeConnection = 
-			voiceService.getBridgeConnection(toCallId);
+			bridgeManager.getBridgeConnection(toCallId);
 
 		    if (toBridgeConnection == null) {
 			logger.info("Unable to get bridge connection "
@@ -230,8 +251,8 @@ public class PrivateMixHandler extends Thread {
 			logger.fine("both calls are on same machine "
 			    + toBridgeConnection);
 
-		        fromBridgeConnection.setPrivateMix(toCallId, 
-			    fromCallId, privateMixParameters);
+		        setPrivateMix(fromBridgeConnection,
+			    toCallId, fromCallId, privateMixParameters);
 		    } else {
 			/*
 			 * The calls are on different bridges.
@@ -257,6 +278,52 @@ public class PrivateMixHandler extends Thread {
 			+  privateMixParameters[3] + " " + e.getMessage());
 		}
 	    }
+
+	    Set<BridgeConnection> keys = bridgeMap.keySet();
+
+	    Iterator<BridgeConnection> it = keys.iterator();
+
+            while (it.hasNext()) {
+                BridgeConnection bc = it.next();
+
+                ArrayList<String> commands = bridgeMap.get(bc);
+
+		String s = "";
+
+		for (int i = 0; i < commands.size(); i++) {
+		    s += commands.get(i) + "\n";
+		}
+
+		try {
+		    bc.setPrivateMix(s);
+		} catch (IOException e) {
+		    logger.info("Unable to send private mix command to "
+			+ bc + " " + e.getMessage());
+		}
+	    }
+	    
+	    bridgeMap.clear();
+	}
+
+	private void setPrivateMix(BridgeConnection bc, String toCallId,
+	        String fromCallId, double[] privateMixParameters) 
+		throws IOException {
+
+	    ArrayList<String> commands = bridgeMap.get(bc);
+
+	    if (commands == null) {
+		commands = new ArrayList<String>();
+
+		bridgeMap.put(bc, commands);
+	    }
+
+	    String s = "pmx=" +  privateMixParameters[0] + ":"
+                +  privateMixParameters[1] + ":"
+                +  privateMixParameters[2] + ":"
+                +  privateMixParameters[3] + ":"
+                + fromCallId + ":" + toCallId;
+
+	    commands.add(s);
 	}
 
         /*
@@ -275,13 +342,14 @@ public class PrivateMixHandler extends Thread {
  	    	+ fromBridgeConnection.getPrivateHost() + "_"
 	    	+ fromBridgeConnection.getPrivateSipPort();
 
-	    CallInfo vToCallInfo = callConnectionMap.get(vToCallId);
+	    CallInfo vToCallInfo = bridgeManager.getCallConnection(vToCallId);
 
 	    if (vToCallInfo != null) {
 		/*
 		 * Let's make sure things are consistent.
 		 */
-		CallInfo vFromCallInfo = callConnectionMap.get(vFromCallId);
+		CallInfo vFromCallInfo = bridgeManager.getCallConnection(
+		    vFromCallId);
 		
 		if (vToCallInfo.bridgeConnection.isConnected() == false) {
 		    logger.info("Unusal:  " + vToCallId
@@ -312,7 +380,7 @@ public class PrivateMixHandler extends Thread {
 		    + " for data to " + toCallId + " from " + vToCallId);
 
 		try {
-		    toBridgeConnection.setPrivateMix(toCallId,
+		    setPrivateMix(toBridgeConnection, toCallId,
 		        vToCallId, privateMixParameters);
 
 		    synchronized (vToCallInfo) {
@@ -327,7 +395,7 @@ public class PrivateMixHandler extends Thread {
 		return;
 	    }
 
-	    logger.info("adding pm for data to " + toCallId 
+	    logger.fine("adding pm for data to " + toCallId 
 		+ " on " + toBridgeConnection.getPrivateHost()
 		+ ":" + toBridgeConnection.getPrivateSipPort()
 		+ ":" + toBridgeConnection.getPrivateControlPort()
@@ -338,7 +406,7 @@ public class PrivateMixHandler extends Thread {
 		+ " vFromCallId " + vFromCallId + " vToCallId "
 		+ vToCallId);
 
-	    CallInfo toCallInfo = callConnectionMap.get(toCallId);
+	    CallInfo toCallInfo = bridgeManager.getCallConnection(toCallId);
 
 	    if (toCallInfo == null) {
 		logger.info("Can't find CallInfo for " + toCallId);
@@ -380,7 +448,7 @@ public class PrivateMixHandler extends Thread {
 	    cp.setForwardingCallId(fromCallId);
 	    cp.setVoiceDetection(true);
 
-	    logger.info("setup virtual call on " + fromBridgeConnection 
+	    logger.fine("setup virtual call on " + fromBridgeConnection 
 		+ " " + cp);
 
 	    try {
@@ -398,7 +466,7 @@ public class PrivateMixHandler extends Thread {
 
 	    CallInfo fromCallInfo = new CallInfo(cp, fromBridgeConnection);
 
-	    callConnectionMap.put(vFromCallId, fromCallInfo);
+	    bridgeManager.putCallConnection(vFromCallId, fromCallInfo);
 
 	    cp = new CallParticipant();
 
@@ -410,7 +478,7 @@ public class PrivateMixHandler extends Thread {
 
 	    toCallInfo = new CallInfo(cp, toBridgeConnection);
 
-	    callConnectionMap.put(vToCallId, toCallInfo);
+	    bridgeManager.putCallConnection(vToCallId, toCallInfo);
 
 	    ArrayList<String> virtualCalls = virtualCallMap.get(fromCallId);
 
@@ -445,7 +513,7 @@ public class PrivateMixHandler extends Thread {
 	     * we'll set the pm then.
 	     */
 	    try {
-	        toBridgeConnection.setPrivateMix(toCallId, vToCallId,
+	        setPrivateMix(toBridgeConnection, toCallId, vToCallId,
 		    privateMixParameters);
 	    } catch (IOException e) {
 		logger.info("Unable to set pm on " + toBridgeConnection
@@ -476,7 +544,7 @@ public class PrivateMixHandler extends Thread {
 	    	+ fromBridgeConnection.getPrivateHost() + "_"
 	        + fromBridgeConnection.getPrivateSipPort();
 
-	    logger.info("removing pm for data to " + toCallId 
+	    logger.fine("removing pm for data to " + toCallId 
 		+ " on " + toBridgeConnection.getPrivateHost()
 		+ ":" + toBridgeConnection.getPrivateSipPort()
 		+ ":" + toBridgeConnection.getPrivateControlPort()
@@ -487,10 +555,10 @@ public class PrivateMixHandler extends Thread {
 		+ " vFromCallId " + vFromCallId + " vToCallId "
 		+ vToCallId);
 
-	    CallInfo toCallInfo = callConnectionMap.get(vToCallId);
+	    CallInfo toCallInfo = bridgeManager.getCallConnection(vToCallId);
 
             try {
-                toBridgeConnection.setPrivateMix(toCallId, vToCallId,
+                setPrivateMix(toBridgeConnection, toCallId, vToCallId,
                     privateMixParameters);
             } catch (IOException e) {
                  logger.info("Unable to remove pm on " + toBridgeConnection
@@ -498,17 +566,22 @@ public class PrivateMixHandler extends Thread {
                      + " " + e.getMessage());
             }
 
-	    ConcurrentHashMap<String, String> privateMixes = 
-		toCallInfo.privateMixes;
+	    ConcurrentHashMap<String, String> privateMixes = null;
 
-	    synchronized (toCallInfo) {
-	        privateMixes.remove(vFromCallId, toCallId);
+	    if (toCallInfo != null) {
+	        privateMixes = toCallInfo.privateMixes;
+
+	        synchronized (toCallInfo) {
+	            privateMixes.remove(vFromCallId, toCallId);
+	        }
+	    } else {
+		logger.warning("No CallInfo for " + toCallId);
 	    }
 
-	    if (privateMixes.size() == 0) {
+	    if (privateMixes == null || privateMixes.size() == 0) {
 	        callEnder.addCallToEnd(vFromCallId, vToCallId);
 	    } else {
-		logger.info("Not ending call " + vToCallId + " remote " 
+		logger.fine("Not ending call " + vToCallId + " remote " 
 		    + vFromCallId
 		    + " because there are still " + privateMixes.size()
 		    + " private mixes for " + vToCallId);    
@@ -532,8 +605,6 @@ public class PrivateMixHandler extends Thread {
         private ConcurrentHashMap<String, EndCallInfo> callsToEnd =
 	    new ConcurrentHashMap<String, EndCallInfo>();
 
-        private VoiceServiceImpl voiceService;
-
         public CallEnder() {
 	    start();
         }
@@ -542,15 +613,15 @@ public class PrivateMixHandler extends Thread {
 	    synchronized (callsToEnd) {
 	        callsToEnd.put(fromCallId, new EndCallInfo(fromCallId));
 	        callsToEnd.put(toCallId, new EndCallInfo(toCallId));
-	        logger.info("CallEnder: " + fromCallId + " scheduled to end");
-	        logger.info("CallEnder: " + toCallId + " scheduled to end");
+	        logger.fine("CallEnder: " + fromCallId + " scheduled to end");
+	        logger.fine("CallEnder: " + toCallId + " scheduled to end");
 	    }
         }
 
         public void removeCallToEnd(String callId, String remoteCallId) {
 	    synchronized (callsToEnd) {
 	        if (callsToEnd.remove(callId) != null) {
-		    logger.info("CallEnder:  Reprieve given to " + callId);
+		    logger.fine("CallEnder:  Reprieve given to " + callId);
 		    callsToEnd.remove(remoteCallId);
 	        } 
 	    }
@@ -585,7 +656,9 @@ public class PrivateMixHandler extends Thread {
 		    callsToEnd.remove(callId);
 
 		    try {
-		        voiceService.endCall(callId);
+			logger.fine("End call:  " + callId);
+		        bridgeManager.endCall(callId);
+			endCall(callId);
 		    } catch (IOException e) {
 		        logger.info("Unable to end call " + callId
 			    + " " + e.getMessage());
@@ -647,19 +720,21 @@ public class PrivateMixHandler extends Thread {
     private int replaced;
     private int count;
 
+    private boolean privateMixSet;
+
     public void setPrivateMix(Work work) {
 	ConcurrentHashMap<String, Work> mixMap = 
 	    privateMixMap.get(work.sourceCallId);
 
         if (mixMap == null) {
-            logger.info("No mixMap for " + work.sourceCallId);
+            logger.fine("No mixMap for " + work.sourceCallId);
 	    return;
 	}
 
 	Work w = mixMap.put(work.targetCallId, work);
 
 	if (work.privateMixParameters[3] == 0) {
-	    logger.info("Zero volume for source " + work.sourceCallId
+	    logger.finer("Zero volume for source " + work.sourceCallId
 		+ " target " + work.targetCallId);
 	}
 
@@ -668,12 +743,12 @@ public class PrivateMixHandler extends Thread {
                 replaced++;
 
 		if (w.privateMixParameters[3] == 0) {
-	    	    logger.info("Replacing 0 volume " + w.sourceCallId
+	    	    logger.finer("Replacing 0 volume " + w.sourceCallId
 			+ " target " + w.targetCallId 
 			+ " new volume " + work.privateMixParameters[3]);
 		}
 
-                logger.fine(w.sourceCallId + " Replacing pm for "
+                logger.finer(w.sourceCallId + " Replacing pm for "
                     + w.targetCallId + " old "
                     + w.privateMixParameters[0] + ":"
                     + w.privateMixParameters[1] + ":"
@@ -687,10 +762,24 @@ public class PrivateMixHandler extends Thread {
 	    } 
 
 	    if (++count == 1000) {
-	        logger.info("Replaced " + replaced);
+	        logger.fine("Replaced " + replaced);
 	        count = 0;
 	        replaced = 0;
 	    }
+
+	    //privateMixMap.notifyAll();
+
+	    privateMixSet = true;
+	}
+    }
+
+    public void commit() {
+	synchronized (privateMixMap) {
+	    if (privateMixSet == false) {
+		return;
+	    }
+
+	    privateMixSet = false;
 
 	    privateMixMap.notifyAll();
 	}
@@ -729,7 +818,7 @@ public class PrivateMixHandler extends Thread {
 	virtualCallMap.remove(callId);
 
 	for (String id : virtualCalls) {
-	    CallInfo callInfo =  callConnectionMap.get(id);
+	    CallInfo callInfo =  bridgeManager.getCallConnection(id);
 
 	    if (callInfo == null) {
 		logger.fine("No call info for " + id);
@@ -741,14 +830,15 @@ public class PrivateMixHandler extends Thread {
 
 	    if (privateMixes.size() <= 1) {
 	        try {
-		    logger.info("Ending virtual call " + id);
-		    voiceService.endCall(id);
+		    logger.fine("Ending virtual call " + id);
+		    bridgeManager.endCall(id);
+		    endCall(callId);
 	        } catch (IOException e) {
 		    logger.info("Unable to end virtual call :  " + id
 		        + " " + e.getMessage());
 	        }
 	    } else {
-		logger.info("Not ending " + id + " because it still has "
+		logger.fine("Not ending " + id + " because it still has "
 		    + privateMixes.size() + " privateMixes");
 	    }
 	}
@@ -766,13 +856,13 @@ public class PrivateMixHandler extends Thread {
 
 	    for (String id : virtualCalls) {
 		if (callId.equals(id)) {
-		    logger.info("Removed virtual call " + id
+		    logger.fine("Removed virtual call " + id
 			+ " from list for " + callId);
 
 		    virtualCalls.remove(id);
 
 		    if (virtualCalls.size() == 0) {
-			logger.info("Removed virtual call array for "
+			logger.fine("Removed virtual call array for "
 			    + callId);
 
 			virtualCallMap.remove(virtualCalls);
@@ -783,7 +873,7 @@ public class PrivateMixHandler extends Thread {
 	}
     }
 
-    public void dumpVirtualCallMap() {
+    public void dump() {
 	logger.info("Virtual call map " + virtualCallMap.size());
 
 	Enumeration<String> keys = virtualCallMap.keys();

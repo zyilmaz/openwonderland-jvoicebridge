@@ -35,7 +35,11 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -102,6 +106,8 @@ public class BridgeConnection extends VoiceBridgeConnection {
 
     private BridgeOfflineListener offlineListener;
 
+    private SocketChannel socketChannel;
+
     static {
         String s = System.getProperty(
             "com.sun.sgs.impl.service.voice.watchdog.timeout");
@@ -154,9 +160,27 @@ public class BridgeConnection extends VoiceBridgeConnection {
 	 * Connect in syncrhonous mode to get command status.
 	 */
 	connect(true);
+
+	/*
+	 * SocketChannels seem to perform much better than Sockets.
+	 */
+	InetAddress ia = InetAddress.getByName(privateHost);
+        InetSocketAddress bridgeSocketAddress = 
+	    new InetSocketAddress(ia, privateControlPort);
+
+        socketChannel = SocketChannel.open(bridgeSocketAddress);
+	//socketChannel.configureBlocking(false);
+
+	Socket socket = socketChannel.socket();
+        socket.setSendBufferSize(2 * 1024 * 1024);
+
+	logger.info("Created a socket channel to " + bridgeSocketAddress
+	    + " sendBufferSize " + socket.getSendBufferSize());
     }
 
-    public void addBridgeOfflineListener(BridgeOfflineListener offlineListener) {
+    public void addBridgeOfflineListener(
+	    BridgeOfflineListener offlineListener) {
+
 	this.offlineListener = offlineListener;
     }
 
@@ -237,7 +261,7 @@ public class BridgeConnection extends VoiceBridgeConnection {
     public void addCall(CallParticipant cp) {
 	callParticipantMap.put(cp.getCallId(), cp);
 
-	logger.fine("added call " + cp.getCallId() + " " 
+	logger.finer("added call " + cp.getCallId() + " " 
 	    + callParticipantMap.size());
     }
 
@@ -247,7 +271,7 @@ public class BridgeConnection extends VoiceBridgeConnection {
     private int removeCall(CallParticipant cp) {
 	callParticipantMap.remove(cp.getCallId());
 
-	logger.fine("removed call " + cp.getCallId() + " "
+	logger.finer("removed call " + cp.getCallId() + " "
 	    + callParticipantMap.size());
 
         return callParticipantMap.size();
@@ -256,7 +280,7 @@ public class BridgeConnection extends VoiceBridgeConnection {
     private int removeCall(String callId) {
 	 callParticipantMap.remove(callId);
 
-	 logger.fine("removed call " + callId + " "
+	 logger.finer("removed call " + callId + " "
 	    + callParticipantMap.size());
 
         return callParticipantMap.size();
@@ -359,8 +383,17 @@ public class BridgeConnection extends VoiceBridgeConnection {
 	    +  privateMixParameters[1] + ":"
 	    +  privateMixParameters[2] + ":"
 	    +  privateMixParameters[3] + ":"
-	    + targetCallId + ":" + sourceCallId;
+	    + targetCallId + ":" + sourceCallId + "\n";
 
+	int n = socketChannel.write(
+	    ByteBuffer.wrap(s.getBytes(), 0, s.length()));
+
+	if (n < s.length()) {
+	    logger.info("Tried to write " + s.length() 
+		+ ", actually wrote " + n);
+	}
+
+if (false) {
 	BridgeResponse br = sendWithResponse(s + "\n");
 
         logger.finest("setPrivateMix status " + br.getStatus());
@@ -374,6 +407,17 @@ public class BridgeConnection extends VoiceBridgeConnection {
             throw new IOException("setPrivateMix failed:  "
               + br.getMessage());
         }
+}
+    }
+
+    public void setPrivateMix(String commands) throws IOException {
+	int n = socketChannel.write(ByteBuffer.wrap(commands.getBytes(), 0, 
+	    commands.length()));
+
+	if (n < commands.length()) {
+	    logger.info("Tried to write " + commands.length() 
+		+ ", actually wrote " + n);
+	}
     }
 
     /**
@@ -799,14 +843,26 @@ public class BridgeConnection extends VoiceBridgeConnection {
     
     public boolean isConnected() {
 	if (socket == null) {
+	    logger.finest("socket is null");
 	    return false;
 	}
 
 	if (socket.isClosed()) {
+	    logger.finest("socket is closed");
 	    return false;
 	}
 
-	return socket.isConnected() && super.isConnected();
+	if (socket.isConnected() == false) {
+	    logger.finest("socket is not connected");
+	    return false;
+	}
+
+	if (super.isConnected() == false) {
+	    logger.finest("super is not connected");
+	    return false;
+	}
+
+	return true;
     }
 
     private void checkConnection() throws IOException {
@@ -967,7 +1023,7 @@ public class BridgeConnection extends VoiceBridgeConnection {
 	    String callId = cp.getCallId();
 
 	    if (callId.indexOf(s) >= 0) {
-		logger.info("Ending virtual call to disconnected bridge " 
+		logger.fine("Ending virtual call to disconnected bridge " 
 		    + callId);
 
 		try {
@@ -1019,7 +1075,7 @@ public class BridgeConnection extends VoiceBridgeConnection {
 	if (offlineNotificationSent == false && offlineListener != null) {
             logger.info("Sending bridge down notification:  " + toString());
 
-            offlineListener.bridgeOffline(this);
+            offlineListener.bridgeOffline(this, getCallParticipantArray());
 	    offlineNotificationSent = true;
 	}
     }

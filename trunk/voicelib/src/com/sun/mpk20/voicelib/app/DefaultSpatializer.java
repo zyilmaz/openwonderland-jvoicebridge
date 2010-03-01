@@ -49,6 +49,16 @@ public class DefaultSpatializer implements Spatializer {
 
     private static final double DEFAULT_ZERO_VOLUME_RADIUS = .3;
 
+    private static final double PiOver2 = Math.PI / 2;
+
+    private static double[] sinTable = new double[360];
+
+    static {
+	for (int i = 0; i < 360; i++) {
+	    sinTable[i] = Math.sin(Math.toRadians(i));
+	}
+    }
+
     public DefaultSpatializer() {
 	fallOffFunction = new InverseFallOff();
 
@@ -180,14 +190,14 @@ public class DefaultSpatializer implements Spatializer {
 	 * The problem can be simplified by noticing that if the distance
 	 * between p1 and p2 is non-zero, then there is always
 	 * a straight line between p1 and p2 in 3-space.
-	 * This straight line can be rotated so that it is parallel to the x-axis
-	 * by subtracting out the angle between the two points.
+	 * This straight line can be rotated so that it is parallel 
+	 * to the x-axis by subtracting out the angle between the two points.
 	 * In doing so, the angles of each point must also have the angle
 	 * between the points subtracted out.
 	 * 
 	 * Now it must be determined which point is in front of the other.
 	 * If the angle at which sounds hits p1 is between 90 and 270 degrees,
-	 * p2 is behind p1.  Other wise p2 is in front of p1.
+	 * p2 is behind p1.  Otherwise p2 is in front of p1.
 	 */
 
 	/*
@@ -254,6 +264,7 @@ public class DefaultSpatializer implements Spatializer {
 	// Try this for smoother transitions.
         privateMixParameters[0] = Math.cos(p1ReceiveAngle);
 	privateMixParameters[1] = -Math.sin(p1ReceiveAngle);
+	//privateMixParameters[1] = -sinTable[(int) p1ReceiveDegrees];
 
         privateMixParameters[3] = volume;    // volume
 
@@ -278,7 +289,11 @@ public class DefaultSpatializer implements Spatializer {
 
 	double zd = p2.z - p1.z;
 
-	double distance = Math.sqrt(d * d + zd * zd);
+	double distance = d;
+
+	if (zd != 0) {
+	    distance = Math.sqrt(d * d + zd * zd);
+	}
 
 	logger.finest(
 	    "P1 (" + round(p1.x) + "," + round(p1.y) + ")"
@@ -311,13 +326,13 @@ public class DefaultSpatializer implements Spatializer {
 		/*
 		 * p1 is below p2, the angle is correct as is.
 		 */
-                p1ReceiveAngle = Math.PI / 2;         // 90 degrees
+                p1ReceiveAngle = PiOver2;         // 90 degrees
             } else {
 		/*
 		 * p1 is above p2, p1 is receiving audio 
 		 * on the opposite size.
 		 */
-                p1ReceiveAngle = -Math.PI / 2;        // -90 degrees
+                p1ReceiveAngle = -PiOver2;        // -90 degrees
 	    }
 	} else {
 	    p1ReceiveAngle = Math.atan((p2.y - p1.y) / (p2.x - p1.x));
@@ -352,7 +367,40 @@ public class DefaultSpatializer implements Spatializer {
     }
 
     public double round(double v) {
-        return Math.round(v * 1000) / (double) 1000;
+        return Math.round(v * 100) / (double) 100;
+    }
+
+    public static void main(String[] args) {
+	DefaultSpatializer spatializer = new DefaultSpatializer();
+
+	int n = 40000;
+
+	doit(spatializer, n);
+
+	long start = System.currentTimeMillis();
+
+	doit(spatializer, n);
+
+	long elapsed = System.currentTimeMillis() - start;
+
+	System.out.println("elapsed " + elapsed + " avg " 
+	    + ((double) elapsed / n));
+    }
+ 
+    private static void doit(DefaultSpatializer spatializer, int n) {
+	for (int i = 0; i < n; i++) {
+	    double sourceX = i;
+	    double sourceY = i + 1;
+	    double sourceOrientation = i;
+
+	    double destX = i + 2;
+	    double destY = i + 3;
+	    double destOrientation = i + 1;
+
+    	    spatializer.spatialize(sourceX, sourceY, 
+	        0, sourceOrientation, destX, destY, 
+		0, destOrientation);
+	}
     }
 
 }
