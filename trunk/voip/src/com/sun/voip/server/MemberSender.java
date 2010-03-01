@@ -952,7 +952,15 @@ public class MemberSender {
 
     public void setDtmfKeyToSend(String dtmfKeyToSend) {
 	if (telephoneEventPayload == 0) {
-	    String treatment = dtmfKeyToSend + ".au";
+	    String treatment;
+
+	    if (dtmfKeyToSend.equals("*")) {
+		treatment = "dtmfStar.au";
+	    } else if (dtmfKeyToSend.equals("#")) {
+		treatment = "dtmfPound.au";
+	    } else {
+		treatment = "dtmf" + dtmfKeyToSend + ".au";
+	    }
 
 	    try {
 	        TreatmentManager tm = new TreatmentManager(treatment,
