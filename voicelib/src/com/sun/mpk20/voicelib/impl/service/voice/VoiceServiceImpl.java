@@ -1,3 +1,21 @@
+/**
+ * Open Wonderland
+ *
+ * Copyright (c) 2010, Open Wonderland Foundation, All Rights Reserved
+ *
+ * Redistributions in source code form must reproduce the above
+ * copyright and this condition.
+ *
+ * The contents of this file are subject to the GNU General Public
+ * License, Version 2 (the "License"); you may not use this file
+ * except in compliance with the License. A copy of the License is
+ * available at http://www.opensource.org/licenses/gpl-license.php.
+ *
+ * The Open Wonderland Foundation designates this particular file as
+ * subject to the "Classpath" exception as provided by the Open Wonderland
+ * Foundation in the License file that accompanied this code.
+ */
+
 /* 
  * Copyright 2007 Sun Microsystems, Inc.
  *
@@ -773,7 +791,10 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     public void abort(Transaction txn) {
 	//System.out.println("VS:  Abort " + txn.getAbortCause().getMessage());
 
-	logger.log(Level.INFO, txn.getAbortCause().getMessage());
+        if (logger.isLoggable(Level.INFO)) {
+            logger.logThrow(Level.INFO, txn.getAbortCause(),
+                            txn.getAbortCause().getMessage());
+        }
 
         localWorkToDo.get().clear();
 
@@ -826,11 +847,14 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     }
 
     public boolean inTransaction() {
-	try {
+        try {
             return txnProxy.getCurrentTransaction() != null;
-	} catch (Exception e) {
-	    return false;
-	}
+        } catch (TransactionNotActiveException cnae) {
+            // OWL issue #93: onyl catch TransactionNotActiveException. Other
+            // exceptions may be thrown while in a transaction, and those are
+            // needed by Darkstar
+            return false;
+        }
     }
 
     public String dump(String command) {
