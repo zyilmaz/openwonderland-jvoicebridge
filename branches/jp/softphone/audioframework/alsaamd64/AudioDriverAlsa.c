@@ -1,3 +1,21 @@
+/**
+ * Open Wonderland
+ *
+ * Copyright (c) 2010, Open Wonderland Foundation, All Rights Reserved
+ *
+ * Redistributions in source code form must reproduce the above
+ * copyright and this condition.
+ *
+ * The contents of this file are subject to the GNU General Public
+ * License, Version 2 (the "License"); you may not use this file
+ * except in compliance with the License. A copy of the License is
+ * available at http://www.opensource.org/licenses/gpl-license.php.
+ *
+ * The Open Wonderland Foundation designates this particular file as
+ * subject to the "Classpath" exception as provided by the Open Wonderland
+ * Foundation in the License file that accompanied this code.
+ */
+
 /*
  * Copyright 2007 Sun Microsystems, Inc.
  *
@@ -74,18 +92,17 @@ pthread_mutex_t *speaker_mutex;
 
 FILE *fp;
 
-void p(char *msg) 
+void p(char *msg, ...) 
 {
 #if 0
-    //if (fp == NULL) {
-    //    fp = fopen("/tmp/alsa.out", "w");
-    //}
+    va_list argp;
+    
+    va_start(argp, msg);
 
-    //fprintf(fp, "%X: %s\n", pthread_self(), msg);
-    //fflush(fp);
-
-    fprintf(stderr, "%X: %s\n", pthread_self(), msg);
+    vfprintf(stderr, msg, argp);
     fflush(stderr);
+    
+    va_end(argp);
 #endif
 }
 
@@ -325,15 +342,28 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nSpeakerAvailable(
 	return -1;
     }
 
-    snd_pcm_uframes_t used_frames;
-    int ret = snd_pcm_delay(speaker_handle, &used_frames);
+    //snd_pcm_uframes_t used_frames;
+    //int ret = snd_pcm_delay(speaker_handle, &used_frames);
+    pthread_mutex_lock(speaker_mutex);
 
-    if (ret < 0) {
-	//fprintf(stderr, "Underrun...\n");
-    	return speaker_buffer_frames;
+    snd_pcm_sframes_t avail = snd_pcm_avail_update(speaker_handle);
+    
+    p("Speaker avail: %ld\n", avail);
+
+    if (avail < 0) {
+	p("Speaker underrun...\n");
+        recover(speaker_handle);
+        
+        pthread_mutex_unlock(speaker_mutex);
+
+        return speaker_buffer_frames;
     }
 
-    int avail_frames = speaker_buffer_frames - used_frames;
+    int avail_frames = avail;
+
+    pthread_mutex_unlock(speaker_mutex);
+
+    //int avail_frames = speaker_buffer_frames - used_frames;
 
 #if 0
     //snd_pcm_hwsync(speaker_handle);
@@ -362,6 +392,8 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nSpeakerAvailable(
     }
 #endif
 
+    //fprintf(stderr, "Speaker available: %d frames\n", avail_frames);
+
     return avail_frames * 2 * speaker_channels;	// convert frames to bytes
 }
 
@@ -381,6 +413,8 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nWriteSpeaker(
 
     int ret = write_speaker(speaker_handle, buffer, frames);
 
+    //fprintf(stderr, "Speaker done writing %d frames = %d\n", frames, ret);
+
     (*env)->ReleaseShortArrayElements(env, speakerBuffer, buffer, 0);
 
     if (ret <= 0) {
@@ -397,6 +431,8 @@ Java_com_sun_mc_softphone_media_alsa_AudioDriverAlsa_nFlushSpeaker(
     if (speaker_handle == NULL) {
 	return 0;
     }
+
+    p("Speaker flush\n");
 
     int ret = snd_pcm_drop(speaker_handle);
 
@@ -471,6 +507,8 @@ async_callback(snd_async_handler_t *ahandler)
 
     snd_pcm_uframes_t avail_frames = snd_pcm_avail_update(handle);
 
+    p("Async callback. Avail = %ld\n", avail_frames);
+
     int used_frames = speaker_buffer_frames - avail_frames;
 
     if (used_frames >= period_frames) {
@@ -499,25 +537,33 @@ int write_speaker(snd_pcm_t *handle, jshort *data, int frames) {
 
     int ret = snd_pcm_writei(handle, data, frames);
 
+    p("Speaker actual write %d frames = %d\n", frames, ret);
+
     if (ret < 0) {
-        //fprintf(stderr, "write speaker error:  %s\n", 
-	//    snd_strerror(ret));
+        fprintf(stderr, "write speaker error:  %s\n",
+	        snd_strerror(ret));
 
-        if (snd_pcm_recover(handle, ret, 1) < 0) {
-	    recovering++;
-            fprintf(stderr, 
-		"write speaker failed to recover from writei:  "
-		"%s reinitializing the speaker\n", snd_strerror(ret));
-
-	    //initialize_microphone();
-	    initialize_speaker();
-	    recovering--;
-	}
-
+        recover(handle);
 	ret = 0;
     }
 
+    //fprintf(stderr, "Speaker unlock\n");
+
     pthread_mutex_unlock(speaker_mutex);
 
+    return ret;
+}
+
+int recover(snd_pcm_t *handle) {
+    recovering++;
+
+    int ret = snd_pcm_prepare(handle);
+    if (ret < 0) {
+        fprintf(stderr, "Write speaker failed to recover: %s. Reinitialize speaker.\n",
+                snd_strerror(ret));
+        ret = initialize_speaker();
+    }
+
+    recovering--;
     return ret;
 }

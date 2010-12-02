@@ -1,3 +1,21 @@
+/**
+ * Open Wonderland
+ *
+ * Copyright (c) 2010, Open Wonderland Foundation, All Rights Reserved
+ *
+ * Redistributions in source code form must reproduce the above
+ * copyright and this condition.
+ *
+ * The contents of this file are subject to the GNU General Public
+ * License, Version 2 (the "License"); you may not use this file
+ * except in compliance with the License. A copy of the License is
+ * available at http://www.opensource.org/licenses/gpl-license.php.
+ *
+ * The Open Wonderland Foundation designates this particular file as
+ * subject to the "Classpath" exception as provided by the Open Wonderland
+ * Foundation in the License file that accompanied this code.
+ */
+
 /*
  * Copyright 2007 Sun Microsystems, Inc.
  *
@@ -37,6 +55,7 @@ import com.sun.mc.softphone.common.Utils;
 
 import com.sun.mc.softphone.media.Microphone;
 import com.sun.mc.softphone.media.Speaker;
+import java.util.regex.Pattern;
 
 public class AudioDriverAlsa extends Object implements AudioDriver {
     
@@ -82,35 +101,33 @@ public class AudioDriverAlsa extends Object implements AudioDriver {
 
 	println("initializeMicrophone");
 
-	String device = "plughw:0,0";
-
 	String microphone = 
 	    Utils.getPreference(Microphone.MICROPHONE_PREFERENCE);
+	if (microphone == null) {
+            // no preference specified -- use the ALSA default device
+            microphone = "default";
+        } else {
+            // a preference was specified -- truncate to the first space
+	    int idx = microphone.indexOf(" ");
+            if (idx != -1) {
+                microphone = microphone.substring(0, idx);
+            }
 
-	if (microphone != null) {
-	    int ix;
-	    if (microphone.indexOf("plughw:") != 0 ||
-	           (ix = microphone.indexOf(" ")) < 0) {
-
-	        Logger.println("Invalid microphone preference:  " + microphone);
-		Utils.setPreference(Microphone.MICROPHONE_PREFERENCE, "");
-	    } else {
-		device = microphone.substring(0, ix);
-	    }
+            Logger.println("Using mic preference " + microphone);
 	}
 	
-	Logger.println("Using Microphone " + device);
+	Logger.println("Using Microphone " + microphone);
 
 	synchronized (micLock) {
-	    int ret = nInitializeMicrophone(device, sampleRate, channels, 
+	    int ret = nInitializeMicrophone(microphone, sampleRate, channels,
 		bufferSize);
 
 	    if (ret < 0) {
 		SipCommunicator.softphoneProblem("Unable to initialize microphone. " 
-		   + device + " error " + ret);
+		   + microphone + " error " + ret);
 
 		throw new IOException("Unable to initialize microphone:  " 
-		    + device + " error " + ret);
+		    + microphone + " error " + ret);
 	    };
 	}
 
@@ -124,34 +141,31 @@ public class AudioDriverAlsa extends Object implements AudioDriver {
 
 	speakerBufferSize = bufferSize;
 
-        String device = "plughw:0,0";
-
         String speaker = Utils.getPreference(Speaker.SPEAKER_PREFERENCE);
-
-        if (speaker != null) {
-            int ix; 
-            if (speaker.indexOf("plughw:") != 0 ||
-                   (ix = speaker.indexOf(" ")) < 0) {
-
-                Logger.println("Invalid speaker preference:  " + speaker);
-            } else {
-                device = speaker.substring(0, ix);
-		Logger.println("Using speaker preference " + speaker);
+        if (speaker == null) {
+            // no preference specified -- use the ALSA default device
+        } else {
+            // a preference was specified -- truncate to the first space
+            int idx = speaker.indexOf(" ");
+            if (idx != -1) {
+                speaker = speaker.substring(0, idx);
             }
+            
+            Logger.println("Using speaker preference " + speaker);
         }
 
-        Logger.println("Using Speaker " + device);
+        Logger.println("Using Speaker " + speaker);
 
 	synchronized (speakerLock) {
-	    int ret = nInitializeSpeaker(device, sampleRate, channels, 
+	    int ret = nInitializeSpeaker(speaker, sampleRate, channels,
 		bufferSize);
 
 	    if (ret < 0) {
 		SipCommunicator.softphoneProblem("Unable to initialize speaker. " 
-		    + device + " error " + ret);
+		    + speaker + " error " + ret);
 
 		throw new IOException("Unable to initialize speaker:  " 
-		    + device + " error " + ret);
+		    + speaker + " error " + ret);
 	    }
 	}
 
