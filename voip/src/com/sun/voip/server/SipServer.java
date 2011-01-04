@@ -1,3 +1,21 @@
+/**
+ * Open Wonderland
+ *
+ * Copyright (c) 2010 - 2011, Open Wonderland Foundation, All Rights Reserved
+ *
+ * Redistributions in source code form must reproduce the above
+ * copyright and this condition.
+ *
+ * The contents of this file are subject to the GNU General Public
+ * License, Version 2 (the "License"); you may not use this file
+ * except in compliance with the License. A copy of the License is
+ * available at http://www.opensource.org/licenses/gpl-license.php.
+ *
+ * The Open Wonderland Foundation designates this particular file as
+ * subject to the "Classpath" exception as provided by the Open Wonderland
+ * Foundation in the License file that accompanied this code.
+ */
+
 /*
  * Copyright 2007 Sun Microsystems, Inc.
  *
@@ -25,6 +43,8 @@ package com.sun.voip.server;
 
 import com.sun.voip.CallParticipant;
 import com.sun.voip.Logger;
+import java.text.ParseException;
+import java.util.logging.Level;
 
 import javax.sip.*; 
 import javax.sip.address.*; 
@@ -398,16 +418,30 @@ public class SipServer implements SipListener {
         }
     }
 
-    private void duplicateInvite(Request request) {
+    private void duplicateInvite(Request request)
+    {
+      try
+      {
 	FromHeader fromHeader = (FromHeader) request.getHeader(FromHeader.NAME);
-
         ToHeader toHeader = (ToHeader) request.getHeader(ToHeader.NAME);
         
 	String from = fromHeader.getAddress().toString();
         String to = toHeader.getAddress().toString();
 
-	Logger.writeFile("SipServer:  duplicate INVITE from "
-	    + from + " to " + to);
+        Response response = messageFactory.createResponse(Response.OK, request);
+        Logger.writeFile("SipServer:  duplicate INVITE from " + from + " to " + to);
+        Logger.println("RESPONSE " + response);
+
+        sipProvider.sendResponse(response);
+    }
+      catch (SipException ex)
+      {
+        java.util.logging.Logger.getLogger(SipServer.class.getName()).log(Level.SEVERE, null, ex);
+      }
+      catch (ParseException ex)
+      {
+        java.util.logging.Logger.getLogger(SipServer.class.getName()).log(Level.SEVERE, null, ex);
+      }
     }
 
     private void handleRegister(Request request, RequestEvent requestEvent) 
