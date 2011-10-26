@@ -59,6 +59,9 @@
  */
 package com.sun.mc.softphone.sip;
 
+import com.sun.voip.sip.security.UserCredentials;
+import com.sun.voip.sip.security.SecurityAuthority;
+import com.sun.voip.sip.security.SipSecurityManager;
 import java.net.*;
 import java.text.*;
 import java.util.*;
@@ -70,19 +73,16 @@ import com.sun.mc.softphone.SipCommunicator;
 import com.sun.mc.softphone.common.*;
 import com.sun.mc.softphone.media.MediaManager;
 import com.sun.mc.softphone.sip.event.*;
-import com.sun.mc.softphone.sip.security.*;
 
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.IOException;
 
 import com.sun.voip.Logger;
+import com.sun.voip.sip.security.SipSecurityManager.SipSecurityLogger;
 
 /**
  * The SipManager provides wrapping of the underlying stack's functionalities.
@@ -224,6 +224,25 @@ public class SipManager
 
     private static Object stackNameLock = new Object();
 
+    static {
+        // set up security logging
+        SipSecurityManager.setSipSecurityLogger(new SipSecurityLogger() {
+            private final Console console = Console.getConsole(SipSecurityManager.class);
+            
+            public void logEntry() {
+                console.logEntry();
+            }
+
+            public void logExit() {
+                console.logExit();
+            }
+
+            public void debug(String message) {
+                console.debug(message);
+            }            
+        });
+    }
+    
     public SipManager(SipCommunicator sipCommunicator, 
 	    MediaManager mediaManager, String registrarAddress) {
 
@@ -246,7 +265,7 @@ public class SipManager
 
         registerProcessing  = new RegisterProcessing(this);
         callProcessing      = new CallProcessing(this);
-        sipSecurityManager  = new SipSecurityManager();
+        sipSecurityManager  = new SipClientSecurityManager(this);
     }
 
     private void initRegistrarAddress() {
@@ -499,8 +518,6 @@ public class SipManager
             }
             sipSecurityManager.setHeaderFactory(headerFactory);
             sipSecurityManager.setTransactionCreator(sipProvider);
-            sipSecurityManager.setSipManCallback(this);
-
 
             //Make sure prebuilt headers are nulled so that they get reinited
             //if this is a restart

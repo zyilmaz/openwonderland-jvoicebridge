@@ -1,3 +1,21 @@
+/**
+ * Open Wonderland
+ *
+ * Copyright (c) 2011, Open Wonderland Foundation, All Rights Reserved
+ *
+ * Redistributions in source code form must reproduce the above
+ * copyright and this condition.
+ *
+ * The contents of this file are subject to the GNU General Public
+ * License, Version 2 (the "License"); you may not use this file
+ * except in compliance with the License. A copy of the License is
+ * available at http://www.opensource.org/licenses/gpl-license.php.
+ *
+ * The Open Wonderland Foundation designates this particular file as
+ * subject to the "Classpath" exception as provided by the Open Wonderland
+ * Foundation in the License file that accompanied this code.
+ */
+
 /*
  * Copyright 2007 Sun Microsystems, Inc.
  *
@@ -441,12 +459,6 @@ if (false) {
 		+ cp.getPhoneNumber());
 	}
 
-        fromAddress = addressFactory.createSipURI(fromNumber, ourIpAddress);
-        fromAddress.setPort(ourSipPort);
-        fromNameAddress = addressFactory.createAddress(fromName, fromAddress); 
-        fromHeader = headerFactory.createFromHeader(fromNameAddress,
-            new Integer((int)(Math.random() * 10000)).toString());
-
         /* create To Header
          * e.g. "Willie Walker"<sip:30039@152.70.1.28:5060>
          *   where "Willie Walker" == cp.getName()
@@ -465,7 +477,7 @@ if (false) {
 
 	    voipGateway = voipGateways.get(0);
 	}
-
+        
 	if (Bridge.getPrivateHost().startsWith("127.") && 
 	    voipGateway.getAddress().getHostAddress().equals("127.0.0.1") == false) {
 
@@ -484,6 +496,21 @@ if (false) {
 
 	Logger.writeFile("Call " + cp + " voip gateway / proxy " + voipGateway);
 
+        // try to find login info for the gateway
+        String loginInfo = GatewayManager.getVoIPGatewayLoginInfo(voipGateway);
+        if (loginInfo != null) {
+            fromAddress = (SipURI) addressFactory.createURI(loginInfo);
+        } else {
+            // use our own IP address
+            fromAddress = addressFactory.createSipURI(fromNumber, ourIpAddress);
+            fromAddress.setPort(ourSipPort);
+        }
+        
+        fromNameAddress = addressFactory.createAddress(fromName, fromAddress); 
+        fromHeader = headerFactory.createFromHeader(fromNameAddress,
+            new Integer((int)(Math.random() * 10000)).toString());
+
+        
         toAddress = addressFactory.createSipURI(toNumber, voipGateway.getAddress().getHostAddress()); 
 
         toNameAddress = addressFactory.createAddress(toNumber, toAddress); 

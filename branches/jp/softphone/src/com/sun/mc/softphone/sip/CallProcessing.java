@@ -67,7 +67,7 @@ import javax.sip.header.*;
 import javax.sip.message.*;
 import com.sun.mc.softphone.sip.event.CallListener;
 import com.sun.mc.softphone.common.*;
-import com.sun.mc.softphone.sip.security.SipSecurityException;
+import com.sun.voip.sip.security.SipSecurityException;
 
 import com.sun.mc.softphone.SipCommunicator;
 

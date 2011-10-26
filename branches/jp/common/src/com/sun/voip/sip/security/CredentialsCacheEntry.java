@@ -55,7 +55,7 @@
  * originally written at the National Center for Supercomputing Applications,
  * University of Illinois, Urbana-Champaign.
  */
-package com.sun.mc.softphone.sip.security;
+package com.sun.voip.sip.security;
 
 import javax.sip.header.AuthorizationHeader;
 import java.util.Vector;

@@ -56,11 +56,11 @@
  * University of Illinois, Urbana-Champaign.
  */
 
-package com.sun.mc.softphone.sip.security;
+package com.sun.voip.sip.security;
 
 import java.security.MessageDigest;
-import java.security.*;
-import com.sun.mc.softphone.common.Console;
+import java.security.NoSuchAlgorithmException;
+
 
 /**
  * The class takes standard Http Authentication details and returns a response
@@ -72,8 +72,6 @@ import com.sun.mc.softphone.common.Console;
 
 public class MessageDigestAlgorithm
 {
-    private static Console console = Console.getConsole(MessageDigestAlgorithm.class);
-
     /**
      * Calculates a response an http authentication response in accordance with
      * rfc2617.
@@ -169,8 +167,6 @@ public class MessageDigestAlgorithm
     private static String H(String data)
     {
         try {
-            console.logEntry();
-
             MessageDigest digest = MessageDigest.getInstance("MD5");
 
             return toHexString(digest.digest(data.getBytes()));
@@ -178,11 +174,7 @@ public class MessageDigestAlgorithm
         catch (NoSuchAlgorithmException ex)
         {
             //shouldn't happen
-            console.error("Failed to instantiate an ");
             return null;
-        }
-        finally {
-            console.logExit();
         }
     }
 
@@ -195,14 +187,7 @@ public class MessageDigestAlgorithm
     */
    private static String KD(String secret, String data)
    {
-       try {
-           console.logEntry();
-
-           return H(secret + ":" + data);
-       }
-       finally {
-           console.logExit();
-       }
+       return H(secret + ":" + data);
    }
 
 

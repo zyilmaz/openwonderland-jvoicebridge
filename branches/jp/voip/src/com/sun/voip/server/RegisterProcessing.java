@@ -71,6 +71,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 import com.sun.voip.Logger;
+import com.sun.voip.sip.security.SipSecurityException;
+import com.sun.voip.sip.security.SipSecurityManager;
 
 /**
  * <p>Title: SIP COMMUNICATOR-1.1</p>
@@ -101,6 +103,7 @@ class RegisterProcessing implements SipListener {
     private AddressFactory addressFactory = SipServer.getAddressFactory();
     private MessageFactory messageFactory = SipServer.getMessageFactory();
     private SipProvider sipProvider = SipServer.getSipProvider();
+    private SipSecurityManager securityManager = SipServer.getSipSecurityManager();
 
     public RegisterProcessing(InetSocketAddress registrar, String loginInfo) {
 	this.registrar = registrar;
@@ -137,9 +140,31 @@ class RegisterProcessing implements SipListener {
 	} else if (statusCode == Response.UNAUTHORIZED || 
 		statusCode == Response.PROXY_AUTHENTICATION_REQUIRED) {
 
-	    Logger.println("Registration with " + registrar 
-	        + " got an authentication challenge which "
-		+ "the bridge does not support!");
+//	    Logger.println("Registration with " + registrar 
+//	        + " got an authentication challenge which "
+//		+ "the bridge does not support!");
+            
+            Logger.println("Authentication challenge");
+            ClientTransaction origTrans = responseReceivedEvent.getClientTransaction();
+            
+            try {
+                ClientTransaction retryTrans =
+                        securityManager.handleChallenge(response, origTrans.getBranchId(),
+                                                        origTrans.getRequest());
+                retryTrans.sendRequest();
+                
+                // keep our existing listener to respond to the retried
+                // transaction
+                return;
+            } catch (SipException se) {
+                Logger.exception("Error responding to auth challenge", se);
+            } catch (SipSecurityException sse) {
+                Logger.exception("Error responding to auth challenge", sse);
+            } catch (InvalidArgumentException iae) {
+                Logger.exception("Error responding to auth challenge", iae);
+            } catch (ParseException pe) {
+                Logger.exception("Error responding to auth challenge", pe);
+            }
 	} else {
 	    Logger.println("Unrecognized response:  " + response);
 	}

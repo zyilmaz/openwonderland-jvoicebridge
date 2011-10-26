@@ -59,6 +59,8 @@
  */
 package com.sun.mc.softphone;
 
+import com.sun.voip.sip.security.UserCredentials;
+import com.sun.voip.sip.security.SecurityAuthority;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -76,7 +78,6 @@ import com.sun.mc.softphone.gui.event.*;
 import com.sun.mc.softphone.media.*;
 import com.sun.mc.softphone.sip.*;
 import com.sun.mc.softphone.sip.event.*;
-import com.sun.mc.softphone.sip.security.*;
 import java.io.IOException;
 
 import java.text.ParseException;

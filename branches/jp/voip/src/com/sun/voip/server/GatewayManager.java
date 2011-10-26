@@ -1,3 +1,21 @@
+/**
+ * Open Wonderland
+ *
+ * Copyright (c) 2011, Open Wonderland Foundation, All Rights Reserved
+ *
+ * Redistributions in source code form must reproduce the above
+ * copyright and this condition.
+ *
+ * The contents of this file are subject to the GNU General Public
+ * License, Version 2 (the "License"); you may not use this file
+ * except in compliance with the License. A copy of the License is
+ * available at http://www.opensource.org/licenses/gpl-license.php.
+ *
+ * The Open Wonderland Foundation designates this particular file as
+ * subject to the "Classpath" exception as provided by the Open Wonderland
+ * Foundation in the License file that accompanied this code.
+ */
+
 /*
  * Copyright 2007 Sun Microsystems, Inc.
  *
@@ -110,7 +128,7 @@ public class GatewayManager {
 
 	    if (gatewayInfo.length > 1) {
 		voIPGatewayLoginInfo.add(gatewayInfo[1]);    
-		new RegisterProcessing(gateway, gatewayInfo[1]);
+		//new RegisterProcessing(gateway, gatewayInfo[1]);
 	    } else {
 		voIPGatewayLoginInfo.add("");
 	    }
@@ -160,6 +178,17 @@ public class GatewayManager {
         }
 	
 	return isa;
+    }
+    
+    public static String getVoIPGatewayLoginInfo(InetSocketAddress addr) {
+        for (int i = 0; i < voIPGateways.size(); i++) {
+            if (addr.equals(voIPGateways.get(i))) {
+                return voIPGatewayLoginInfo.get(i);
+            }
+        }
+        
+        Logger.println("No login info found for " + addr);
+        return null;
     }
 
     /**
