@@ -41,6 +41,7 @@
             <jvmarg value="-Dcom.sun.voip.server.LONE_RECEIVER_PORT=${voicebridge.lone.receiver.port}"/>
             <jvmarg value="-Dcom.sun.voip.server.NETWORK_AUDIO_BUFFER_SIZE=${voicebridge.network.audio.buffer.size}"/>
             <jvmarg value="-Dcom.sun.voip.server.WEBSERVER_URL=${voicebridge.webserver.url}"/>
+            <jvmarg value="-Dcom.sun.voip.server.CredentialsFile=${voicebridge.sip.credentials}"/>
             <jvmarg value="-ms300m"/>
             <jvmarg value="-mx300m"/>
             <jvmarg value="-XX:NewSize=5m"/>

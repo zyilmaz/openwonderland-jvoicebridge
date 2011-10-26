@@ -56,21 +56,28 @@
  * University of Illinois, Urbana-Champaign.
  */
 
-package com.sun.mc.softphone.sip.security;
+package com.sun.voip.sip.security;
 
-import javax.sip.*;
-import javax.sip.message.*;
-import javax.sip.address.*;
-import javax.sip.header.*;
-
-import java.util.Hashtable;
+import com.sun.voip.Logger;
+import java.text.ParseException;
 import java.util.ListIterator;
-
-import com.sun.mc.softphone.common.Console;
-import com.sun.mc.softphone.common.Utils;
-import com.sun.mc.softphone.sip.SipManager;
-import java.text.*;
+import javax.sip.ClientTransaction;
 import javax.sip.InvalidArgumentException;
+import javax.sip.SipException;
+import javax.sip.SipProvider;
+import javax.sip.address.Address;
+import javax.sip.address.SipURI;
+import javax.sip.address.URI;
+import javax.sip.header.AuthorizationHeader;
+import javax.sip.header.CSeqHeader;
+import javax.sip.header.FromHeader;
+import javax.sip.header.HeaderFactory;
+import javax.sip.header.ProxyAuthenticateHeader;
+import javax.sip.header.ProxyAuthorizationHeader;
+import javax.sip.header.ViaHeader;
+import javax.sip.header.WWWAuthenticateHeader;
+import javax.sip.message.Request;
+import javax.sip.message.Response;
 
 /**
  * The class handles authentication challenges, caches user credentials and
@@ -83,12 +90,11 @@ import javax.sip.InvalidArgumentException;
 
 public class SipSecurityManager
 {
-    private static final Console console = Console.getConsole(SipSecurityManager.class);
-
+    private static SipSecurityLogger logger = new DefaultSipSecurityLoggerImpl();
+    
     private SecurityAuthority securityAuthority = null;
     private HeaderFactory     headerFactory = null;
     private SipProvider       transactionCreator = null;
-    private SipManager        sipManCallback = null;
 
     /**
      * Credentials cached so far.
@@ -97,10 +103,8 @@ public class SipSecurityManager
 
 
 
-
-	public SipSecurityManager()
+    public SipSecurityManager()
     {
-
     }
 
     /**
@@ -109,13 +113,13 @@ public class SipSecurityManager
     public void setHeaderFactory(HeaderFactory headerFactory)
     {
         try{
-            console.logEntry();
+            logger.logEntry();
 
             this.headerFactory = headerFactory;
         }
         finally
         {
-            console.logExit();
+            logger.logExit();
         }
 
     }
@@ -149,7 +153,7 @@ public class SipSecurityManager
         throws SipSecurityException, SipException, InvalidArgumentException, ParseException
     {
        try{
-            console.logEntry();
+            logger.logEntry();
 
             Request reoriginatedRequest = (Request)challengedRequest.clone();
 
@@ -175,7 +179,8 @@ public class SipSecurityManager
             //from cache)
             reoriginatedRequest.removeHeader(AuthorizationHeader.NAME);
             reoriginatedRequest.removeHeader(ProxyAuthorizationHeader.NAME);
-
+            reoriginatedRequest.removeHeader(ViaHeader.NAME);
+            
             ClientTransaction retryTran =
                 transactionCreator.getNewClientTransaction(reoriginatedRequest);
 
@@ -212,7 +217,7 @@ public class SipSecurityManager
                    || ( (!authHeader.isStale() && ccEntryHasSeenTran))) // we have already tried with those and this is (!stale) not just a request to reencode
                 {
 
-                        console.debug(
+                        logger.debug(
                             "We don't seem to have a good pass! Get one.");
                         if(ccEntry == null)
                         	ccEntry = new CredentialsCacheEntry();
@@ -226,7 +231,7 @@ public class SipSecurityManager
                 else if(ccEntry != null
                         &&( !ccEntryHasSeenTran || authHeader.isStale()))
                 {
-                    console.debug(
+                    logger.debug(
                             "We seem to have a pass in the cache. Let's try with it.");
                 }
 
@@ -261,59 +266,9 @@ public class SipSecurityManager
                     add.setURI(sipUri);
                     from.setAddress(add);
                     reoriginatedRequest.setHeader(from);
-                    if(challengedRequest.getMethod().equals(Request.REGISTER))
-	                {
-                    	ToHeader to =
-                    	(ToHeader)reoriginatedRequest.getHeader(ToHeader.NAME);
-
-			String proxyWorkAround = 
-			    Utils.getProperty("com.sun.mc.softphone.REGISTRAR_WORKAROUND");
-
-// System.out.println("proxyWorkAround="+proxyWorkAround);
-
-			if (proxyWorkAround != null && 
-			        proxyWorkAround.toUpperCase().equals("TRUE")) {
-
-			    /*
-			     * Some registrars (proxies) require the To Header 
-			     * to be addressed to them for the REGISTER command
-			     * even though the SIP Spec explicitly says that the
-			     * To header must contain the address being registered.
-			     * This is a workaround so that registration works.
-			     */
-			    String registrarAddress = sipManCallback.getRegistrarAddress();
-
-			    int registrarPort = sipManCallback.getRegistrarPort();
-
-			    String registrarTransport = Utils.getPreference(
-				"com.sun.mc.softphone.sip.REGISTRAR_TRANSPORT");
-
-			    sipUri.setHost(registrarAddress);
-
-			    int port = 5060;
-
-			    sipUri.setPort(port);
-
-			    if (registrarTransport == null) {
-				registrarTransport = "udp";
-			    }
-
-			    sipUri.setTransportParam(registrarTransport);
-
-			    System.out.println("Registrar workaround setting To Header: "
-				+ "Host = " + registrarAddress + " Port = " + port 
-				+ " Transport " + registrarTransport);
-			}
-
-                        add.setURI(sipUri);
-                        to.setAddress(add);
-                        reoriginatedRequest.setHeader(to);
-
-                    }
-
-                    //very ugly but very necessary
-					sipManCallback.setCurrentlyUsedURI(sipUri.toString());
-
+                    
+                    // let subclasses perform custom updates
+                    updateReoriginatedRequest(reoriginatedRequest);
                 }
 
                 //if this is a register - fix to as well
@@ -330,10 +285,21 @@ public class SipSecurityManager
         }
         finally
         {
-            console.logExit();
+            logger.logExit();
         }
     }
 
+    /**
+     * Update reoriginated request. This method can be used by subclasses to
+     * make changes to the reoriginated request.
+     * @param reoriginatedRequest the request that has been reoriginated
+     */
+    protected void updateReoriginatedRequest(Request request) 
+        throws SipSecurityException, SipException, InvalidArgumentException, ParseException
+    {
+        // default does nothing
+    }
+    
     /**
      * Sets the SecurityAuthority instance that should be queried for user
      * credentials.
@@ -374,7 +340,11 @@ public class SipSecurityManager
                                                  UserCredentials userCredentials)
         throws SecurityException
     {
-
+        if (userCredentials.getPassword() == null) {
+            throw new SecurityException("No password for " + authHeader.getRealm() +
+                                        " domain " + authHeader.getDomain());
+        }
+        
         String response = null;
         try
         {
@@ -393,7 +363,7 @@ public class SipSecurityManager
                             authHeader.getQop());
         }catch(NullPointerException exc)
         {
-            throw new SecurityException("The authenticate header was malformatted");
+            throw new SecurityException("The authenticate header was malformatted", exc);
         }
 
         AuthorizationHeader authorization = null;
@@ -417,7 +387,6 @@ public class SipSecurityManager
             if( authHeader.getOpaque() != null)
                 authorization.setOpaque(authHeader.getOpaque());
             authorization.setResponse(response);
-            authorization.setUsername(sipManCallback.getAuthenticationUserName());
         }
         catch (ParseException ex) {
             throw new
@@ -447,15 +416,27 @@ public class SipSecurityManager
     	this.transactionCreator = transactionCreator;
     }
 
-    /**
-     * If the user name was wrong and the user fixes it here we should
-     * als notify the sip manager that the currentlyUsedURI it has
-     * is not valid.
-     * @param sipManCallback a valid instance of SipMaqnager
-     */
-    public void setSipManCallback(SipManager sipManCallback)
-    {
-    	this.sipManCallback = sipManCallback;
+    public static void setSipSecurityLogger(SipSecurityLogger logger) {
+        SipSecurityManager.logger = logger;
     }
+    
+    public interface SipSecurityLogger {
+        public void logEntry();
+        public void logExit();
+        public void debug(String message);
+    }
+    
+    static class DefaultSipSecurityLoggerImpl implements SipSecurityLogger {
+        public void logEntry() {
+        }
 
+        public void logExit() {
+        }
+
+        public void debug(String message) {
+            if (Logger.logLevel >= Logger.LOG_DEBUG) {
+                Logger.println(message);
+	    }
+        }        
+    }
 }

@@ -43,6 +43,7 @@ package com.sun.voip.server;
 
 import com.sun.voip.CallParticipant;
 import com.sun.voip.Logger;
+import com.sun.voip.sip.security.SipSecurityManager;
 import java.text.ParseException;
 import java.util.logging.Level;
 
@@ -112,6 +113,7 @@ public class SipServer implements SipListener {
     private static Iterator listeningPoints; 
     private static SipServerCallback sipServerCallback;
     private static InetSocketAddress sipAddress;
+    private static SipServerSecurity serverSecurity;
 
     /**
      * Constructor
@@ -207,6 +209,12 @@ public class SipServer implements SipListener {
 	        + properties.getProperty("javax.sip.IP_ADDRESS"));
             Logger.println("Bridge private SIP port:  " + lp.getPort());
 
+            /*
+             * create and initialize the SipServerSecurity
+             */
+            serverSecurity = new SipServerSecurity();
+            serverSecurity.initialize();
+            
             /*
 	     * get IPs of the SIP Proxy server
 	     */
@@ -592,6 +600,22 @@ public class SipServer implements SipListener {
      */
     public static SipProvider getSipProvider() {
         return sipProvider;
+    }
+    
+    /**
+     * returns the SipServerSecurity
+     * @return the SipServerSecurity
+     */
+    public static SipServerSecurity getSipServerSecurity() {
+        return serverSecurity;
+    }
+    
+    /**
+     * return SipSecurityManager
+     * @return the SipSecurityManager
+     */
+    public static SipSecurityManager getSipSecurityManager() {
+        return serverSecurity.getSipSecurityManager();
     }
 
     /**
