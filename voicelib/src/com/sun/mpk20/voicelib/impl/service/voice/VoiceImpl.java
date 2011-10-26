@@ -1,3 +1,21 @@
+/**
+ * Open Wonderland
+ *
+ * Copyright (c) 2011, Open Wonderland Foundation, All Rights Reserved
+ *
+ * Redistributions in source code form must reproduce the above
+ * copyright and this condition.
+ *
+ * The contents of this file are subject to the GNU General Public
+ * License, Version 2 (the "License"); you may not use this file
+ * except in compliance with the License. A copy of the License is
+ * available at http://www.opensource.org/licenses/gpl-license.php.
+ *
+ * The Open Wonderland Foundation designates this particular file as
+ * subject to the "Classpath" exception as provided by the Open Wonderland
+ * Foundation in the License file that accompanied this code.
+ */
+
 /*
  * Copyright 2007 Sun Microsystems, Inc.
  *
@@ -102,7 +120,7 @@ public class VoiceImpl {
     private static final String DS_MANAGED_CALL_BEGIN_END_LISTENERS =
         DS_PREFIX + "CallBeginEndListeners";
 
-    private static final String VOICEIMPL_PREFIX = NAME + ".";
+    private static final String VOICEIMPL_PREFIX = NAME;
 
     private final String SCALE_PROPERTY =
         VOICEIMPL_PREFIX + ".VoiceManagerImpl.SCALE";
@@ -359,9 +377,7 @@ public class VoiceImpl {
     }
 
     private double getPreference(String preference, double defaultValue) {
-        Preferences prefs = Preferences.userNodeForPackage(VoiceImpl.class);
-
-	String s = prefs.get(VOICEIMPL_PREFIX + preference, null);
+        String s = System.getProperty(preference, null);
 
 	if (s == null) {
 	    return defaultValue;
