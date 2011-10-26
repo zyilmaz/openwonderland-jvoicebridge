@@ -1,7 +1,7 @@
 /**
  * Open Wonderland
  *
- * Copyright (c) 2010, Open Wonderland Foundation, All Rights Reserved
+ * Copyright (c) 2010 - 2011, Open Wonderland Foundation, All Rights Reserved
  *
  * Redistributions in source code form must reproduce the above
  * copyright and this condition.
@@ -558,7 +558,7 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	try {
 	    transactionScheduler.runTask(new ReadyNotifier(), taskOwner);
 	} catch (Exception e) {
-	    System.out.println("Exception trying to warm start:  " + e.getMessage());
+	    logger.logThrow(Level.WARNING, e, "Exception in warm start");
 	}
     }
 
@@ -608,9 +608,11 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	    }
 
 	    if (warmStart) {
-                new WarmStart(VoiceImpl.getInstance());
+                // schedule a warm start task which will run once a bridge
+                // becomes available
+                AppContext.getTaskManager().scheduleTask(new WarmstartTask());
 	    } else {
-		System.out.println("There is nothing to warm start");
+		logger.log(Level.INFO, "There is nothing to warm start");
 		//VoiceImpl.getInstance().foo();
 	    }
         }
@@ -793,7 +795,7 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 
         if (logger.isLoggable(Level.INFO)) {
             logger.logThrow(Level.INFO, txn.getAbortCause(),
-                            txn.getAbortCause().getMessage());
+                        txn.getAbortCause().getMessage());
         }
 
         localWorkToDo.get().clear();
@@ -891,6 +893,26 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	txnProxy.getCurrentTransaction().join(participant);
     }
 
+    private static class WarmstartTask implements Task, Serializable {
+        public void run() throws Exception {
+            // try to get the bridge connection (indicating the bridge is
+            // available)
+            try {
+                VoiceImpl.getInstance().getBridgeManager().getBridgeConnection();
+                
+                // if we got here, there is at least one bridge available, so
+                // we should go ahead with the warm start
+                new WarmStart(VoiceImpl.getInstance());
+            } catch (IOException ioe) {
+                // bridge not available yet. Try again later
+                logger.log(Level.INFO, "No bridge connection trying to warm " +
+                           "start. Will try again in 1 second.");
+                AppContext.getTaskManager().scheduleTask(this, 1000);
+            }
+            
+        }        
+    }
+    
     private class CallStatusNotifier implements KernelRunnable, NonDurableTransactionParticipant {
 
 	private final CallStatus status;
