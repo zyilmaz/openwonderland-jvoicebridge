@@ -1,3 +1,21 @@
+/**
+ * Open Wonderland
+ *
+ * Copyright (c) 2011 - 2012, Open Wonderland Foundation, All Rights Reserved
+ *
+ * Redistributions in source code form must reproduce the above
+ * copyright and this condition. 
+ * 
+ * The contents of this file are subject to the GNU General Public
+ * License, Version 2 (the "License"); you may not use this file
+ * except in compliance with the License. A copy of the License is
+ * available at http://www.opensource.org/licenses/gpl-license.php.
+ * 
+ * The Open Wonderland Foundation designates this particular file as
+ * subject to the "Classpath" exception as provided by the Open Wonderland
+ * Foundation in the License file that accompanied this code.
+ */
+
 /*
  * Copyright 2007 Sun Microsystems, Inc.
  *
@@ -340,8 +358,16 @@ public class SdpManager {
 
 	String transmitMap = "";
 
-	if (transmitMediaInfo != null) {
-	    transmitMap = generateRtpmap(transmitMediaInfo) + "\r\n";
+        // first, try the media info that has been manually set
+        MediaInfo useTransmitMediaInfo = transmitMediaInfo;
+        if (useTransmitMediaInfo == null && remoteSdpInfo.getTransmitMediaInfoOk()) {
+            // if none is set, try using whatever the remote side
+            // proposed
+            useTransmitMediaInfo = remoteSdpInfo.getTransmitMediaInfo();
+        }
+        
+	if (useTransmitMediaInfo != null) {
+	    transmitMap = generateRtpmap(useTransmitMediaInfo) + "\r\n";
 	}
 
 	String sdp =            
@@ -359,9 +385,9 @@ public class SdpManager {
 	    + transmitMap 
 	    + telephoneEvent; 
 
-        if (transmitMediaInfo != null) {
+        if (useTransmitMediaInfo != null) {
             sdp += "a=transmitPayload:"
-                + transmitMediaInfo.getPayload() + "\r\n";
+                + useTransmitMediaInfo.getPayload() + "\r\n";
         }
 
 	return sdp;
