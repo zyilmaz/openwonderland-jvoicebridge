@@ -59,18 +59,12 @@
  */
 package com.sun.mc.softphone.media;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 
 import java.util.ArrayList;
-import java.util.prefs.Preferences;
 import java.util.Vector;
 
 import com.sun.mc.softphone.SipCommunicator;
@@ -79,7 +73,6 @@ import com.sun.mc.softphone.common.*;
 
 import com.sun.mc.softphone.sip.SipManager;
 
-import java.io.InputStreamReader;
 
 import  javax.sound.sampled.LineUnavailableException;
 
@@ -87,13 +80,12 @@ import com.sun.stun.NetworkAddressManager;
 
 import com.sun.voip.Logger;
 import com.sun.voip.MediaInfo;
+import com.sun.voip.Recorder;
 import com.sun.voip.RtpPacket;
 import com.sun.voip.RtpSocket;
 import com.sun.voip.RtpSenderPacket;
 import com.sun.voip.SdpManager;
 import com.sun.voip.SdpInfo;
-import com.sun.voip.SpeechDetector;
-import com.sun.voip.Util;
 
 import java.text.ParseException;
 
@@ -700,8 +692,8 @@ if (false) {
 	initialize();
     }
 
-    public void startMicVuMeter(boolean startVuMeter) {
-	if (microphone == null) {
+    public void startMicVuMeter(boolean startVuMeter) {        
+        if (microphone == null) {
 	    Logger.println("startMicVuMeter:  Microphone is null");
 	    return;
 	}
@@ -709,7 +701,7 @@ if (false) {
 	microphone.removeListener(this);
 
 	if (startVuMeter == true) {
-	    microphone.addListener(this);
+            microphone.addListener(this);
 	} 
     }
 
@@ -721,7 +713,7 @@ if (false) {
 	if (microphone == null) {
 	    return;
 	}
-
+        
 	if (micVuMeterCount++ >= VU_COUNT) {
 	    micVuMeterCount = 0;
 
@@ -1077,7 +1069,7 @@ if (false) {
             player.done();
         }
         
-	if (audioReceiver != null) {
+	if (audioReceiver != null && audioReceiver.hasSpeaker()) {
 	    audioReceiver.playAudioFile(file, volume);
 	    return;
 	}
@@ -1345,7 +1337,11 @@ if (false) {
 	}
 
 	if (recordingMic) {
-	    audioTransmitter.startRecording(path, recordingType);
+            if (micReader != null) {
+                micReader.startRecording(path);
+            } else {
+                audioTransmitter.startRecording(path, recordingType);
+            }
 	} else {
 	    audioReceiver.startRecording(path, recordingType);
 	}
@@ -1374,7 +1370,34 @@ if (false) {
 	    audioReceiver.stopRecording();
 	}
     }
+    
+    private MicrophoneReader micReader;
 
+    public void startReadingMicrophone() throws IOException {
+        if (isStarted()) {
+            throw new IllegalStateException("Can't read mic when call is " +
+                    "in progress");
+        }
+        
+        // if the microphone is null, initialize it before starting
+        // the read in another thread
+        getMicrophone();
+        
+        if (micReader != null) {
+            micReader.quit();
+        }
+        
+        micReader = new MicrophoneReader();
+        micReader.start();
+    }
+
+    public void stopReadingMicrophone() {
+        if (micReader != null) {
+            micReader.quit();
+            micReader = null;
+        }
+    }
+    
     class LocalPlayer extends Thread {
 
 	//private AudioReceiver audioReceiver;
@@ -1513,5 +1536,67 @@ if (false) {
 	}
 
     }
+    
+    class MicrophoneReader extends Thread {
+        private Recorder recorder;
+        private boolean quit = false;
+        
+        public MicrophoneReader() {
+        }
+        
+        public synchronized void startRecording(String path) throws IOException {
+            Microphone mic = getMicrophone();
+            MediaInfo mi = new MediaInfo((byte) 116, RtpPacket.PCM_ENCODING, 
+                    mic.getSampleRate(), mic.getChannels(), false);
+                
+            recorder = new Recorder(path, "au", mi);
+        }
 
+        public synchronized void stopRecording() {
+            recorder.done();
+            recorder = null;
+        }
+        
+        protected synchronized Recorder getRecorder() {
+            return recorder;
+        }
+        
+        @Override
+        public void run() {
+            
+            try {   
+                Microphone mic = getMicrophone();
+                
+                int sampleSize = microphone.getSampleSizeInBits() / 8 * microphone.getChannels();
+                float rate = microphone.getSampleRate();
+                int chunksize = (int)(sampleSize*rate*0.02f);
+                
+                // buffer holds 20ms of data
+                byte[] data = new byte[chunksize];
+                            
+                while (!isQuit()) {
+                    mic.read(data, 0, data.length);
+                    
+                    Recorder rec = getRecorder();
+                    if (rec != null) {
+                        rec.write(data, 0, data.length);
+                    }
+                }
+            } catch (IOException ioe) {
+                Logger.exception("Error reading microphone", ioe);
+            } finally {
+                if (getRecorder() != null) {
+                    getRecorder().done();
+                }
+            }
+        }
+        
+        public synchronized boolean isQuit() {
+            return quit;
+        }
+        
+        public synchronized void quit() {
+            quit = true;
+        }
+    }
 }
