@@ -680,53 +680,15 @@ public class SipCommunicator extends Thread implements
 
 	    if (tokens.length != 3) {
 		Logger.println("Usage is:  "
-		    + "PlaceCall=conferenceId:<conferenceId>,"
-		    + "userName=<userName>,"
-		    + "callee=<callee>");
+		    + "PlaceCall=<conferenceId>,"
+		    + "<userName>,"
+		    + "<callee>");
 		    return;
-	    }
-
-	    String[] cId = tokens[0].split(":");
-			
-	    if (cId.length != 2) {
-	        Logger.println("Missing conference Id");
-		return;
-	    }
-
-	    if (cId[0].equalsIgnoreCase("conferenceId") == false) {
-		Logger.println("Unknown parameter:  " + cId[0]);
-		return;
-	    }
-
-	    String conferenceId = cId[1];
-
-            String[] uName = tokens[1].split(":");
-
-            if (uName.length != 2) {
-                Logger.println("Missing userName");
-                return;
             }
-
-            if (uName[0].equalsIgnoreCase("userName") == false) {
-                Logger.println("Unknown parameter:  " + cId[0]);
-                return;
-            }
-
-            String userName = uName[1];
-
-            String[] number = tokens[2].split(":");
-
-            if (number.length != 2) {
-                Logger.println("Missing callee number");
-                return;
-            }
-
-            if (number[0].equalsIgnoreCase("callee") == false) {
-                Logger.println("Unknown parameter:  " + number[0]);
-                return;
-            }
-
-            String callee = number[1];
+            
+	    String conferenceId = tokens[0];
+            String userName = tokens[1];
+            String callee = tokens[2];
 
 	    Logger.println(
 		"Dialing Conference id " + conferenceId
@@ -734,7 +696,7 @@ public class SipCommunicator extends Thread implements
 		    + " callee " + callee);
 
 		//dial(conferenceId, userName, callee);
-	    dial(null, userName, callee);
+	    dial(conferenceId, userName, callee);
 	    return;
         }
 
@@ -848,27 +810,72 @@ public class SipCommunicator extends Thread implements
 		
 	    return;
 	}
+        
+        if (command.indexOf("recordAudio") >= 0) {
+	    String tokens[] = command.split("=");
+
+	    if (tokens.length != 2) {
+		Logger.println("Missing recording path:  " + command);
+		return;
+	    }
+            
+            String[] recordType = tokens[1].split(":");
+            boolean recordMic = false;
+            if (recordType.length == 2) {
+                recordMic = Boolean.parseBoolean(recordType[1]);
+            }
+
+	    if (mediaManager != null) {
+		try {
+		    mediaManager.startRecording(recordType[0], "Au",
+			recordMic, null);
+		} catch (IOException e) {
+		    Logger.println("Unable to record to "
+			+ tokens[1] + ":  " + e.getMessage());
+		}
+	    }
+		
+	    return;
+	}
   
-	if (command.indexOf("pauseRecordingReceivedAudio") >= 0) {
+	if (command.indexOf("pauseRecordingAudio") >= 0) {
 	    if (mediaManager != null) {
 		mediaManager.pauseRecording(false);
 	    }
 	    return;
 	}
 
-	if (command.indexOf("resumeRecordingReceivedAudio") >= 0) {
+	if (command.indexOf("resumeRecordingAudio") >= 0) {
 	    if (mediaManager != null) {
 		mediaManager.resumeRecording(false);
 	    }
 	    return;
 	}
 
-	if (command.indexOf("stopRecordingReceivedAudio") >= 0) {
+	if (command.indexOf("stopRecordingAudio") >= 0) {
 	    if (mediaManager != null) {
 		mediaManager.stopRecording(false);
 	    }
 	    return;
 	}
+        
+        if (command.indexOf("startReadingMic") >= 0) {
+            if (mediaManager != null) {
+                try {
+                    mediaManager.startReadingMicrophone();
+                } catch (IOException ioe) {
+                    Logger.exception("Error reading microphone", ioe);
+                }
+            }
+            return;
+        }
+        
+        if (command.indexOf("stopReadingMic") >= 0) {
+            if (mediaManager != null) {
+                mediaManager.stopReadingMicrophone();
+            }
+            return;
+        }
 
 	if (command.indexOf("playFile") >= 0) {
 	    if (mediaManager != null) {
@@ -898,6 +905,13 @@ public class SipCommunicator extends Thread implements
 	    return;
 	}
 
+        if (command.indexOf("stopPlayingFile") >= 0) {
+            if (mediaManager != null) {
+                mediaManager.stopPlayingFile();
+            }
+            return;
+        }
+        
         //** 1.5 only!
 
         if (command.indexOf("stack") >= 0) {
