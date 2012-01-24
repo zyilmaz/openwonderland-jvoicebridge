@@ -1,3 +1,21 @@
+/**
+ * Open Wonderland
+ *
+ * Copyright (c) 2011 - 2012, Open Wonderland Foundation, All Rights Reserved
+ *
+ * Redistributions in source code form must reproduce the above
+ * copyright and this condition.
+ *
+ * The contents of this file are subject to the GNU General Public
+ * License, Version 2 (the "License"); you may not use this file
+ * except in compliance with the License. A copy of the License is
+ * available at http://www.opensource.org/licenses/gpl-license.php.
+ *
+ * The Open Wonderland Foundation designates this particular file as
+ * subject to the "Classpath" exception as provided by the Open Wonderland
+ * Foundation in the License file that accompanied this code.
+ */
+
 /*
  * Copyright 2007 Sun Microsystems, Inc.
  *
@@ -36,13 +54,11 @@ import java.io.IOException;
 
 import java.text.ParseException;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 
-import java.util.NoSuchElementException;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Manage a conference consisting of members.
@@ -74,6 +90,10 @@ public class ConferenceManager {
     private WGManager	       wgManager;	      // whisper group manager
     private ConferenceReceiver conferenceReceiver;    // receiver thread
 
+    protected enum ConferenceMemberEvent { JOIN, INITIALIZE, LEAVE };
+    private final Set<ConferenceMemberListener> memberListeners =
+            new CopyOnWriteArraySet<ConferenceMemberListener>();
+    
     private boolean	       permanent = false;     
 
     private static int	       totalMembers = 0;
@@ -497,6 +517,32 @@ public class ConferenceManager {
 
 	return getMemberList().size();
     }
+    
+    public void addMemberListener(ConferenceMemberListener listener) {
+        memberListeners.add(listener);
+    }
+    
+    public void removeMemberListener(ConferenceMemberListener listener) {
+        memberListeners.remove(listener);
+    }
+    
+    protected void notifyMemberListeners(ConferenceMember member,     
+                                         ConferenceMemberEvent type) 
+    {
+        for (ConferenceMemberListener listener : memberListeners) {
+            switch (type) {
+                case JOIN:
+                    listener.memberJoined(member);
+                    break;
+                case INITIALIZE:
+                    listener.memberInitialized(member);
+                    break;
+                case LEAVE:
+                    listener.memberLeft(member);
+                    break;
+            }
+        }
+    }
 
     /**
      * Get the conference identifier.
@@ -632,6 +678,8 @@ public class ConferenceManager {
                 + " new member " + member + s
                 + " total members:  " + memberList.size());
         }
+        
+        notifyMemberListeners(member, ConferenceMemberEvent.JOIN);
     }
 
     public static boolean hasCommonMix(String conferenceId) {
@@ -743,6 +791,8 @@ public class ConferenceManager {
 	        end();	// last member left, the conference is over
 	    }
 	}
+        
+        notifyMemberListeners(member, ConferenceMemberEvent.LEAVE);
     }
 
     private void endAllCalls() {
