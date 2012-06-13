@@ -41,6 +41,22 @@
 
 package com.sun.mpk20.voicelib.impl.service.voice;
 
+import com.sun.mpk20.voicelib.app.AudioGroup;
+import com.sun.mpk20.voicelib.app.AudioGroupSetup;
+import com.sun.mpk20.voicelib.app.BridgeInfo;
+import com.sun.mpk20.voicelib.app.Call;
+import com.sun.mpk20.voicelib.app.CallBeginEndListener;
+import com.sun.mpk20.voicelib.app.CallSetup;
+import com.sun.mpk20.voicelib.app.Player;
+import com.sun.mpk20.voicelib.app.PlayerSetup;
+import com.sun.mpk20.voicelib.app.Recorder;
+import com.sun.mpk20.voicelib.app.RecorderSetup;
+import com.sun.mpk20.voicelib.app.Treatment;
+import com.sun.mpk20.voicelib.app.TreatmentGroup;
+import com.sun.mpk20.voicelib.app.TreatmentSetup;
+import com.sun.mpk20.voicelib.app.VoiceBridgeParameters;
+import com.sun.mpk20.voicelib.app.VoiceManagerParameters;
+import com.sun.mpk20.voicelib.app.VoiceService;
 import com.sun.mpk20.voicelib.impl.service.voice.work.Work;
 import com.sun.mpk20.voicelib.impl.service.voice.work.audiogroup.*;
 import com.sun.mpk20.voicelib.impl.service.voice.work.call.*;
@@ -49,80 +65,29 @@ import com.sun.mpk20.voicelib.impl.service.voice.work.player.*;
 import com.sun.mpk20.voicelib.impl.service.voice.work.recorder.*;
 import com.sun.mpk20.voicelib.impl.service.voice.work.treatment.*;
 import com.sun.mpk20.voicelib.impl.service.voice.work.treatmentgroup.*;
-
 import com.sun.sgs.app.AppContext;
 import com.sun.sgs.app.DataManager;
-import com.sun.sgs.app.ManagedObject;
-import com.sun.sgs.app.ManagedReference;
 import com.sun.sgs.app.NameNotBoundException;
-import com.sun.sgs.app.PeriodicTaskHandle;
 import com.sun.sgs.app.Task;
-import com.sun.sgs.app.TaskManager;
 import com.sun.sgs.app.TransactionNotActiveException;
-
-import com.sun.sgs.auth.Identity;
-
 import com.sun.sgs.impl.sharedutil.LoggerWrapper;
 import com.sun.sgs.impl.util.AbstractService;
-
 import com.sun.sgs.kernel.ComponentRegistry;
 import com.sun.sgs.kernel.KernelRunnable;
-import com.sun.sgs.kernel.RecurringTaskHandle;
-import com.sun.sgs.kernel.TaskReservation;
 import com.sun.sgs.kernel.TransactionScheduler;
-
-import com.sun.sgs.service.DataService;
 import com.sun.sgs.service.NonDurableTransactionParticipant;
-import com.sun.sgs.service.Service;
 import com.sun.sgs.service.Transaction;
 import com.sun.sgs.service.TransactionProxy;
-
-import com.sun.mpk20.voicelib.app.ManagedCallStatusListener;
-import com.sun.mpk20.voicelib.app.Spatializer;
-import com.sun.mpk20.voicelib.app.DefaultSpatializer;
-
-import com.sun.mpk20.voicelib.app.AudioGroup;
-import com.sun.mpk20.voicelib.app.AudioGroupSetup;
-import com.sun.mpk20.voicelib.app.BridgeInfo;
-import com.sun.mpk20.voicelib.app.Call;
-import com.sun.mpk20.voicelib.app.CallSetup;
-import com.sun.mpk20.voicelib.app.DefaultSpatializer;
-import com.sun.mpk20.voicelib.app.DefaultSpatializers;
-import com.sun.mpk20.voicelib.app.CallBeginEndListener;
-import com.sun.mpk20.voicelib.app.ManagedCallStatusListener;
-import com.sun.mpk20.voicelib.app.ManagedCallBeginEndListener;
-import com.sun.mpk20.voicelib.app.Player;
-import com.sun.mpk20.voicelib.app.PlayerSetup;
-import com.sun.mpk20.voicelib.app.Recorder;
-import com.sun.mpk20.voicelib.app.RecorderSetup;
-import com.sun.mpk20.voicelib.app.Treatment;
-import com.sun.mpk20.voicelib.app.TreatmentGroup;
-import com.sun.mpk20.voicelib.app.TreatmentSetup;
-import com.sun.mpk20.voicelib.app.VirtualPlayerListener;
-import com.sun.mpk20.voicelib.app.VoiceManager;
-import com.sun.mpk20.voicelib.app.VoiceService;
-import com.sun.mpk20.voicelib.app.VoiceBridgeParameters;
-import com.sun.mpk20.voicelib.app.VoiceManagerParameters;
-
-import java.io.IOException;
-import java.io.Serializable;
-
-import java.text.ParseException;
-
-import java.util.ArrayList;
-import java.util.Properties;
-
-import java.util.concurrent.ConcurrentHashMap;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import java.util.prefs.Preferences;
-
-import com.sun.voip.CallParticipant;
-
 import com.sun.voip.client.connector.CallStatus;
 import com.sun.voip.client.connector.CallStatusListener;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is an implementation of <code>VoiceService</code> that works on a
@@ -134,10 +99,10 @@ import com.sun.voip.client.connector.CallStatusListener;
 public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	CallStatusListener, NonDurableTransactionParticipant {
 
-    private ThreadLocal<ArrayList<Work>> localWorkToDo =
-       new ThreadLocal<ArrayList<Work>>() {
-           protected ArrayList<Work> initialValue() {
-               return new ArrayList<Work>();
+    private ThreadLocal<VoiceServiceTxnState> voiceTxnState =
+       new ThreadLocal<VoiceServiceTxnState>() {
+           protected VoiceServiceTxnState initialValue() {
+               return new VoiceServiceTxnState();
            }
        }; 
 
@@ -165,6 +130,9 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
     private boolean isConfigured = false;
     private boolean isConfiguring = false;
 
+    // flag indicating whether there is a bridge connected
+    private boolean bridgeConnected = false;
+   
     // the system's task scheduler, where tasks actually run
     private TransactionScheduler transactionScheduler;
 
@@ -220,8 +188,8 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	} catch (TransactionNotActiveException e) {
 	    return false;
 	}
-
-	localWorkToDo.get().add(work);
+        
+        voiceTxnState.get().addWork(work);
 	return true;
     }
 
@@ -282,19 +250,12 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
             warmStartCalls = (WarmStartCalls)
 		dm.getBinding(WarmStartInfo.DS_WARM_START_CALLS);
         } catch (NameNotBoundException e) {
-            try {
-                warmStartCalls = new WarmStartCalls();
-                dm.setBinding(WarmStartInfo.DS_WARM_START_CALLS, warmStartCalls);
-            }  catch (RuntimeException re) {
-                logger.log(Level.WARNING, "failed to bind map for warm starting calls " 
-		    + re.getMessage());
-		throw new IOException("failed to bind map for warm starting calls " 
-                    + re.getMessage());
-            }
+            warmStartCalls = new WarmStartCalls();
+            dm.setBinding(WarmStartInfo.DS_WARM_START_CALLS, warmStartCalls);
         }
 
 	Call call = new CallImpl(id, setup);
-        warmStartCalls.put(id, setup.bridgeInfo);
+        warmStartCalls.put(id, new WarmStartCallInfo(setup.bridgeInfo));
 	return call;
     }
 
@@ -422,13 +383,8 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
             warmStartTreatmentGroups = (WarmStartTreatmentGroups)
                 dm.getBinding(WarmStartInfo.DS_WARM_START_TREATMENTGROUPS);
         } catch (NameNotBoundException e) {
-            try {
-                warmStartTreatmentGroups = new WarmStartTreatmentGroups();
-                dm.setBinding(WarmStartInfo.DS_WARM_START_TREATMENTGROUPS, warmStartTreatmentGroups);
-            }  catch (RuntimeException re) {
-                logger.log(Level.WARNING, "failed to bind map for warm starting treatments "
-                    + re.getMessage());
-            }
+            warmStartTreatmentGroups = new WarmStartTreatmentGroups();
+            dm.setBinding(WarmStartInfo.DS_WARM_START_TREATMENTGROUPS, warmStartTreatmentGroups);
         }
 
         warmStartTreatmentGroups.add(id);
@@ -452,15 +408,8 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
             warmStartTreatments = (WarmStartTreatments)
 		dm.getBinding(WarmStartInfo.DS_WARM_START_TREATMENTS);
         } catch (NameNotBoundException e) {
-            try {
-                warmStartTreatments = new WarmStartTreatments();
-                dm.setBinding(WarmStartInfo.DS_WARM_START_TREATMENTS, warmStartTreatments);
-            }  catch (RuntimeException re) {
-                logger.log(Level.WARNING, "failed to bind map for warm starting treatments " 
-		    + re.getMessage());
-		throw new IOException("failed to bind map for warm starting treatments " 
-                    + re.getMessage());
-            }
+            warmStartTreatments = new WarmStartTreatments();
+            dm.setBinding(WarmStartInfo.DS_WARM_START_TREATMENTS, warmStartTreatments);
         }
 
         warmStartTreatments.put(id, new WarmStartTreatmentInfo(setup));
@@ -483,15 +432,8 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
             warmStartRecorders = (WarmStartRecorders)
                 dm.getBinding(WarmStartInfo.DS_WARM_START_RECORDERS);
         } catch (NameNotBoundException e) {
-            try {
-                warmStartRecorders = new WarmStartRecorders();
-                dm.setBinding(WarmStartInfo.DS_WARM_START_RECORDERS, warmStartRecorders);
-            }  catch (RuntimeException re) {
-                logger.log(Level.WARNING, "failed to bind map for warm starting Recorders "
-                    + re.getMessage());
-                throw new IOException("failed to bind map for warm starting Recorders "
-                    + re.getMessage());
-            }
+            warmStartRecorders = new WarmStartRecorders();
+            dm.setBinding(WarmStartInfo.DS_WARM_START_RECORDERS, warmStartRecorders);
         }
 
         warmStartRecorders.put(id, setup);
@@ -543,6 +485,23 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 
     }
 
+    protected boolean isBridgeConnected() {
+        // first check if there is a transaction in progress that has
+        // modified this value
+        VoiceServiceTxnState ts = voiceTxnState.get();
+        if (ts != null && ts.getConnected() != null) {
+            return ts.getConnected();
+        }
+        
+        return bridgeConnected;
+    }
+    
+    protected void setBridgeConnected(boolean bridgeConnected) {
+        getTxnState();
+        
+        voiceTxnState.get().setConnected(bridgeConnected);
+    }
+    
     /**
      * {@inheritDoc}
      */
@@ -579,42 +538,9 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
              * This method could get called multiple times if
              * ExceptionRetryStatus is thrown.
              */
-            boolean warmStart = false;
-
-	    DataManager dm = AppContext.getDataManager();
-
-            try {
-                dm.getBinding(WarmStartInfo.DS_WARM_START_CALLS);
-	        warmStart = true;
-            } catch (NameNotBoundException e) {
-	    }
-
-            try {
-                dm.getBinding(WarmStartInfo.DS_WARM_START_TREATMENTGROUPS);
-	        warmStart = true;
-            } catch (NameNotBoundException e) {
-	    }
-
-            try {
-                dm.getBinding(WarmStartInfo.DS_WARM_START_TREATMENTS);
-	        warmStart = true;
-            } catch (NameNotBoundException e) {
-	    }
-
-            try {
-                dm.getBinding(WarmStartInfo.DS_WARM_START_RECORDERS);
-	        warmStart = true;
-            } catch (NameNotBoundException e) {
-	    }
-
-	    if (warmStart) {
-                // schedule a warm start task which will run once a bridge
-                // becomes available
-                AppContext.getTaskManager().scheduleTask(new WarmstartTask());
-	    } else {
-		logger.log(Level.INFO, "There is nothing to warm start");
-		//VoiceImpl.getInstance().foo();
-	    }
+            // schedule a bridge connection task which will run once a bridge
+            // becomes available
+            AppContext.getTaskManager().scheduleTask(new BridgeConnectionTask());
         }
     }
 
@@ -727,54 +653,71 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
             throw new IllegalStateException("VoiceService " + NAME + " has " +
                                             "not been prepared");
         }
+        
+        try {
+            VoiceServiceTxnState vts = voiceTxnState.get();
+            
+            // update connected status
+            if (vts.getConnected() != null) {
+                logger.log(Level.FINEST, "Marking bridge as connected");
+                this.bridgeConnected = vts.getConnected();
+            }
+            
+            if (!isBridgeConnected()) {
+                // ignore work submitted before a bridge is connected.
+                // Hopefully whatever it is will be handled properly
+                // by the warm start system
+                logger.log(Level.FINEST, "Dropping " + vts.getWork().size() + 
+                        " operations");
+                return;
+            }
 
-        ArrayList<Work> workToDo;
+            List<Work> workToDo = vts.getWork();
 
-        workToDo = localWorkToDo.get();
+            logger.log(Level.FINEST, "workToDo size " + workToDo.size());
+            //System.out.println("VS: WORK TO DO SIZE " + workToDo.size());
 
-	logger.log(Level.FINEST, "workToDo size " + workToDo.size());
-	//System.out.println("VS: WORK TO DO SIZE " + workToDo.size());
+            for (int i = 0; i < workToDo.size(); i++) {
+                Work work = workToDo.get(i);
 
-	for (int i = 0; i < workToDo.size(); i++) {
-	    Work work = workToDo.get(i);
+                if (work instanceof RecorderWork) {
+                    RecorderWork w = (RecorderWork) work;
+                    RecorderImpl r = (RecorderImpl) w.recorder;
+                    r.commit(w);
+                } else if (work instanceof CallWork) {
+                    CallWork w = (CallWork) work;
+                    CallImpl c = (CallImpl) w.call;
+                    c.commit(w);
+                } else if (work instanceof PlayerWork) {
+                    PlayerWork w = (PlayerWork) work;
+                    PlayerImpl p = (PlayerImpl) w.player;
+                    p.commit(w);
+                } else if (work instanceof AudioGroupWork) {
+                    AudioGroupWork w = (AudioGroupWork) work;
+                    AudioGroupImpl a = (AudioGroupImpl) w.audioGroup;
+                    a.commit(w);
+                } else if (work instanceof TreatmentGroupWork) {
+                    TreatmentGroupWork w = (TreatmentGroupWork) work;
+                    TreatmentGroupImpl t = (TreatmentGroupImpl) w.treatmentGroup;
+                    t.commit(w);
+                } else if (work instanceof TreatmentWork) {
+                    TreatmentWork w = (TreatmentWork) work;
+                    TreatmentImpl t = (TreatmentImpl) w.treatment;
+                    t.commit(w);
+                } else if (work instanceof ListenerWork) {
+                    ListenerWork w = (ListenerWork) work;
+                    VoiceImpl.getInstance().commit(w);
+                } else {
+                    logger.log(Level.WARNING, "Unknown work to do:  " + work);
+                }
+            }
 
-	    if (work instanceof RecorderWork) {
-		RecorderWork w = (RecorderWork) work;
-		RecorderImpl r = (RecorderImpl) w.recorder;
-		r.commit(w);
-	    } else if (work instanceof CallWork) {
-		CallWork w = (CallWork) work;
-		CallImpl c = (CallImpl) w.call;
-		c.commit(w);
-	    } else if (work instanceof PlayerWork) {
-		PlayerWork w = (PlayerWork) work;
-		PlayerImpl p = (PlayerImpl) w.player;
-		p.commit(w);
-	    } else if (work instanceof AudioGroupWork) {
-		AudioGroupWork w = (AudioGroupWork) work;
-		AudioGroupImpl a = (AudioGroupImpl) w.audioGroup;
-		a.commit(w);
-	    } else if (work instanceof TreatmentGroupWork) {
-		TreatmentGroupWork w = (TreatmentGroupWork) work;
-		TreatmentGroupImpl t = (TreatmentGroupImpl) w.treatmentGroup;
-		t.commit(w);
-	    } else if (work instanceof TreatmentWork) {
-		TreatmentWork w = (TreatmentWork) work;
-		TreatmentImpl t = (TreatmentImpl) w.treatment;
-		t.commit(w);
-	    } else if (work instanceof ListenerWork) {
-		ListenerWork w = (ListenerWork) work;
-		VoiceImpl.getInstance().commit(w);
-	    } else {
-		 logger.log(Level.WARNING, "Unknown work to do:  " + work);
-	    }
-	}
-
-	localWorkToDo.get().clear();
-
-	bridgeManager.commit();
-
-        logger.log(Level.FINEST, "commit txn succeeded " + txn);
+            bridgeManager.commit();
+            logger.log(Level.FINEST, "commit txn succeeded " + txn);
+        } finally {
+            // reset the thread-local data
+            voiceTxnState.remove();
+        }
     }
 
     /**
@@ -798,7 +741,8 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
                         txn.getAbortCause().getMessage());
         }
 
-        localWorkToDo.get().clear();
+        // reset the thread-local data
+        voiceTxnState.remove();
 
         // resolve the current transaction and the local state, removing the
         // state so we can't accidentally use it further in the future
@@ -893,7 +837,7 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 	txnProxy.getCurrentTransaction().join(participant);
     }
 
-    private static class WarmstartTask implements Task, Serializable {
+    private static class BridgeConnectionTask implements Task, Serializable {
         public void run() throws Exception {
             // try to get the bridge connection (indicating the bridge is
             // available)
@@ -901,7 +845,11 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
                 VoiceImpl.getInstance().getBridgeManager().getBridgeConnection();
                 
                 // if we got here, there is at least one bridge available, so
-                // we should go ahead with the warm start
+                // mark the fact that a bridge is online
+                VoiceServiceImpl.getInstance().setBridgeConnected(true);
+                
+                // perform a warm start to restart anything that has been
+                // set up
                 new WarmStart(VoiceImpl.getInstance());
             } catch (IOException ioe) {
                 // bridge not available yet. Try again later
@@ -909,7 +857,6 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
                            "start. Will try again in 1 second.");
                 AppContext.getTaskManager().scheduleTask(this, 1000);
             }
-            
         }        
     }
     
@@ -961,4 +908,25 @@ public class VoiceServiceImpl extends AbstractService implements VoiceService,
 
     }
 
+    private static class VoiceServiceTxnState {
+        private final List<Work> work = new ArrayList<Work>();
+        private Boolean connected = null;
+        
+        public void addWork(Work work) {
+            this.work.add(work);
+        }
+        
+        public List<Work> getWork() {
+            return work;
+        }
+        
+        public Boolean getConnected() {
+            return connected;
+        }
+        
+        public void setConnected(Boolean connected) {
+            this.connected = connected;
+        }
+        
+    }
 }

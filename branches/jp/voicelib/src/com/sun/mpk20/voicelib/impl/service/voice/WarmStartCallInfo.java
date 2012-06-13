@@ -23,14 +23,16 @@
 package com.sun.mpk20.voicelib.impl.service.voice;
 
 import com.sun.mpk20.voicelib.app.BridgeInfo;
+import java.io.Serializable;
 
-import com.sun.sgs.app.ManagedObject;
+public class WarmStartCallInfo implements Serializable {
+    public BridgeInfo bridgeInfo;
 
-import java.util.concurrent.ConcurrentHashMap;
+    public WarmStartCallInfo() {
+	this(null);
+    }
 
-public class WarmStartCalls extends ConcurrentHashMap
-	<String, WarmStartCallInfo> implements ManagedObject {
-
-    private static final long serialVersionUID = 1;
-
+    public WarmStartCallInfo(BridgeInfo bridgeInfo) {
+	this.bridgeInfo = bridgeInfo;
+    }
 }

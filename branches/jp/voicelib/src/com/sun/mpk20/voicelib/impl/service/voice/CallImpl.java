@@ -122,20 +122,6 @@ public class CallImpl implements Call, CallStatusListener {
 
 	setup.cp.setName(name);
 
-	if (setup.bridgeInfo == null) {
-            BridgeConnection bc = VoiceImpl.getInstance().getBridgeManager().getBridgeConnection();
-
-            BridgeInfo bridgeInfo = new BridgeInfo();
-
-	    bridgeInfo.privateHostName = bc.getPrivateHost();
-	    bridgeInfo.privateControlPort = bc.getPrivateControlPort();
-            bridgeInfo.publicHostName = bc.getPublicHost();
-	    bridgeInfo.publicControlPort = bc.getPublicControlPort();
-            bridgeInfo.publicSipPort = bc.getPublicSipPort();
-
-	    setup.bridgeInfo = bridgeInfo;
-	}
-
 	//if (setup.managedListenerRef != null) {
         //    VoiceImpl.getInstance().addCallStatusListener(setup.managedListenerRef, id);
         //}
@@ -152,8 +138,7 @@ public class CallImpl implements Call, CallStatusListener {
 
 	if (cp.getPhoneNumber() != null) {
 	    logger.log(Level.FINER, "VS:  Setting up call to "
-		+ cp.getPhoneNumber() + " on bridge " 
-		+ setup.bridgeInfo);
+		+ cp.getPhoneNumber());
 	} else {
 	    logger.log(Level.FINER, "VS:  Setting up call to "
 		+ cp.getInputTreatment());
@@ -171,6 +156,23 @@ public class CallImpl implements Call, CallStatusListener {
 
 	if (setup.incomingCall == false) {
 	    try {
+                if (setup.bridgeInfo == null) {
+                    BridgeConnection bc = VoiceImpl.getInstance().getBridgeManager().getBridgeConnection();
+
+                    BridgeInfo bridgeInfo = new BridgeInfo();
+
+                    bridgeInfo.privateHostName = bc.getPrivateHost();
+                    bridgeInfo.privateControlPort = bc.getPrivateControlPort();
+                    bridgeInfo.publicHostName = bc.getPublicHost();
+                    bridgeInfo.publicControlPort = bc.getPublicControlPort();
+                    bridgeInfo.publicSipPort = bc.getPublicSipPort();
+
+                    setup.bridgeInfo = bridgeInfo;
+                }
+                
+                logger.log(Level.FINER, "VS: setting up call on bridge "  +  
+                           setup.bridgeInfo);
+                
 		voiceImpl.getBridgeManager().initiateCall(cp, setup.bridgeInfo);
 	    } catch (IOException e) {
 		logger.log(Level.INFO, e.getMessage());

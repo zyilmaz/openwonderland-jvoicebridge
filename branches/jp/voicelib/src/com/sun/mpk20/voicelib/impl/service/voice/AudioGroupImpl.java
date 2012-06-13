@@ -46,12 +46,14 @@ import com.sun.mpk20.voicelib.app.VoiceManagerParameters;
 import java.io.Serializable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Set;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
 
 import java.util.logging.Logger;
 
@@ -111,26 +113,43 @@ public class AudioGroupImpl implements AudioGroup {
     }
 
     private void addPlayerCommit(Player player, AudioGroupPlayerInfo info) {
-	if (players.get(player.getId()) != null) {
-	    players.put(player.getId(), info);
-	    return;
-	}
+        logger.fine("Add player commit: " + player.getId() + " to group " +
+                    getId());
 
-	players.put(player.getId(), info);
+        try {
+            if (players.get(player.getId()) != null) {
+                logger.fine("Player " + player.getId() + " already in group " +
+                            getId());
+                players.put(player.getId(), info);
+                return;
+            }
 
-	Player p = VoiceImpl.getInstance().getPlayer(player.getId());
+            players.put(player.getId(), info);
 
-	if (p == null) {
-	    logger.warning("player null for " + player.getId());
-	} else {
-	    if (p.toString().equals(player.toString()) == false) {
-	       System.out.println("DIFFERENT OBJECTS:  player " + player + " p " + p);
-	    }
+            Player p = VoiceImpl.getInstance().getPlayer(player.getId());
 
-	    player = p;
-	}
+            if (p == null) {
+                logger.warning("player null for " + player.getId());
+            } else {
+                if (p.toString().equals(player.toString()) == false) {
+                System.out.println("DIFFERENT OBJECTS:  player " + player + " p " + p);
+                }
 
-	((PlayerImpl) player).addAudioGroupCommit(this);
+                player = p;
+            }
+
+            ((PlayerImpl) player).addAudioGroupCommit(this);
+
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("Groups for " + player.getId() + " " +
+                            Arrays.toString(player.getAudioGroups()));
+            }
+        } catch (Throwable t) {
+            logger.log(Level.FINE, "Error in addPlayerCommit", t);
+            if (t instanceof RuntimeException) {
+                throw (RuntimeException) t;
+            }
+        }
 
 	for (AudioGroupListener listener : listeners) {
 	    VoiceImpl.getInstance().scheduleTask(new Notifier(listener, this, player, info, true));
