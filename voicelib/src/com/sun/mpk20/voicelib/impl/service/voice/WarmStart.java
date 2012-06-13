@@ -101,12 +101,15 @@ public class WarmStart {
 	    String callID = keys.nextElement();
 
 	    BridgeManager bridgeManager = voiceImpl.getBridgeManager();
-
-	    BridgeInfo info = warmStartCalls.get(callID);
-
-	    BridgeConnection bc = bridgeManager.findBridge(
-		info.publicHostName, String.valueOf(info.publicSipPort));
-
+            BridgeConnection bc = null;
+            
+	    WarmStartCallInfo callInfo = warmStartCalls.get(callID);
+            BridgeInfo info = callInfo.bridgeInfo;
+            if (info != null) {
+                bc = bridgeManager.findBridge(info.publicHostName, 
+                                              String.valueOf(info.publicSipPort));
+            }
+            
 	    if (bc == null) {
 		logger.warning("Unable to find BridgeConnection for " + callID);
 		sendStatus(callID);
