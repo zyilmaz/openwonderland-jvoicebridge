@@ -176,6 +176,11 @@ public class TreatmentImpl implements Treatment, CallStatusListener {
 	    VoiceImpl.getInstance().scheduleTask(
 		new Notifier(setup.treatmentCreatedListener, this, player));
 	}
+        
+        // should we start paused
+        if (setup.startPaused) {
+            pauseCommit(true);
+        }
     }
 
     private class Notifier implements KernelRunnable, NonDurableTransactionParticipant {

@@ -43,4 +43,5 @@ public class TreatmentSetup implements Serializable {
 
     public ManagedReference<ManagedCallStatusListener> managedListenerRef;
 
+    public boolean startPaused = false;
 }
